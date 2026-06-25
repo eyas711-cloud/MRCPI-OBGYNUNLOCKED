@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
-import { ArrowRight, Calendar, Clock, Video, CheckCircle, FileText, Globe, Bell } from "lucide-react";
+import { useState } from "react";
+import { ArrowRight, Calendar, Clock, Video, CheckCircle, FileText, Globe, Bell, Send } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const availableDates = [
   { date: "Monday, 30 June 2025", slots: ["09:00 BST", "11:00 BST", "14:00 BST", "16:00 BST"] },
@@ -23,6 +27,32 @@ const feedbackComponents = [
 ];
 
 export default function MockOscePage() {
+  const [selected, setSelected] = useState<{ date: string; slot: string } | null>(null);
+  const [form, setForm] = useState({ name: "", email: "", notes: "" });
+  const [loading, setLoading] = useState(false);
+  const [booked, setBooked] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleBook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selected) return;
+    setLoading(true);
+    setError(null);
+    const { error } = await supabase.from("osce_bookings").insert([{
+      name: form.name,
+      email: form.email,
+      date: selected.date,
+      time_slot: selected.slot,
+      notes: form.notes,
+    }]);
+    setLoading(false);
+    if (error) {
+      setError("Something went wrong. Please try again or contact us directly.");
+    } else {
+      setBooked(true);
+    }
+  };
+
   return (
     <>
       {/* HERO */}
@@ -119,15 +149,24 @@ export default function MockOscePage() {
                       <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{d.date}</p>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                      {d.slots.map((slot) => (
-                        <button
-                          key={slot}
-                          className="px-4 py-2 rounded-lg border text-sm font-medium transition-all hover:border-teal-bright hover:text-teal"
-                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }}
-                        >
-                          {slot}
-                        </button>
-                      ))}
+                      {d.slots.map((slot) => {
+                        const isActive = selected?.date === d.date && selected?.slot === slot;
+                        return (
+                          <button
+                            key={slot}
+                            onClick={() => setSelected({ date: d.date, slot })}
+                            className="px-4 py-2 rounded-lg border text-sm font-medium transition-all"
+                            style={{
+                              borderColor: isActive ? "var(--teal-bright)" : "rgba(15,76,92,0.2)",
+                              backgroundColor: isActive ? "var(--teal-bright)" : "transparent",
+                              color: isActive ? "var(--navy)" : "var(--navy)",
+                              fontWeight: isActive ? 600 : 400,
+                            }}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -146,34 +185,74 @@ export default function MockOscePage() {
                   <p className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>Per session · 3 stations included</p>
                 </div>
                 <div className="p-6 bg-white">
-                  <ul className="space-y-3 mb-6">
-                    {[
-                      "3 timed OSCE stations",
-                      "Experienced examiner",
-                      "Secure video platform",
-                      "Written feedback report",
-                      "Domain-level scoring",
-                      "24-hour report delivery",
-                    ].map((f) => (
-                      <li key={f} className="flex items-center gap-2 text-sm" style={{ color: "rgba(26,26,26,0.7)" }}>
-                        <CheckCircle size={13} style={{ color: "var(--teal-bright)" }} /> {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link
-                    href="/login"
-                    className="block w-full text-center py-3.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 mb-3"
-                    style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}
-                  >
-                    Book Now
-                  </Link>
-                  <Link
-                    href="/contact"
-                    className="block w-full text-center py-3.5 rounded-lg font-semibold text-sm border transition-all"
-                    style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }}
-                  >
-                    Ask a Question
-                  </Link>
+                  {booked ? (
+                    <div className="text-center py-4">
+                      <CheckCircle size={36} className="mx-auto mb-3" style={{ color: "var(--teal-bright)" }} />
+                      <p className="font-serif font-semibold text-lg mb-1" style={{ color: "var(--navy)" }}>Booking Request Sent!</p>
+                      <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>
+                        We will confirm your session for <strong>{selected?.date}</strong> at <strong>{selected?.slot}</strong> within 24 hours.
+                      </p>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleBook} className="space-y-4">
+                      {selected ? (
+                        <div className="rounded-lg px-4 py-3 text-sm font-medium" style={{ backgroundColor: "rgba(201,162,39,0.1)", color: "var(--navy)" }}>
+                          <span style={{ color: "var(--teal)" }}>Selected: </span>{selected.date} · {selected.slot}
+                        </div>
+                      ) : (
+                        <p className="text-sm" style={{ color: "rgba(26,26,26,0.5)" }}>← Select a date and time slot to book</p>
+                      )}
+                      <div>
+                        <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Full Name *</label>
+                        <input
+                          type="text" required
+                          value={form.name}
+                          onChange={(e) => setForm({ ...form, name: e.target.value })}
+                          placeholder="Dr. Jane Smith"
+                          className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--ink)" }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Email Address *</label>
+                        <input
+                          type="email" required
+                          value={form.email}
+                          onChange={(e) => setForm({ ...form, email: e.target.value })}
+                          placeholder="you@example.com"
+                          className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--ink)" }}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Notes (optional)</label>
+                        <textarea
+                          rows={2}
+                          value={form.notes}
+                          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                          placeholder="Any specific areas to focus on?"
+                          className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none resize-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--ink)" }}
+                        />
+                      </div>
+                      {error && <p className="text-xs text-red-600">{error}</p>}
+                      <button
+                        type="submit"
+                        disabled={loading || !selected}
+                        className="inline-flex items-center justify-center gap-2 w-full py-3.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                        style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}
+                      >
+                        <Send size={14} /> {loading ? "Sending…" : "Request Booking"}
+                      </button>
+                      <Link
+                        href="/contact"
+                        className="block w-full text-center py-3 rounded-lg font-semibold text-sm border transition-all"
+                        style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }}
+                      >
+                        Ask a Question
+                      </Link>
+                    </form>
+                  )}
                 </div>
               </div>
             </div>

@@ -2,15 +2,25 @@
 
 import { useState } from "react";
 import { Mail, Phone, Share2, Rss, Video, Send, CheckCircle } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In production, wire to API route or form service
-    setSubmitted(true);
+    setLoading(true);
+    setError(null);
+    const { error } = await supabase.from("contact_submissions").insert([form]);
+    setLoading(false);
+    if (error) {
+      setError("Something went wrong. Please try again or email us directly.");
+    } else {
+      setSubmitted(true);
+    }
   };
 
   return (
@@ -166,12 +176,14 @@ export default function ContactPage() {
                       style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--ink)" }}
                     />
                   </div>
+                  {error && <p className="text-sm text-red-600">{error}</p>}
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
+                    disabled={loading}
+                    className="inline-flex items-center gap-2 px-7 py-3.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-60"
                     style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}
                   >
-                    <Send size={15} /> Send Message
+                    <Send size={15} /> {loading ? "Sending…" : "Send Message"}
                   </button>
                 </form>
               )}
