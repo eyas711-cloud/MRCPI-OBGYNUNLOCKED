@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Download, FileText, Lightbulb } from "lucide-react";
+import { ArrowRight, FileText, Lightbulb } from "lucide-react";
 
 const freeGuides = [
   { title: "MRCPI OBGYN OSCE Blueprint Overview", type: "PDF Guide", pages: "12 pages", desc: "A structured overview of the current MRCPI O&G OSCE format, domains, and marking criteria.", locked: false },
@@ -82,9 +82,9 @@ export default function ResourcesPage() {
                     Unlock with Course <ArrowRight size={13} />
                   </Link>
                 ) : (
-                  <button type="button" className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--teal)" }}>
-                    <Download size={14} aria-hidden="true" /> Download Free
-                  </button>
+                  <Link href="/login" className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--teal)" }}>
+                    View Guide <ArrowRight size={13} />
+                  </Link>
                 )}
               </div>
             ))}
