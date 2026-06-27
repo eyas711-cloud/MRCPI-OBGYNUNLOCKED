@@ -97,7 +97,7 @@ export default function Footer() {
         </div>
         <div className="pt-6 flex items-center justify-center gap-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/diab-studios-logo.png" alt="Diab Studios" style={{ height: "52px", width: "auto", objectFit: "contain" }} />
+          <img src="/DIABSTUDIOS Logo.png" alt="Diab Studios" style={{ height: "52px", width: "auto", objectFit: "contain" }} />
           <p style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", color: "#C9A84C", fontSize: "15px", letterSpacing: "0.03em" }}>
             Designed &amp; Developed by Diab Studios
           </p>
