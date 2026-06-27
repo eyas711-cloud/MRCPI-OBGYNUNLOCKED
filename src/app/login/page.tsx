@@ -125,6 +125,16 @@ function LoginForm() {
         resource: registerForm.fullName.trim(),
         metadata: { requested_at: new Date().toISOString() },
       }]);
+
+      // Send email notification to admins
+      await fetch("/api/notify-registration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: registerForm.fullName.trim(),
+          email: registerForm.email.trim().toLowerCase(),
+        }),
+      });
     }
 
     setLoading(false);
