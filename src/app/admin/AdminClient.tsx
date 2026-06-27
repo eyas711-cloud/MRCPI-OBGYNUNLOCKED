@@ -1158,8 +1158,6 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   </div>
                 )}
               </div>
-            </div>
-          )}
 
               {/* Bookings list */}
               <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
