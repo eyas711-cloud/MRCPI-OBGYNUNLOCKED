@@ -27,6 +27,8 @@ type ContentItem = {
 
 type AuditRow = { id: string; user_email: string; action: string; resource: string | null; created_at: string };
 
+type SlotRow = { id: string; date_label: string; slots: string[]; sort_order: number; visible: boolean };
+
 type ReviewRow = {
   id: string; user_id: string; student_name: string; rating: number;
   review_text: string; status: string; created_at: string;
@@ -477,6 +479,11 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
   const [recentItems, setRecentItems] = useState<ContentItem[]>([]);
 
+  // Mock OSCEs state
+  const [slots, setSlots] = useState<SlotRow[]>([]);
+  const [slotForm, setSlotForm] = useState({ date_label: "", slots_raw: "09:00 AST\n11:00 AST\n14:00 AST" });
+  const [slotSaving, setSlotSaving] = useState(false);
+
   // Reviews state
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
@@ -508,6 +515,11 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setRecentItems(data ?? []);
   }, []);
 
+  const fetchSlots = useCallback(async () => {
+    const { data } = await supabase.from("mock_osce_slots").select("*").order("sort_order");
+    setSlots(data ?? []);
+  }, []);
+
   const fetchReviews = useCallback(async () => {
     setLoadingReviews(true);
     const { data } = await supabase.from("student_reviews").select("*").order("created_at", { ascending: false });
@@ -528,7 +540,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Students") fetchStudents();
     if (activeNav === "Success Stories") fetchTestimonials();
     if (activeNav === "Reviews") fetchReviews();
-  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews]);
+    if (activeNav === "Mock OSCEs") fetchSlots();
+  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots]);
 
   useEffect(() => {
     fetchStudents();
@@ -1037,6 +1050,99 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── MOCK OSCEs ── */}
+          {activeNav === "Mock OSCEs" && (
+            <div className="space-y-6">
+              {/* Add new date */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <Plus size={16} style={{ color: "var(--teal)" }} />
+                  <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Add New Session Date</h2>
+                </div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  setSlotSaving(true);
+                  const parsedSlots = slotForm.slots_raw.split("\n").map(s => s.trim()).filter(Boolean);
+                  const maxOrder = slots.length > 0 ? Math.max(...slots.map(s => s.sort_order)) : 0;
+                  await supabase.from("mock_osce_slots").insert([{
+                    date_label: slotForm.date_label.trim(),
+                    slots: parsedSlots,
+                    sort_order: maxOrder + 1,
+                    visible: true,
+                  }]);
+                  setSlotSaving(false);
+                  setSlotForm({ date_label: "", slots_raw: "09:00 AST\n11:00 AST\n14:00 AST" });
+                  fetchSlots();
+                }} className="p-5 space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Date Label *</label>
+                    <input required value={slotForm.date_label} onChange={e => setSlotForm({ ...slotForm, date_label: e.target.value })}
+                      placeholder="e.g. Monday, 28 July 2026"
+                      className="w-full px-3 py-2 rounded-lg border text-sm" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>
+                      Time Slots * <span className="font-normal" style={{ color: "rgba(26,26,26,0.5)" }}>(one per line, e.g. 09:00 AST)</span>
+                    </label>
+                    <textarea required rows={4} value={slotForm.slots_raw} onChange={e => setSlotForm({ ...slotForm, slots_raw: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border text-sm font-mono resize-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <button type="submit" disabled={slotSaving}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                    {slotSaving ? <Loader size={14} className="animate-spin" /> : <Plus size={14} />}
+                    {slotSaving ? "Saving…" : "Add Date"}
+                  </button>
+                </form>
+              </div>
+
+              {/* Existing dates */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <div className="flex items-center gap-2">
+                    <Calendar size={16} style={{ color: "var(--teal)" }} />
+                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Current Session Dates</h2>
+                  </div>
+                  <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: "rgba(21,176,151,0.1)", color: "var(--teal)" }}>
+                    {slots.filter(s => s.visible).length} visible / {slots.length} total
+                  </span>
+                </div>
+                {slots.length === 0 ? (
+                  <p className="text-sm text-center py-10" style={{ color: "rgba(26,26,26,0.4)" }}>No dates yet. Add one above.</p>
+                ) : (
+                  <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.07)" }}>
+                    {slots.map(s => (
+                      <div key={s.id} className="flex items-start gap-4 p-5">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm mb-1" style={{ color: "var(--navy)" }}>{s.date_label}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {s.slots.map(t => (
+                              <span key={t} className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ backgroundColor: "rgba(21,176,151,0.1)", color: "var(--teal)" }}>{t}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <button onClick={async () => { await supabase.from("mock_osce_slots").update({ visible: !s.visible }).eq("id", s.id); fetchSlots(); }}
+                            title={s.visible ? "Hide from booking page" : "Show on booking page"}
+                            className="w-9 h-9 rounded-lg border flex items-center justify-center transition-all hover:bg-gray-50"
+                            style={{ borderColor: "rgba(15,76,92,0.2)", color: s.visible ? "var(--teal)" : "rgba(26,26,26,0.3)" }}>
+                            <Eye size={14} />
+                          </button>
+                          <button onClick={async () => { if (confirm(`Delete "${s.date_label}"?`)) { await supabase.from("mock_osce_slots").delete().eq("id", s.id); fetchSlots(); } }}
+                            title="Delete permanently"
+                            className="w-9 h-9 rounded-lg border flex items-center justify-center transition-all hover:bg-red-50"
+                            style={{ borderColor: "rgba(220,38,38,0.2)", color: "#dc2626" }}>
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

@@ -1,16 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ArrowRight, Calendar, Clock, Video, CheckCircle, FileText, Globe, Bell, Send } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-const availableDates = [
-  { date: "Monday, 30 June 2025", slots: ["09:00 AST", "11:00 AST", "14:00 AST", "16:00 AST"] },
-  { date: "Wednesday, 2 July 2025", slots: ["10:00 AST", "13:00 AST", "15:00 AST"] },
-  { date: "Saturday, 5 July 2025", slots: ["09:00 AST", "11:00 AST", "13:00 AST", "15:00 AST", "17:00 AST"] },
-  { date: "Monday, 7 July 2025", slots: ["09:00 AST", "11:00 AST", "14:00 AST"] },
-];
+type SlotRow = { id: string; date_label: string; slots: string[] };
 
 const sessionSteps = [
   { step: "01", title: "Choose a Date & Time", desc: "Select from available examiner slots. All times shown in Arabia Standard Time (AST, Riyadh)." },
@@ -27,11 +22,21 @@ const feedbackComponents = [
 ];
 
 export default function MockOscePage() {
+  const [availableDates, setAvailableDates] = useState<SlotRow[]>([]);
   const [selected, setSelected] = useState<{ date: string; slot: string } | null>(null);
   const [form, setForm] = useState({ name: "", email: "", notes: "" });
   const [loading, setLoading] = useState(false);
   const [booked, setBooked] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("mock_osce_slots")
+      .select("id, date_label, slots")
+      .eq("visible", true)
+      .order("sort_order")
+      .then(({ data }) => { if (data) setAvailableDates(data); });
+  }, []);
 
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,21 +148,21 @@ export default function MockOscePage() {
               </h2>
               <div className="space-y-4">
                 {availableDates.map((d) => (
-                  <div key={d.date} className="rounded-xl border p-6 bg-white" style={{ borderColor: "rgba(15,76,92,0.15)" }}>
+                  <div key={d.id} className="rounded-xl border p-6 bg-white" style={{ borderColor: "rgba(15,76,92,0.15)" }}>
                     <div className="flex items-center gap-3 mb-4">
                       <Calendar size={16} style={{ color: "var(--teal)" }} />
-                      <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{d.date}</p>
+                      <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{d.date_label}</p>
                     </div>
-                    <div className="flex flex-wrap gap-3" role="radiogroup" aria-label={`Available times for ${d.date}`}>
+                    <div className="flex flex-wrap gap-3" role="radiogroup" aria-label={`Available times for ${d.date_label}`}>
                       {d.slots.map((slot) => {
-                        const isActive = selected?.date === d.date && selected?.slot === slot;
+                        const isActive = selected?.date === d.date_label && selected?.slot === slot;
                         return (
                           <button
                             key={slot}
                             type="button"
                             role="radio"
                             aria-checked={isActive}
-                            onClick={() => setSelected({ date: d.date, slot })}
+                            onClick={() => setSelected({ date: d.date_label, slot })}
                             className="px-4 py-2.5 rounded-lg border text-sm font-medium transition-all"
                             style={{
                               borderColor: isActive ? "var(--teal-bright)" : "rgba(15,76,92,0.2)",
