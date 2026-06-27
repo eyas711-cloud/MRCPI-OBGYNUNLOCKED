@@ -477,6 +477,15 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
   const [recentItems, setRecentItems] = useState<ContentItem[]>([]);
 
+  // Settings state
+  const [settings, setSettings] = useState<Record<string, string>>({});
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsDone, setSettingsDone] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [passwordMsg, setPasswordMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
   // Payments state
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [paymentForm, setPaymentForm] = useState({ student_name: "", student_email: "", amount: "", currency: "SAR", payment_date: new Date().toISOString().slice(0, 10), notes: "" });
@@ -526,6 +535,24 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setRecentItems(data ?? []);
   }, []);
 
+  const fetchSettings = useCallback(async () => {
+    const { data } = await supabase.from("site_settings").select("key, value");
+    const map: Record<string, string> = {};
+    (data ?? []).forEach((r: { key: string; value: string }) => { map[r.key] = r.value ?? ""; });
+    setSettings(map);
+  }, []);
+
+  const saveSettings = async (updates: Record<string, string>) => {
+    setSettingsSaving(true);
+    for (const [key, value] of Object.entries(updates)) {
+      await supabase.from("site_settings").upsert({ key, value, updated_at: new Date().toISOString() });
+    }
+    setSettingsSaving(false);
+    setSettingsDone(true);
+    setTimeout(() => setSettingsDone(false), 2000);
+    fetchSettings();
+  };
+
   const fetchPayments = useCallback(async () => {
     const { data } = await supabase.from("payments").select("*").order("payment_date", { ascending: false });
     const rows = (data ?? []) as PaymentRow[];
@@ -571,7 +598,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
     if (activeNav === "Payments") fetchPayments();
-  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments]);
+    if (activeNav === "Settings") fetchSettings();
+  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings]);
 
   useEffect(() => {
     fetchStudents();
@@ -1449,6 +1477,171 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* ── SETTINGS ── */}
+          {activeNav === "Settings" && (
+            <div className="space-y-6 max-w-2xl">
+
+              {/* 1. Platform Info */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <Settings size={15} style={{ color: "var(--teal)" }} />
+                  <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Platform Info</h2>
+                </div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  await saveSettings({
+                    contact_email: settings.contact_email ?? "",
+                    whatsapp_number: settings.whatsapp_number ?? "",
+                    instagram_url: settings.instagram_url ?? "",
+                    twitter_url: settings.twitter_url ?? "",
+                  });
+                }} className="p-5 space-y-4">
+                  {[
+                    { key: "contact_email", label: "Contact Email", placeholder: "info@mrcpi-obgynunlocked.com", type: "email" },
+                    { key: "whatsapp_number", label: "WhatsApp Number", placeholder: "+966 5X XXX XXXX", type: "text" },
+                    { key: "instagram_url", label: "Instagram URL", placeholder: "https://instagram.com/...", type: "url" },
+                    { key: "twitter_url", label: "X / Twitter URL", placeholder: "https://x.com/...", type: "url" },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>{f.label}</label>
+                      <input
+                        type={f.type}
+                        value={settings[f.key] ?? ""}
+                        onChange={e => setSettings({ ...settings, [f.key]: e.target.value })}
+                        placeholder={f.placeholder}
+                        className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                        style={{ borderColor: "rgba(15,76,92,0.2)" }}
+                      />
+                    </div>
+                  ))}
+                  <button type="submit" disabled={settingsSaving}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                    {settingsDone ? <><CheckCircle size={14} /> Saved!</> : settingsSaving ? <><Loader size={14} className="animate-spin" /> Saving…</> : "Save Changes"}
+                  </button>
+                </form>
+              </div>
+
+              {/* 2. Email Notifications */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <Bell size={15} style={{ color: "var(--teal)" }} />
+                  <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Email Notifications</h2>
+                </div>
+                <div className="p-5 space-y-4">
+                  {[
+                    { key: "notify_new_registration", label: "New student registration", desc: "Send email to admins when a student registers" },
+                    { key: "notify_new_booking", label: "New mock OSCE booking", desc: "Send email to admins when a booking is submitted" },
+                  ].map(item => (
+                    <div key={item.key} className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{item.label}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.5)" }}>{item.desc}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const newVal = settings[item.key] === "true" ? "false" : "true";
+                          setSettings({ ...settings, [item.key]: newVal });
+                          await saveSettings({ [item.key]: newVal });
+                        }}
+                        className="relative w-12 h-6 rounded-full transition-colors flex-shrink-0"
+                        style={{ backgroundColor: settings[item.key] === "true" ? "var(--teal-bright)" : "rgba(26,26,26,0.15)" }}
+                      >
+                        <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all"
+                          style={{ left: settings[item.key] === "true" ? "26px" : "2px" }} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Announcement Banner */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <Bell size={15} style={{ color: "var(--gold)" }} />
+                  <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Announcement Banner</h2>
+                </div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  await saveSettings({ banner_enabled: settings.banner_enabled ?? "false", banner_text: settings.banner_text ?? "" });
+                }} className="p-5 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>Show banner on website</p>
+                      <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.5)" }}>Displays a banner at the top of every page for all visitors</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSettings({ ...settings, banner_enabled: settings.banner_enabled === "true" ? "false" : "true" })}
+                      className="relative w-12 h-6 rounded-full transition-colors flex-shrink-0"
+                      style={{ backgroundColor: settings.banner_enabled === "true" ? "var(--gold)" : "rgba(26,26,26,0.15)" }}
+                    >
+                      <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all"
+                        style={{ left: settings.banner_enabled === "true" ? "26px" : "2px" }} />
+                    </button>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Banner Message</label>
+                    <input
+                      value={settings.banner_text ?? ""}
+                      onChange={e => setSettings({ ...settings, banner_text: e.target.value })}
+                      placeholder="e.g. Registration now open for the July 2026 cohort!"
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                      style={{ borderColor: "rgba(15,76,92,0.2)" }}
+                    />
+                  </div>
+                  <button type="submit" disabled={settingsSaving}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: "var(--gold)", color: "var(--navy)" }}>
+                    {settingsDone ? <><CheckCircle size={14} /> Saved!</> : settingsSaving ? <><Loader size={14} className="animate-spin" /> Saving…</> : "Save Banner"}
+                  </button>
+                </form>
+              </div>
+
+              {/* 4. Change Password */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <Shield size={15} style={{ color: "var(--teal)" }} />
+                  <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Change Password</h2>
+                </div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (newPassword !== confirmPassword) { setPasswordMsg({ type: "err", text: "Passwords do not match." }); return; }
+                  if (newPassword.length < 8) { setPasswordMsg({ type: "err", text: "Password must be at least 8 characters." }); return; }
+                  setPasswordSaving(true);
+                  const { error } = await supabase.auth.updateUser({ password: newPassword });
+                  setPasswordSaving(false);
+                  if (error) { setPasswordMsg({ type: "err", text: error.message }); }
+                  else { setPasswordMsg({ type: "ok", text: "Password updated successfully." }); setNewPassword(""); setConfirmPassword(""); }
+                  setTimeout(() => setPasswordMsg(null), 4000);
+                }} className="p-5 space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>New Password</label>
+                    <input type="password" required minLength={8} value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                      placeholder="Minimum 8 characters"
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Confirm New Password</label>
+                    <input type="password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                      placeholder="Repeat password"
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  {passwordMsg && (
+                    <p className="text-sm font-medium" style={{ color: passwordMsg.type === "ok" ? "var(--teal)" : "#dc2626" }}>{passwordMsg.text}</p>
+                  )}
+                  <button type="submit" disabled={passwordSaving}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: "var(--navy)", color: "white" }}>
+                    {passwordSaving ? <><Loader size={14} className="animate-spin" /> Updating…</> : "Update Password"}
+                  </button>
+                </form>
+              </div>
+
             </div>
           )}
 

@@ -3,6 +3,7 @@ import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/components/AuthProvider";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
 
 export const metadata: Metadata = {
   title: {
@@ -45,6 +46,7 @@ export default function RootLayout({
           >
             Skip to main content
           </a>
+          <AnnouncementBanner />
           <Nav />
           <main id="main-content">{children}</main>
           <Footer />
