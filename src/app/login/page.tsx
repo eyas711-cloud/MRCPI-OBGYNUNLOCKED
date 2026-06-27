@@ -107,7 +107,7 @@ function LoginForm() {
     }
 
     if (data?.user) {
-      // Insert profile with pending status
+      // Insert profile with pending status (fallback if trigger didn't run)
       await supabase.from("profiles").upsert({
         id: data.user.id,
         email: registerForm.email.trim().toLowerCase(),
@@ -125,17 +125,17 @@ function LoginForm() {
         resource: registerForm.fullName.trim(),
         metadata: { requested_at: new Date().toISOString() },
       }]);
-
-      // Send email notification to admins
-      await fetch("/api/notify-registration", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          fullName: registerForm.fullName.trim(),
-          email: registerForm.email.trim().toLowerCase(),
-        }),
-      });
     }
+
+    // Send email notification to admins (always, regardless of data.user)
+    await fetch("/api/notify-registration", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fullName: registerForm.fullName.trim(),
+        email: registerForm.email.trim().toLowerCase(),
+      }),
+    });
 
     setLoading(false);
     setSuccess(
