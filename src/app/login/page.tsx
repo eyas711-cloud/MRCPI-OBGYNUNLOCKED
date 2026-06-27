@@ -128,14 +128,19 @@ function LoginForm() {
     }
 
     // Send email notification to admins (always, regardless of data.user)
-    await fetch("/api/notify-registration", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fullName: registerForm.fullName.trim(),
-        email: registerForm.email.trim().toLowerCase(),
-      }),
-    });
+    try {
+      const notifyRes = await fetch("/api/notify-registration", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: registerForm.fullName.trim(),
+          email: registerForm.email.trim().toLowerCase(),
+        }),
+      });
+      console.log("Notify response status:", notifyRes.status);
+    } catch (notifyErr) {
+      console.error("Notify fetch error:", notifyErr);
+    }
 
     setLoading(false);
     setSuccess(
