@@ -6,14 +6,14 @@ import { ArrowRight, Calendar, Clock, Video, CheckCircle, FileText, Globe, Bell,
 import { supabase } from "@/lib/supabase";
 
 const availableDates = [
-  { date: "Monday, 30 June 2025", slots: ["09:00 BST", "11:00 BST", "14:00 BST", "16:00 BST"] },
-  { date: "Wednesday, 2 July 2025", slots: ["10:00 BST", "13:00 BST", "15:00 BST"] },
-  { date: "Saturday, 5 July 2025", slots: ["09:00 BST", "11:00 BST", "13:00 BST", "15:00 BST", "17:00 BST"] },
-  { date: "Monday, 7 July 2025", slots: ["09:00 BST", "11:00 BST", "14:00 BST"] },
+  { date: "Monday, 30 June 2025", slots: ["09:00 AST", "11:00 AST", "14:00 AST", "16:00 AST"] },
+  { date: "Wednesday, 2 July 2025", slots: ["10:00 AST", "13:00 AST", "15:00 AST"] },
+  { date: "Saturday, 5 July 2025", slots: ["09:00 AST", "11:00 AST", "13:00 AST", "15:00 AST", "17:00 AST"] },
+  { date: "Monday, 7 July 2025", slots: ["09:00 AST", "11:00 AST", "14:00 AST"] },
 ];
 
 const sessionSteps = [
-  { step: "01", title: "Choose a Date & Time", desc: "Select from available examiner slots. All times shown in BST with automatic conversion to your local timezone." },
+  { step: "01", title: "Choose a Date & Time", desc: "Select from available examiner slots. All times shown in Arabia Standard Time (AST, Riyadh)." },
   { step: "02", title: "Complete Your Booking", desc: "Secure your session with payment. Receive an instant confirmation email with session details and preparation guidance." },
   { step: "03", title: "Attend Your Mock OSCE", desc: "Join the secure video session at your scheduled time. Your examiner will conduct 3 timed OSCE stations in real exam format." },
   { step: "04", title: "Receive Your Feedback", desc: "Get your detailed written feedback report within 24 hours, including domain-level scores and personalised improvement recommendations." },
@@ -148,18 +148,21 @@ export default function MockOscePage() {
                       <Calendar size={16} style={{ color: "var(--teal)" }} />
                       <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{d.date}</p>
                     </div>
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-wrap gap-3" role="radiogroup" aria-label={`Available times for ${d.date}`}>
                       {d.slots.map((slot) => {
                         const isActive = selected?.date === d.date && selected?.slot === slot;
                         return (
                           <button
                             key={slot}
+                            type="button"
+                            role="radio"
+                            aria-checked={isActive}
                             onClick={() => setSelected({ date: d.date, slot })}
-                            className="px-4 py-2 rounded-lg border text-sm font-medium transition-all"
+                            className="px-4 py-2.5 rounded-lg border text-sm font-medium transition-all"
                             style={{
                               borderColor: isActive ? "var(--teal-bright)" : "rgba(15,76,92,0.2)",
                               backgroundColor: isActive ? "var(--teal-bright)" : "transparent",
-                              color: isActive ? "var(--navy)" : "var(--navy)",
+                              color: "var(--navy)",
                               fontWeight: isActive ? 600 : 400,
                             }}
                           >
@@ -172,7 +175,7 @@ export default function MockOscePage() {
                 ))}
               </div>
               <p className="mt-4 text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>
-                All times shown in British Summer Time (BST). Your local time will be displayed at checkout.
+                All times shown in Arabia Standard Time (AST — Riyadh, Saudi Arabia). Your local time will be displayed at checkout.
               </p>
             </div>
 
@@ -180,9 +183,8 @@ export default function MockOscePage() {
             <div>
               <div className="rounded-xl border sticky top-24" style={{ borderColor: "rgba(15,76,92,0.2)", overflow: "hidden" }}>
                 <div className="p-6" style={{ backgroundColor: "var(--navy)" }}>
-                  <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal-bright)" }}>Session Pricing</p>
-                  <p className="font-serif text-white font-bold text-4xl mb-1">£149</p>
-                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>Per session · 3 stations included</p>
+                  <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal-bright)" }}>Book a Session</p>
+                  <p className="text-sm leading-relaxed" style={{ color: "rgba(255,255,255,0.65)" }}>Contact us for current mock exam fees and enrolment details.</p>
                 </div>
                 <div className="p-6 bg-white">
                   {booked ? (

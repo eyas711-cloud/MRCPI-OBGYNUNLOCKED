@@ -16,7 +16,7 @@ const faqCategories = [
     faqs: [
       { q: "Who is this platform designed for?", a: "MRCPI-OBGYN Unlocked is designed for OBGYN trainees, international medical graduates (IMGs), and any doctor preparing for the MRCPI Part 2 OSCE examination. The platform is suitable for candidates at all stages of preparation — from those just beginning to those making final preparations before their examination date." },
       { q: "Who teaches on the platform?", a: "All courses and mock OSCE sessions are led by Dr. Einas Diab — an experienced OBGYN clinician and medical educator with a distinguished portfolio of postgraduate qualifications. Dr. Diab conducts all one-to-one mock OSCE sessions personally." },
-      { q: "What is included in the Complete OSCE Preparation Course?", a: "The Complete Course includes 12 weeks of structured preparation, 50+ video lessons, access to 78 practice stations, 2 live one-to-one mock OSCE sessions, downloadable PDF study guides, a digital flashcard library, progress tracking, and a course completion certificate." },
+      { q: "What is included in the Complete OSCE Preparation Course?", a: "The Complete Course includes 8–9 weeks of structured preparation, 50+ video lessons, access to 78 practice stations, 2 live one-to-one mock OSCE sessions, downloadable PDF study guides, a digital flashcard library, progress tracking, and a course completion certificate." },
       { q: "Can I access the platform on mobile devices?", a: "Yes. The platform is fully responsive and optimised for desktop, tablet, and mobile devices. Video lessons and study materials are accessible across all modern browsers and devices." },
       { q: "Is the content regularly updated?", a: "Yes. All course materials are reviewed and updated regularly to reflect the current MRCPI OBGYN OSCE blueprint, examination format changes, and developments in clinical practice guidelines." },
     ],
@@ -76,7 +76,7 @@ export default function FaqPage() {
                   >
                     <summary className="flex items-center justify-between p-6 cursor-pointer font-semibold text-sm list-none" style={{ color: "var(--navy)" }}>
                       <span className="pr-4">{f.q}</span>
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full border flex items-center justify-center text-xs transition-transform group-open:rotate-45" style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--teal)" }}>
+                      <span aria-hidden="true" className="flex-shrink-0 w-7 h-7 rounded-full border flex items-center justify-center text-xs transition-transform group-open:rotate-45" style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--teal)" }}>
                         +
                       </span>
                     </summary>

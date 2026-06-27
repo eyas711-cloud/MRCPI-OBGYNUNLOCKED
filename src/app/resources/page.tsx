@@ -82,8 +82,8 @@ export default function ResourcesPage() {
                     Unlock with Course <ArrowRight size={13} />
                   </Link>
                 ) : (
-                  <button className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--teal)" }}>
-                    <Download size={14} /> Download Free
+                  <button type="button" className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--teal)" }}>
+                    <Download size={14} aria-hidden="true" /> Download Free
                   </button>
                 )}
               </div>

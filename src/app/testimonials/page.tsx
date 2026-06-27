@@ -106,7 +106,7 @@ export default function TestimonialsPage() {
                   ))}
                 </div>
                 <div className="mb-4 flex-1">
-                  <Quote size={20} className="mb-3" style={{ color: "rgba(21,176,151,0.3)" }} />
+                  <Quote size={20} aria-hidden="true" className="mb-3" style={{ color: "rgba(21,176,151,0.3)" }} />
                   <p className="text-sm leading-relaxed italic" style={{ color: "rgba(26,26,26,0.75)" }}>
                     &ldquo;{t.quote}&rdquo;
                   </p>

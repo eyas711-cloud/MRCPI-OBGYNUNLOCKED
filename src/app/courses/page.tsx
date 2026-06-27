@@ -4,10 +4,10 @@ import { ArrowRight, CheckCircle, Clock, Users, Video, FileText, Award, Star } f
 const courses = [
   {
     id: "complete-osce-prep",
-    badge: "Most Popular",
+    badge: "",
     title: "Complete MRCPI OBGYN OSCE Preparation",
     subtitle: "The all-in-one system to pass your MRCPI Part 2 OSCE",
-    duration: "12 Weeks",
+    duration: "8–9 Weeks",
     format: "Online + Live Sessions",
     price: "£499",
     originalPrice: "£699",
@@ -128,19 +128,18 @@ export default function CoursesPage() {
             >
               {c.highlight && (
                 <div className="py-2 px-6 text-xs font-semibold text-center font-mono-data uppercase tracking-widest" style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
-                  Most Popular — Recommended for Exam Candidates
+                  Recommended for Exam Candidates
                 </div>
               )}
               <div className="grid grid-cols-1 lg:grid-cols-3">
                 {/* Main info */}
                 <div className="lg:col-span-2 p-8 bg-white">
                   <div className="flex flex-wrap items-start gap-3 mb-4">
-                    <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: "rgba(21,176,151,0.1)", color: "var(--teal)" }}>
-                      {c.badge}
-                    </span>
-                    <span className="text-xs font-mono-data px-3 py-1 rounded-full" style={{ backgroundColor: "rgba(11,30,61,0.06)", color: "var(--navy)" }}>
-                      {c.level}
-                    </span>
+                    {c.badge && (
+                      <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: "rgba(21,176,151,0.1)", color: "var(--teal)" }}>
+                        {c.badge}
+                      </span>
+                    )}
                   </div>
                   <h2 className="font-serif font-semibold text-2xl mb-2" style={{ color: "var(--navy)" }}>{c.title}</h2>
                   <p className="text-sm mb-5" style={{ color: "rgba(26,26,26,0.55)" }}>{c.subtitle}</p>
@@ -179,29 +178,18 @@ export default function CoursesPage() {
                   </div>
                 </div>
 
-                {/* Pricing panel */}
+                {/* Enquiry panel */}
                 <div className="p-8 flex flex-col justify-between" style={{ backgroundColor: c.highlight ? "var(--navy)" : "rgba(11,30,61,0.03)" }}>
                   <div>
-                    <p className="font-mono-data text-xs uppercase tracking-widest mb-3" style={{ color: c.highlight ? "var(--teal-bright)" : "var(--teal)" }}>
-                      Course Investment
+                    <p className="font-mono-data text-xs uppercase tracking-widest mb-4" style={{ color: c.highlight ? "var(--teal-bright)" : "var(--teal)" }}>
+                      Enrolment
                     </p>
-                    <div className="mb-2">
-                      {c.originalPrice && (
-                        <p className="text-sm line-through mb-1" style={{ color: c.highlight ? "rgba(255,255,255,0.35)" : "rgba(26,26,26,0.35)" }}>
-                          {c.originalPrice}
-                        </p>
-                      )}
-                      <p className="font-serif font-bold" style={{ fontSize: "2.5rem", color: c.highlight ? "white" : "var(--navy)" }}>
-                        {c.price}
-                      </p>
-                      <p className="text-xs" style={{ color: c.highlight ? "rgba(255,255,255,0.5)" : "rgba(26,26,26,0.5)" }}>
-                        One-time payment · Lifetime access
-                      </p>
-                    </div>
+                    <p className="text-sm leading-relaxed mb-6" style={{ color: c.highlight ? "rgba(255,255,255,0.65)" : "rgba(26,26,26,0.65)" }}>
+                      Contact us for current course fees, mock exam fees, and enrolment details.
+                    </p>
                     <div className="my-6 border-t" style={{ borderColor: c.highlight ? "rgba(255,255,255,0.1)" : "rgba(15,76,92,0.12)" }} />
                     <ul className="space-y-3 mb-8">
                       {[
-                        "Instant enrolment",
                         "Secure student dashboard",
                         "Certificate on completion",
                         "GDPR-compliant data handling",
@@ -214,21 +202,11 @@ export default function CoursesPage() {
                   </div>
                   <div className="space-y-3">
                     <Link
-                      href="/login"
+                      href="/contact"
                       className="block w-full text-center py-3.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
                       style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}
                     >
-                      Enroll Now
-                    </Link>
-                    <Link
-                      href="/contact"
-                      className="block w-full text-center py-3.5 rounded-lg font-semibold text-sm border transition-all"
-                      style={{
-                        borderColor: c.highlight ? "rgba(255,255,255,0.25)" : "rgba(15,76,92,0.25)",
-                        color: c.highlight ? "white" : "var(--navy)",
-                      }}
-                    >
-                      Ask a Question
+                      Enquire About Fees &amp; Enrolment →
                     </Link>
                   </div>
                 </div>

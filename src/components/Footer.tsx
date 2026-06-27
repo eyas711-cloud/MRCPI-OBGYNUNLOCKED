@@ -8,7 +8,7 @@ const footerGroups = [
       { href: "/courses", label: "All Courses" },
       { href: "/courses#osce-prep", label: "OSCE Preparation" },
       { href: "/mock-osce", label: "Mock OSCE Sessions" },
-      { href: "/courses#pricing", label: "Pricing & Enroll" },
+      { href: "/contact", label: "Fees & Enrolment" },
     ],
   },
   {
@@ -49,6 +49,9 @@ export default function Footer() {
             <div className="flex flex-col gap-2 text-sm">
               <a href="mailto:info@mrcpiobgynunlocked.com" className="flex items-center gap-2 text-white/55 hover:text-white transition-colors">
                 <Mail size={13} /> info@mrcpiobgynunlocked.com
+              </a>
+              <a href="https://wa.me/201559912306" className="flex items-center gap-2 text-white/55 hover:text-white transition-colors">
+                <Phone size={13} /> WhatsApp: +20 155 991 2306
               </a>
               <a href="https://wa.me/966563618146" className="flex items-center gap-2 text-white/55 hover:text-white transition-colors">
                 <Phone size={13} /> WhatsApp: +966 563 618 146

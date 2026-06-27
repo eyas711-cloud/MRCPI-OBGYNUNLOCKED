@@ -1,8 +1,9 @@
 import Link from "next/link";
 import {
-  ArrowRight, CheckCircle, Star, Award, BookOpen,
+  ArrowRight, CheckCircle, Award, BookOpen,
   Users, Video, FileText, Calendar, MessageSquare, ShieldCheck
 } from "lucide-react";
+import { createClient } from "@/lib/supabase-server";
 
 const credentials = [
   { title: "Sexual Health Diploma", date: "Feb 2023", institution: "American University of Science and Technology" },
@@ -25,10 +26,10 @@ const whyChoose = [
 ];
 
 const courseHighlights = [
-  { label: "OSCE Station Library", value: "78+", desc: "Structured practice stations across all domains" },
-  { label: "Video Lessons", value: "50+", desc: "High-quality recorded lectures and tutorials" },
+  { label: "OSCE Station Library", value: "100+", desc: "Structured practice stations across all domains" },
+  { label: "Video Lessons", value: "8+", desc: "High-quality recorded lectures and tutorials" },
   { label: "Mock OSCE Sessions", value: "1:1", desc: "Live sessions with examiner feedback" },
-  { label: "Pass Rate", value: "94%", desc: "Of enrolled candidates report improved confidence" },
+  { label: "Pass Rate", value: "99%", desc: "Of enrolled candidates report improved confidence" },
 ];
 
 const faqs = [
@@ -39,13 +40,22 @@ const faqs = [
   { q: "Is the course content regularly updated?", a: "Yes. All materials are reviewed and updated regularly to reflect the current MRCPI O&G OSCE blueprint and any changes to examination format." },
 ];
 
-const testimonials = [
-  { name: "Dr. Sarah M.", role: "OBGYN Trainee, Egypt", quote: "Dr. Einas's structured approach completely transformed my preparation. The mock sessions were invaluable — I passed first time.", stars: 5 },
-  { name: "Dr. Rania K.", role: "IMg, Jordan", quote: "The video lessons and mark-scheme guides helped me understand exactly what examiners are looking for. Highly recommended.", stars: 5 },
-  { name: "Dr. Ahmed T.", role: "OBGYN Resident, UAE", quote: "The live mock OSCE with feedback is worth every penny. Real exam conditions, expert guidance, and clear improvement areas.", stars: 5 },
-];
+export default async function HomePage() {
+  const supabase = createClient();
+  const { data: rawTestimonials } = await supabase
+    .from("testimonials")
+    .select("id, name, country, initials, color, blur_avatar, messages")
+    .eq("visible", true)
+    .order("sort_order");
+  const testimonials = rawTestimonials ?? [];
 
-export default function HomePage() {
+  const { data: rawReviews } = await supabase
+    .from("student_reviews")
+    .select("id, student_name, rating, review_text, approved_at")
+    .eq("status", "approved")
+    .order("approved_at", { ascending: false });
+  const reviews = rawReviews ?? [];
+
   return (
     <>
       {/* HERO */}
@@ -79,11 +89,11 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mb-10">
                 <Link
-                  href="/courses"
+                  href="/contact"
                   className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-lg font-semibold text-sm transition-all hover:opacity-90 shadow-lg"
                   style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}
                 >
-                  Enroll Now <ArrowRight size={16} />
+                  Enquire About Fees &amp; Enrolment <ArrowRight size={16} />
                 </Link>
                 <Link
                   href="/contact"
@@ -163,15 +173,6 @@ export default function HomePage() {
                   <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.65)" }}>MRCPI OBGYN Specialist &amp; Educator</p>
                 </div>
               </div>
-              {/* Credential badge */}
-              <div
-                className="absolute -bottom-4 -right-4 rounded-xl border p-4 shadow-lg hidden sm:block"
-                style={{ backgroundColor: "white", borderColor: "rgba(15,76,92,0.15)" }}
-              >
-                <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "var(--teal)" }}>Qualifications</p>
-                <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>8 Diplomas &amp; Certifications</p>
-                <p className="text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>2022 – 2023</p>
-              </div>
             </div>
 
             {/* Bio */}
@@ -185,8 +186,20 @@ export default function HomePage() {
               <p className="leading-relaxed mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
                 Dr. Einas Diab is a distinguished OBGYN clinician and medical educator with extensive clinical and academic experience. She brings a rigorous, structured, and empathetic approach to OSCE coaching — helping candidates not just pass the examination, but develop lasting clinical competence.
               </p>
-              <p className="leading-relaxed mb-8" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
+              <p className="leading-relaxed mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
                 With a broad portfolio of postgraduate diplomas spanning women&apos;s health, aesthetic gynecology, mental health counselling, and hospital management, Dr. Diab offers a uniquely comprehensive perspective on clinical practice and examination excellence.
+              </p>
+              <p className="leading-relaxed mb-8" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
+                She is also the host of an educational podcast &ldquo;Dakatret Nesa&rdquo; where she shares Evidence-based discussions, Clinical insight and Practical Guidance on Women&apos;s health, Obstetrics and Gynecology. Episodes available on{" "}
+                <a
+                  href="https://www.youtube.com/@Dakatretnesa-i4f"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 transition-opacity hover:opacity-70"
+                  style={{ color: "var(--teal)" }}
+                >
+                  YouTube
+                </a>.
               </p>
 
               {/* Credentials grid */}
@@ -301,10 +314,10 @@ export default function HomePage() {
               <div className="p-6 bg-white">
                 <div className="grid grid-cols-2 gap-4 mb-6">
                   {[
-                    { label: "Duration", value: "12 Weeks" },
+                    { label: "Duration", value: "8–9 Weeks" },
                     { label: "Format", value: "Online + Live" },
-                    { label: "Stations", value: "78 Practice" },
-                    { label: "Mock OSCEs", value: "Included" },
+                    { label: "Stations", value: "100+ Exam Stations" },
+                    { label: "Mock OSCEs", value: "Available Upon Request" },
                   ].map((d) => (
                     <div key={d.label} className="rounded-lg p-3" style={{ backgroundColor: "var(--paper)" }}>
                       <p className="text-xs mb-1" style={{ color: "rgba(26,26,26,0.5)" }}>{d.label}</p>
@@ -397,24 +410,51 @@ export default function HomePage() {
               Candidates who passed with us
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
             {testimonials.map((t, i) => (
               <div
                 key={i}
-                className="rounded-xl border p-7"
-                style={{ borderColor: "rgba(15,76,92,0.15)", backgroundColor: "rgba(255,255,255,0.7)" }}
+                className="rounded-2xl overflow-hidden shadow-md flex flex-col"
+                style={{ backgroundColor: "#0b141a", minHeight: "320px" }}
               >
-                <div className="flex gap-1 mb-4">
-                  {Array.from({ length: t.stars }).map((_, j) => (
-                    <Star key={j} size={14} fill="var(--gold)" style={{ color: "var(--gold)" }} />
+                {/* WhatsApp-style header */}
+                <div className="flex items-center gap-3 px-4 py-3 flex-shrink-0" style={{ backgroundColor: "#1f2c34" }}>
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                    style={{
+                      backgroundColor: t.color,
+                      filter: t.blur_avatar ? "blur(6px)" : "none",
+                    }}
+                  >
+                    {t.initials}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white leading-none">{t.name}</p>
+                  </div>
+                </div>
+
+                {/* Message bubbles */}
+                <div className="px-4 py-4 space-y-2 flex-1">
+                  {(t.messages as string[]).map((msg: string, j: number) => (
+                    <div key={j} className="flex justify-end">
+                      <div
+                        className="rounded-lg rounded-tr-none px-3 py-2 text-sm leading-relaxed max-w-[85%]"
+                        style={{ backgroundColor: "#005c4b", color: "rgba(255,255,255,0.92)" }}
+                      >
+                        {msg}
+                      </div>
+                    </div>
                   ))}
                 </div>
-                <p className="text-sm leading-relaxed mb-5 italic" style={{ color: "rgba(26,26,26,0.7)" }}>
-                  &ldquo;{t.quote}&rdquo;
-                </p>
-                <div>
-                  <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{t.name}</p>
-                  <p className="text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>{t.role}</p>
+
+                {/* Country — always pinned to bottom left */}
+                <div className="px-4 pb-4 flex-shrink-0">
+                  <span
+                    className="text-xs italic"
+                    style={{ color: "rgba(255,255,255,0.4)" }}
+                  >
+                    &ldquo;{t.country}&rdquo;
+                  </span>
                 </div>
               </div>
             ))}
@@ -426,6 +466,67 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* STUDENT REVIEWS */}
+      <section className="py-24 px-6" style={{ backgroundColor: "rgba(11,30,61,0.03)" }}>
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-14">
+              <p className="font-mono-data text-xs uppercase tracking-widest mb-3" style={{ color: "var(--teal)" }}>Verified Students</p>
+              <h2 className="font-serif font-semibold" style={{ fontSize: "clamp(1.8rem,3vw,2.5rem)", color: "var(--navy)" }}>
+                Student Reviews &amp; Testimonials
+              </h2>
+              <p className="text-sm mt-3 max-w-xl mx-auto" style={{ color: "rgba(26,26,26,0.55)" }}>
+                Honest feedback from enrolled students, verified and approved.
+              </p>
+            </div>
+            {reviews.length === 0 ? (
+              <div className="text-center py-14 rounded-2xl border" style={{ borderColor: "rgba(15,76,92,0.1)", backgroundColor: "rgba(255,255,255,0.6)" }}>
+                <p className="font-serif text-lg mb-2" style={{ color: "var(--navy)" }}>Reviews coming soon</p>
+                <p className="text-sm" style={{ color: "rgba(26,26,26,0.45)" }}>Enrolled students can leave a review from their student portal.</p>
+              </div>
+            ) : null}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {(reviews as { id: string; student_name: string; rating: number; review_text: string; approved_at: string | null }[]).map((r, i) => (
+                <div
+                  key={r.id}
+                  className="rounded-2xl bg-white border p-6 flex flex-col"
+                  style={{
+                    borderColor: "rgba(15,76,92,0.12)",
+                    boxShadow: "0 2px 12px rgba(11,30,61,0.06)",
+                    animation: `fadeSlideUp 0.5s ease both`,
+                    animationDelay: `${i * 80}ms`,
+                  }}
+                >
+                  {/* Stars */}
+                  <div className="flex gap-0.5 mb-4">
+                    {[1,2,3,4,5].map(s => (
+                      <svg key={s} width="16" height="16" viewBox="0 0 24 24" fill={s <= r.rating ? "var(--gold)" : "none"} stroke="var(--gold)" strokeWidth="1.5">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    ))}
+                  </div>
+                  {/* Quote */}
+                  <p className="text-sm leading-relaxed italic flex-1 mb-5" style={{ color: "rgba(26,26,26,0.72)" }}>
+                    &ldquo;{r.review_text}&rdquo;
+                  </p>
+                  {/* Author */}
+                  <div className="flex items-center gap-3 pt-4 border-t" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                    <div
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                      style={{ backgroundColor: "var(--teal)" }}
+                    >
+                      {r.student_name.split(" ").map((n: string) => n[0]).join("").slice(0,2).toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{r.student_name}</p>
+                      <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>Verified Student</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
       {/* FAQ */}
       <section className="py-24 px-6" style={{ backgroundColor: "rgba(11,30,61,0.03)" }}>
@@ -473,11 +574,11 @@ export default function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/courses"
+              href="/contact"
               className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-lg font-semibold text-sm transition-all hover:opacity-90 shadow-lg"
               style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}
             >
-              Enroll Now <ArrowRight size={16} />
+              Enquire About Fees &amp; Enrolment <ArrowRight size={16} />
             </Link>
             <Link
               href="/contact"
