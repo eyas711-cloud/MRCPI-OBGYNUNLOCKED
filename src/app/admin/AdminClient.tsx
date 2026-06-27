@@ -60,12 +60,6 @@ const stats = [
   { label: "Revenue (MTD)",        value: "SAR 0",     change: "Starts at first enrolment", icon: <DollarSign size={18} />,color: "var(--teal-bright)"},
 ];
 
-const recentEnrollments = [
-  { name: "Dr. Fatima Al-Hassan", course: "Complete OSCE Prep",  date: "24 Jun 2025", status: "Active"  },
-  { name: "Dr. Omar Khalil",      course: "Mock OSCE Pack",      date: "23 Jun 2025", status: "Active"  },
-  { name: "Dr. Nadia Rashid",     course: "Foundation Course",   date: "22 Jun 2025", status: "Active"  },
-  { name: "Dr. Amira Youssef",    course: "Complete OSCE Prep",  date: "21 Jun 2025", status: "Pending" },
-];
 
 const navItems = [
   { icon: <BarChart3 size={16} />,     label: "Overview"        },
@@ -710,18 +704,27 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: "var(--teal)" }}>Recent Enrollments</p>
                     <button className="text-xs font-semibold" style={{ color: "var(--teal)" }}>View All</button>
                   </div>
-                  <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.06)" }}>
-                    {recentEnrollments.map((e, i) => (
-                      <div key={i} className="flex items-center gap-4 px-5 py-3.5">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: "var(--teal)" }}>{e.name.charAt(3)}</div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate" style={{ color: "var(--navy)" }}>{e.name}</p>
-                          <p className="text-xs truncate" style={{ color: "rgba(26,26,26,0.45)" }}>{e.course} · {e.date}</p>
-                        </div>
-                        <span className="text-xs px-2 py-1 rounded-full font-semibold flex-shrink-0" style={{ backgroundColor: e.status === "Active" ? "rgba(21,176,151,0.1)" : "rgba(201,162,39,0.1)", color: e.status === "Active" ? "var(--teal)" : "var(--gold)" }}>{e.status}</span>
-                      </div>
-                    ))}
-                  </div>
+                  {students.length === 0 ? (
+                    <div className="px-5 py-8 text-sm text-center" style={{ color: "rgba(26,26,26,0.4)" }}>No enrollments yet.</div>
+                  ) : (
+                    <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.06)" }}>
+                      {students.slice(0, 5).map((s) => {
+                        const ini = (s.full_name ?? s.email).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+                        const badgeBg = s.status === "active" ? "rgba(21,176,151,0.1)" : s.status === "pending" ? "rgba(201,162,39,0.12)" : "rgba(200,50,50,0.08)";
+                        const badgeColor = s.status === "active" ? "var(--teal)" : s.status === "pending" ? "var(--gold)" : "rgba(180,40,40,0.8)";
+                        return (
+                          <div key={s.id} className="flex items-center gap-4 px-5 py-3.5">
+                            <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: "var(--teal)" }}>{ini}</div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate" style={{ color: "var(--navy)" }}>{s.full_name || s.email}</p>
+                              <p className="text-xs truncate" style={{ color: "rgba(26,26,26,0.45)" }}>{new Date(s.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                            </div>
+                            <span className="text-xs px-2 py-1 rounded-full font-semibold capitalize flex-shrink-0" style={{ backgroundColor: badgeBg, color: badgeColor }}>{s.status}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Recent Uploads */}
