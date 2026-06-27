@@ -100,7 +100,9 @@ function LoginForm() {
 
     if (authError) {
       setLoading(false);
-      setError(authError.message || "Registration failed. Please try again.");
+      const msg = authError.message && authError.message !== "{}" ? authError.message : JSON.stringify(authError) !== "{}" ? JSON.stringify(authError) : authError.status ? `Error ${authError.status}` : "Registration failed. Please check your details and try again.";
+      setError(msg);
+      console.error("SignUp error:", authError);
       return;
     }
 
