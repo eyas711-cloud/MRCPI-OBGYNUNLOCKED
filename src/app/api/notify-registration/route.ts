@@ -7,10 +7,7 @@ export async function POST(req: Request) {
   console.log("Sending notification for:", email);
 
   const transporter = nodemailer.createTransport({
-    host: "smtp.hostinger.com",
-    port: 587,
-    secure: false,
-    requireTLS: true,
+    service: "gmail",
     auth: {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
