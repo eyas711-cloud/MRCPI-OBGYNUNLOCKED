@@ -2,7 +2,9 @@ import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
+  console.log("notify-registration API called");
   const { fullName, email } = await req.json();
+  console.log("Sending notification for:", email);
 
   const transporter = nodemailer.createTransport({
     host: "smtp.hostinger.com",
