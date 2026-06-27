@@ -95,8 +95,10 @@ export default function Footer() {
             <a href="#" className="hover:text-white/60 transition-colors">Terms of Use</a>
           </div>
         </div>
-        <div className="pt-4 text-center">
-          <p style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", color: "#C9A84C", fontSize: "13px", letterSpacing: "0.02em" }}>
+        <div className="pt-6 flex items-center justify-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/diab-studios-logo.png" alt="Diab Studios" style={{ height: "52px", width: "auto", objectFit: "contain" }} />
+          <p style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", color: "#C9A84C", fontSize: "15px", letterSpacing: "0.03em" }}>
             Designed &amp; Developed by Diab Studios
           </p>
         </div>
