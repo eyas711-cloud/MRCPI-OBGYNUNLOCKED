@@ -100,9 +100,9 @@ export default function Footer() {
             Designed &amp; Developed by Diab Studios
           </p>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "12px 20px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ backgroundColor: "white", borderRadius: "16px", padding: "12px 32px", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/DIABSTUDIOS Logo.png" alt="Diab Studios" style={{ height: "130px", width: "auto", objectFit: "contain" }} />
+            <img src="/DIABSTUDIOS Logo.png" alt="Diab Studios" style={{ height: "160px", width: "auto", objectFit: "contain" }} />
           </div>
         </div>
       </div>
