@@ -5,7 +5,7 @@ import {
   Users, BookOpen, Video, FileText, Calendar, BarChart3,
   Upload, Plus, Trash2, Settings, Shield, Bell,
   TrendingUp, DollarSign, Eye, CheckCircle, X, Loader, LogOut,
-  Image, Mic, MessageSquare, Star, Download,
+  Image, Mic, MessageSquare, Star, Download, Send,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
@@ -28,6 +28,8 @@ type ContentItem = {
 type AuditRow = { id: string; user_email: string; action: string; resource: string | null; created_at: string };
 
 type SlotRow = { id: string; date_label: string; slots: string[]; sort_order: number; visible: boolean };
+
+type BookingRow = { id: string; name: string; email: string; date: string; time_slot: string; notes: string | null; status: string; meet_link: string | null; created_at: string };
 
 type ReviewRow = {
   id: string; user_id: string; student_name: string; rating: number;
@@ -483,6 +485,11 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [slots, setSlots] = useState<SlotRow[]>([]);
   const [slotForm, setSlotForm] = useState({ date_label: "", slots_raw: "09:00 AST\n11:00 AST\n14:00 AST" });
   const [slotSaving, setSlotSaving] = useState(false);
+  const [bookings, setBookings] = useState<BookingRow[]>([]);
+  const [confirmModal, setConfirmModal] = useState<BookingRow | null>(null);
+  const [meetLink, setMeetLink] = useState("");
+  const [sendingConfirm, setSendingConfirm] = useState(false);
+  const [confirmSent, setConfirmSent] = useState<string | null>(null);
 
   // Reviews state
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
@@ -520,6 +527,11 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setSlots(data ?? []);
   }, []);
 
+  const fetchBookings = useCallback(async () => {
+    const { data } = await supabase.from("osce_bookings").select("*").order("created_at", { ascending: false });
+    setBookings(data ?? []);
+  }, []);
+
   const fetchReviews = useCallback(async () => {
     setLoadingReviews(true);
     const { data } = await supabase.from("student_reviews").select("*").order("created_at", { ascending: false });
@@ -540,8 +552,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Students") fetchStudents();
     if (activeNav === "Success Stories") fetchTestimonials();
     if (activeNav === "Reviews") fetchReviews();
-    if (activeNav === "Mock OSCEs") fetchSlots();
-  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots]);
+    if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
+  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings]);
 
   useEffect(() => {
     fetchStudents();
@@ -1142,6 +1154,146 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+              {/* Bookings list */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <div className="flex items-center gap-2">
+                    <Bell size={16} style={{ color: "var(--teal)" }} />
+                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Booking Requests</h2>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs px-2 py-1 rounded-full" style={{ backgroundColor: "rgba(201,162,39,0.12)", color: "var(--gold)" }}>
+                      {bookings.filter(b => b.status === "pending").length} pending
+                    </span>
+                    <button onClick={fetchBookings} className="text-xs font-semibold" style={{ color: "var(--teal)" }}>Refresh</button>
+                  </div>
+                </div>
+                {bookings.length === 0 ? (
+                  <p className="text-sm text-center py-10" style={{ color: "rgba(26,26,26,0.4)" }}>No booking requests yet.</p>
+                ) : (
+                  <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.07)" }}>
+                    {bookings.map(b => {
+                      const isPending = b.status === "pending";
+                      const isConfirmed = b.status === "confirmed";
+                      return (
+                        <div key={b.id} className="flex items-start gap-4 p-5">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                            style={{ backgroundColor: isPending ? "var(--gold)" : "var(--teal)" }}>
+                            {b.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{b.name}</p>
+                            <p className="text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>{b.email}</p>
+                            <p className="text-xs mt-1 font-medium" style={{ color: "var(--teal)" }}>{b.date} · {b.time_slot}</p>
+                            {b.notes && <p className="text-xs mt-1 italic" style={{ color: "rgba(26,26,26,0.45)" }}>"{b.notes}"</p>}
+                            <p className="text-xs mt-1" style={{ color: "rgba(26,26,26,0.3)" }}>Received {new Date(b.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-xs px-2.5 py-1 rounded-full font-semibold capitalize"
+                              style={{
+                                backgroundColor: isPending ? "rgba(201,162,39,0.12)" : "rgba(21,176,151,0.1)",
+                                color: isPending ? "var(--gold)" : "var(--teal)",
+                              }}>
+                              {b.status}
+                            </span>
+                            {confirmSent === b.id ? (
+                              <span className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: "rgba(21,176,151,0.1)", color: "var(--teal)" }}>
+                                <CheckCircle size={12} /> Sent!
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => { setConfirmModal(b); setMeetLink(b.meet_link ?? ""); }}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90"
+                                style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                                {isConfirmed ? "Resend" : "Send Confirmation"}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Confirmation modal */}
+          {confirmModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
+              onClick={() => setConfirmModal(null)}>
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+                  <h2 className="font-serif font-semibold text-base" style={{ color: "var(--navy)" }}>Send Session Confirmation</h2>
+                  <button onClick={() => setConfirmModal(null)} className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-gray-100">
+                    <X size={16} style={{ color: "var(--navy)" }} />
+                  </button>
+                </div>
+                <div className="px-6 py-5 space-y-4">
+                  {/* Preview */}
+                  <div className="rounded-xl p-4 text-sm space-y-1" style={{ backgroundColor: "rgba(21,176,151,0.06)", border: "1px solid rgba(21,176,151,0.15)" }}>
+                    <p><span className="font-semibold" style={{ color: "var(--navy)" }}>To:</span> <span style={{ color: "rgba(26,26,26,0.7)" }}>{confirmModal.name} &lt;{confirmModal.email}&gt;</span></p>
+                    <p><span className="font-semibold" style={{ color: "var(--navy)" }}>Date:</span> <span style={{ color: "rgba(26,26,26,0.7)" }}>{confirmModal.date}</span></p>
+                    <p><span className="font-semibold" style={{ color: "var(--navy)" }}>Time:</span> <span style={{ color: "rgba(26,26,26,0.7)" }}>{confirmModal.time_slot} AST</span></p>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Meeting Link (Zoom / Google Meet) *</label>
+                    <input
+                      type="url" required
+                      value={meetLink}
+                      onChange={e => setMeetLink(e.target.value)}
+                      placeholder="https://meet.google.com/xxx-xxxx-xxx"
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                      style={{ borderColor: "rgba(15,76,92,0.2)" }}
+                    />
+                  </div>
+                  <p className="text-xs leading-relaxed" style={{ color: "rgba(26,26,26,0.5)" }}>
+                    This will send the student a confirmation email with the session details, meeting link, and a preparation checklist.
+                  </p>
+                </div>
+                <div className="flex gap-3 px-6 pb-6">
+                  <button onClick={() => setConfirmModal(null)}
+                    className="flex-1 py-3 rounded-xl text-sm font-semibold border transition-all hover:opacity-80"
+                    style={{ borderColor: "rgba(15,76,92,0.2)", color: "rgba(26,26,26,0.5)" }}>
+                    Cancel
+                  </button>
+                  <button
+                    disabled={sendingConfirm || !meetLink.trim()}
+                    onClick={async () => {
+                      if (!meetLink.trim()) return;
+                      setSendingConfirm(true);
+                      try {
+                        const res = await fetch("/api/send-booking-confirmation", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            studentName: confirmModal.name,
+                            studentEmail: confirmModal.email,
+                            date: confirmModal.date,
+                            timeSlot: confirmModal.time_slot,
+                            meetLink: meetLink.trim(),
+                            bookingId: confirmModal.id,
+                          }),
+                        });
+                        if (res.ok) {
+                          await supabase.from("osce_bookings").update({ status: "confirmed", meet_link: meetLink.trim() }).eq("id", confirmModal.id);
+                          setConfirmSent(confirmModal.id);
+                          setConfirmModal(null);
+                          fetchBookings();
+                        }
+                      } finally {
+                        setSendingConfirm(false);
+                      }
+                    }}
+                    className="flex-1 inline-flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                    {sendingConfirm ? <><Loader size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send Confirmation</>}
+                  </button>
+                </div>
               </div>
             </div>
           )}
