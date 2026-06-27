@@ -95,6 +95,11 @@ export default function Footer() {
             <a href="#" className="hover:text-white/60 transition-colors">Terms of Use</a>
           </div>
         </div>
+        <div className="pt-4 text-center">
+          <p style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", color: "#C9A84C", fontSize: "13px", letterSpacing: "0.02em" }}>
+            Designed &amp; Developed by Diab Studios
+          </p>
+        </div>
       </div>
     </footer>
   );
