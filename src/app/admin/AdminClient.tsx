@@ -599,6 +599,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
     if (activeNav === "Payments") fetchPayments();
     if (activeNav === "Settings") fetchSettings();
+    if (activeNav === "Courses") fetchSettings();
   }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings]);
 
   useEffect(() => {
@@ -1476,6 +1477,96 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ── COURSES ── */}
+          {activeNav === "Courses" && (
+            <div className="space-y-6 max-w-2xl">
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <BookOpen size={15} style={{ color: "var(--teal)" }} />
+                  <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Complete MRCPI OBGYN OSCE Preparation</h2>
+                </div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  await saveSettings({
+                    course_title: settings.course_title ?? "",
+                    course_subtitle: settings.course_subtitle ?? "",
+                    course_price: settings.course_price ?? "",
+                    course_duration: settings.course_duration ?? "",
+                    course_format: settings.course_format ?? "",
+                    course_description: settings.course_description ?? "",
+                    course_outcomes: settings.course_outcomes ?? "",
+                    course_enrolment_open: settings.course_enrolment_open ?? "true",
+                  });
+                }} className="p-5 space-y-4">
+
+                  {/* Enrolment toggle */}
+                  <div className="flex items-center justify-between gap-4 rounded-lg p-4" style={{ backgroundColor: "rgba(21,176,151,0.05)", border: "1px solid rgba(21,176,151,0.15)" }}>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "var(--navy)" }}>Enrolment Status</p>
+                      <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.5)" }}>
+                        {settings.course_enrolment_open === "false" ? "Closed — button shows \"Coming Soon\"" : "Open — Enquire button is active"}
+                      </p>
+                    </div>
+                    <button type="button"
+                      onClick={() => setSettings({ ...settings, course_enrolment_open: settings.course_enrolment_open === "false" ? "true" : "false" })}
+                      className="relative w-12 h-6 rounded-full transition-colors flex-shrink-0"
+                      style={{ backgroundColor: settings.course_enrolment_open !== "false" ? "var(--teal-bright)" : "rgba(26,26,26,0.15)" }}>
+                      <span className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all"
+                        style={{ left: settings.course_enrolment_open !== "false" ? "26px" : "2px" }} />
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Course Title *</label>
+                    <input required value={settings.course_title ?? ""} onChange={e => setSettings({ ...settings, course_title: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Subtitle</label>
+                    <input value={settings.course_subtitle ?? ""} onChange={e => setSettings({ ...settings, course_subtitle: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Price</label>
+                      <input value={settings.course_price ?? ""} onChange={e => setSettings({ ...settings, course_price: e.target.value })}
+                        placeholder="e.g. £499" className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Duration</label>
+                      <input value={settings.course_duration ?? ""} onChange={e => setSettings({ ...settings, course_duration: e.target.value })}
+                        placeholder="e.g. 8–9 Weeks" className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Format</label>
+                    <input value={settings.course_format ?? ""} onChange={e => setSettings({ ...settings, course_format: e.target.value })}
+                      placeholder="e.g. Online + Live Sessions" className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Description</label>
+                    <textarea rows={4} value={settings.course_description ?? ""} onChange={e => setSettings({ ...settings, course_description: e.target.value })}
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none resize-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>
+                      Learning Outcomes <span className="font-normal" style={{ color: "rgba(26,26,26,0.5)" }}>(one per line)</span>
+                    </label>
+                    <textarea rows={6} value={settings.course_outcomes ?? ""} onChange={e => setSettings({ ...settings, course_outcomes: e.target.value })}
+                      placeholder={"Master all 6 MRCPI OBGYN OSCE domains\nComplete 78 structured practice stations"}
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none resize-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+
+                  <button type="submit" disabled={settingsSaving}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                    {settingsDone ? <><CheckCircle size={14} /> Saved!</> : settingsSaving ? <><Loader size={14} className="animate-spin" /> Saving…</> : "Save Course"}
+                  </button>
+                </form>
               </div>
             </div>
           )}
