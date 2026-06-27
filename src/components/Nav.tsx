@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   Menu, X, ChevronDown, LogIn, LogOut,
@@ -28,8 +27,6 @@ export default function Nav() {
   const [open, setOpen] = useState(false);
   const [dropdown, setDropdown] = useState<string | null>(null);
   const { user, profile, loading, signOut } = useAuth();
-  const router = useRouter();
-
   const isAdmin = profile?.role === "admin" || profile?.role === "instructor";
   const initials = profile?.full_name
     ? profile.full_name

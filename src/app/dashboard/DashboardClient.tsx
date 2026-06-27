@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   FileText, Image, Video, Mic, ChevronRight, ChevronLeft,
   Play, Bell, LogOut, Award, Search, X, Loader,
-  BookOpen, FlaskConical, Stethoscope, Star, MessageSquare, CheckCircle, Clock,
+  BookOpen, Star, MessageSquare, CheckCircle, Clock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 

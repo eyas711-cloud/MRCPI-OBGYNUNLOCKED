@@ -14,7 +14,7 @@ export default function PricingPage() {
             Course &amp; Mock Exam Fees
           </h1>
           <p className="text-base max-w-xl mx-auto" style={{ color: "rgba(255,255,255,0.55)" }}>
-            We keep our fees personal. Reach out and we'll provide full details on current fees and how to enrol.
+            We keep our fees personal. Reach out and we&apos;ll provide full details on current fees and how to enrol.
           </p>
         </div>
       </section>

@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { LogIn, Eye, EyeOff, AlertCircle, Mail } from "lucide-react";
+import { LogIn, Eye, EyeOff, AlertCircle, Mail, UserPlus } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/auth/role-redirect";
 

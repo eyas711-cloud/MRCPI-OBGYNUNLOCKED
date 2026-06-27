@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, CheckCircle, Clock, Users, Video, FileText, Award, Star } from "lucide-react";
+import { ArrowRight, CheckCircle, Clock, Video, FileText, Award } from "lucide-react";
 
 const courses = [
   {

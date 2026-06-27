@@ -5,7 +5,7 @@ import {
   Users, BookOpen, Video, FileText, Calendar, BarChart3,
   Upload, Plus, Trash2, Settings, Shield, Bell,
   TrendingUp, DollarSign, Eye, CheckCircle, X, Loader, LogOut,
-  Image, Mic, ChevronRight, MessageSquare, Star, Download,
+  Image, Mic, MessageSquare, Star, Download,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";

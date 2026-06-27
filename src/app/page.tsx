@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  ArrowRight, CheckCircle, Award, BookOpen,
+  ArrowRight, CheckCircle, Award,
   Users, Video, FileText, Calendar, MessageSquare, ShieldCheck
 } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";

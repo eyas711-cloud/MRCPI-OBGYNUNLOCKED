@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Download, BookOpen, FileText, Lightbulb, Star } from "lucide-react";
+import { ArrowRight, Download, FileText, Lightbulb } from "lucide-react";
 
 const freeGuides = [
   { title: "MRCPI OBGYN OSCE Blueprint Overview", type: "PDF Guide", pages: "12 pages", desc: "A structured overview of the current MRCPI O&G OSCE format, domains, and marking criteria.", locked: false },
