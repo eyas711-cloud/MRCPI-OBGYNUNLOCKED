@@ -1500,6 +1500,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     course_description: settings.course_description ?? "",
                     course_outcomes: settings.course_outcomes ?? "",
                     course_enrolment_open: settings.course_enrolment_open ?? "true",
+                    course_price_visible: settings.course_price_visible ?? "true",
                   });
                 }} className="p-5 space-y-4">
 
@@ -1532,7 +1533,19 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Price</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-semibold" style={{ color: "var(--navy)" }}>Price</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>{settings.course_price_visible === "false" ? "Hidden" : "Visible"}</span>
+                          <button type="button"
+                            onClick={() => setSettings({ ...settings, course_price_visible: settings.course_price_visible === "false" ? "true" : "false" })}
+                            className="relative w-9 h-5 rounded-full transition-colors"
+                            style={{ backgroundColor: settings.course_price_visible !== "false" ? "var(--teal-bright)" : "rgba(26,26,26,0.15)" }}>
+                            <span className="absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all"
+                              style={{ left: settings.course_price_visible !== "false" ? "18px" : "2px" }} />
+                          </button>
+                        </div>
+                      </div>
                       <input value={settings.course_price ?? ""} onChange={e => setSettings({ ...settings, course_price: e.target.value })}
                         placeholder="e.g. £499" className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
                     </div>

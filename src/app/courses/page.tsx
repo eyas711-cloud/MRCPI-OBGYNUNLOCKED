@@ -21,7 +21,7 @@ export default async function CoursesPage() {
   const { data } = await supabase
     .from("site_settings")
     .select("key, value")
-    .in("key", ["course_title", "course_subtitle", "course_price", "course_duration", "course_format", "course_description", "course_outcomes", "course_enrolment_open"]);
+    .in("key", ["course_title", "course_subtitle", "course_price", "course_price_visible", "course_duration", "course_format", "course_description", "course_outcomes", "course_enrolment_open"]);
 
   const s: Record<string, string> = {};
   (data ?? []).forEach((r: { key: string; value: string }) => { s[r.key] = r.value ?? ""; });
@@ -34,6 +34,7 @@ export default async function CoursesPage() {
   const description = s.course_description || "";
   const outcomes = (s.course_outcomes || "").split("\n").map(o => o.trim()).filter(Boolean);
   const enrolmentOpen = s.course_enrolment_open !== "false";
+  const priceVisible = s.course_price_visible !== "false";
 
   return (
     <>
@@ -107,7 +108,7 @@ export default async function CoursesPage() {
               <div className="p-8 flex flex-col justify-between" style={{ backgroundColor: "var(--navy)" }}>
                 <div>
                   <p className="font-mono-data text-xs uppercase tracking-widest mb-4" style={{ color: "var(--teal-bright)" }}>Enrolment</p>
-                  {price && price !== "Contact us" && (
+                  {priceVisible && price && (
                     <p className="font-serif font-bold text-3xl mb-2 text-white">{price}</p>
                   )}
                   <p className="text-sm leading-relaxed mb-6" style={{ color: "rgba(255,255,255,0.65)" }}>
