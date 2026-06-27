@@ -31,6 +31,8 @@ type SlotRow = { id: string; date_label: string; slots: string[]; sort_order: nu
 
 type BookingRow = { id: string; name: string; email: string; date: string; time_slot: string; notes: string | null; status: string; meet_link: string | null; created_at: string };
 
+type PaymentRow = { id: string; student_name: string; student_email: string; amount: number; currency: string; payment_date: string; notes: string | null; created_at: string };
+
 type ReviewRow = {
   id: string; user_id: string; student_name: string; rating: number;
   review_text: string; status: string; created_at: string;
@@ -53,11 +55,11 @@ const CONTENT_SECTIONS = [
 
 type SectionId = (typeof CONTENT_SECTIONS)[number]["id"];
 
-const stats = [
-  { label: "Total Students",       value: "0",      change: "Starts at first enrolment",   icon: <Users size={18} />,    color: "var(--teal)"       },
-  { label: "Active Courses",       value: "1",      change: "MRCPI OBGYN OSCE",            icon: <BookOpen size={18} />, color: "var(--navy)"       },
-  { label: "Mock Sessions Booked", value: "0",      change: "Starts at first booking",     icon: <Calendar size={18} />, color: "var(--gold)"       },
-  { label: "Revenue (MTD)",        value: "SAR 0",     change: "Starts at first enrolment", icon: <DollarSign size={18} />,color: "var(--teal-bright)"},
+const buildStats = (studentCount: number, mtd: number, total: number) => [
+  { label: "Total Students",       value: String(studentCount), change: studentCount === 0 ? "Starts at first enrolment" : `${studentCount} registered`,  icon: <Users size={18} />,     color: "var(--teal)"        },
+  { label: "Active Courses",       value: "1",                  change: "MRCPI OBGYN OSCE",                                                                icon: <BookOpen size={18} />,  color: "var(--navy)"        },
+  { label: "Mock Sessions Booked", value: "0",                  change: "Starts at first booking",                                                         icon: <Calendar size={18} />,  color: "var(--gold)"        },
+  { label: "Revenue (MTD)",        value: `SAR ${mtd.toLocaleString()}`, change: `Total all-time: SAR ${total.toLocaleString()}`,                          icon: <DollarSign size={18} />, color: "var(--teal-bright)" },
 ];
 
 
@@ -475,6 +477,14 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
   const [recentItems, setRecentItems] = useState<ContentItem[]>([]);
 
+  // Payments state
+  const [payments, setPayments] = useState<PaymentRow[]>([]);
+  const [paymentForm, setPaymentForm] = useState({ student_name: "", student_email: "", amount: "", currency: "SAR", payment_date: new Date().toISOString().slice(0, 10), notes: "" });
+  const [paymentSaving, setPaymentSaving] = useState(false);
+  const [paymentDone, setPaymentDone] = useState(false);
+  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [mtdRevenue, setMtdRevenue] = useState(0);
+
   // Mock OSCEs state
   const [slots, setSlots] = useState<SlotRow[]>([]);
   const [slotForm, setSlotForm] = useState({ date_label: "", slots_raw: "09:00 AST\n11:00 AST\n14:00 AST" });
@@ -516,6 +526,19 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setRecentItems(data ?? []);
   }, []);
 
+  const fetchPayments = useCallback(async () => {
+    const { data } = await supabase.from("payments").select("*").order("payment_date", { ascending: false });
+    const rows = (data ?? []) as PaymentRow[];
+    setPayments(rows);
+    setTotalRevenue(rows.reduce((sum, p) => sum + Number(p.amount), 0));
+    const now = new Date();
+    const mtd = rows.filter(p => {
+      const d = new Date(p.payment_date);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+    setMtdRevenue(mtd.reduce((sum, p) => sum + Number(p.amount), 0));
+  }, []);
+
   const fetchSlots = useCallback(async () => {
     const { data } = await supabase.from("mock_osce_slots").select("*").order("sort_order");
     setSlots(data ?? []);
@@ -542,12 +565,13 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
   useEffect(() => {
     if (activeNav === "Security") fetchAuditLogs();
-    if (activeNav === "Overview") { fetchAuditLogs(); fetchStudents(); fetchRecentItems(); }
+    if (activeNav === "Overview") { fetchAuditLogs(); fetchStudents(); fetchRecentItems(); fetchPayments(); }
     if (activeNav === "Students") fetchStudents();
     if (activeNav === "Success Stories") fetchTestimonials();
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
-  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings]);
+    if (activeNav === "Payments") fetchPayments();
+  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments]);
 
   useEffect(() => {
     fetchStudents();
@@ -684,7 +708,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
           {activeNav === "Overview" && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {stats.map((s, i) => (
+                {buildStats(students.length, mtdRevenue, totalRevenue).map((s, i) => (
                   <div key={i} className="rounded-xl border bg-white p-5" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                     <div className="flex items-start justify-between mb-4">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.04)", color: s.color }}>{s.icon}</div>
@@ -1295,6 +1319,135 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     {sendingConfirm ? <><Loader size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send Confirmation</>}
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── PAYMENTS ── */}
+          {activeNav === "Payments" && (
+            <div className="space-y-6">
+              {/* Summary */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {[
+                  { label: "Total Revenue", value: `SAR ${totalRevenue.toLocaleString()}`, color: "var(--teal)" },
+                  { label: "This Month", value: `SAR ${mtdRevenue.toLocaleString()}`, color: "var(--gold)" },
+                  { label: "Payments Recorded", value: String(payments.length), color: "var(--navy)" },
+                ].map((s, i) => (
+                  <div key={i} className="rounded-xl border bg-white p-5" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "rgba(26,26,26,0.45)" }}>{s.label}</p>
+                    <p className="font-serif font-bold text-2xl" style={{ color: s.color }}>{s.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add payment form */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <Plus size={16} style={{ color: "var(--teal)" }} />
+                  <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Record New Payment</h2>
+                </div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  setPaymentSaving(true);
+                  await supabase.from("payments").insert([{
+                    student_name: paymentForm.student_name.trim(),
+                    student_email: paymentForm.student_email.trim().toLowerCase(),
+                    amount: parseFloat(paymentForm.amount),
+                    currency: paymentForm.currency,
+                    payment_date: paymentForm.payment_date,
+                    notes: paymentForm.notes.trim() || null,
+                    recorded_by: user.email,
+                  }]);
+                  await logAudit(user.id, user.email, user.role, "payment_recorded", paymentForm.student_name, { amount: paymentForm.amount, currency: paymentForm.currency });
+                  setPaymentSaving(false);
+                  setPaymentDone(true);
+                  setPaymentForm({ student_name: "", student_email: "", amount: "", currency: "SAR", payment_date: new Date().toISOString().slice(0, 10), notes: "" });
+                  setTimeout(() => { setPaymentDone(false); fetchPayments(); }, 1500);
+                }} className="p-5 space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Student Name *</label>
+                      <input required value={paymentForm.student_name} onChange={e => setPaymentForm({ ...paymentForm, student_name: e.target.value })}
+                        placeholder="Dr. Jane Smith"
+                        className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Student Email *</label>
+                      <input required type="email" value={paymentForm.student_email} onChange={e => setPaymentForm({ ...paymentForm, student_email: e.target.value })}
+                        placeholder="student@example.com"
+                        className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Amount *</label>
+                      <div className="flex gap-2">
+                        <select value={paymentForm.currency} onChange={e => setPaymentForm({ ...paymentForm, currency: e.target.value })}
+                          className="px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }}>
+                          <option>SAR</option>
+                          <option>USD</option>
+                          <option>GBP</option>
+                          <option>EUR</option>
+                        </select>
+                        <input required type="number" min="0" step="0.01" value={paymentForm.amount} onChange={e => setPaymentForm({ ...paymentForm, amount: e.target.value })}
+                          placeholder="0.00"
+                          className="flex-1 px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Payment Date *</label>
+                      <input required type="date" value={paymentForm.payment_date} onChange={e => setPaymentForm({ ...paymentForm, payment_date: e.target.value })}
+                        className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Notes (optional)</label>
+                    <input value={paymentForm.notes} onChange={e => setPaymentForm({ ...paymentForm, notes: e.target.value })}
+                      placeholder="e.g. Mock OSCE session fee, Course subscription..."
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <button type="submit" disabled={paymentSaving}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                    {paymentSaving ? <><Loader size={14} className="animate-spin" /> Saving…</> : paymentDone ? <><CheckCircle size={14} /> Saved!</> : <><Plus size={14} /> Record Payment</>}
+                  </button>
+                </form>
+              </div>
+
+              {/* Payments list */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <div className="flex items-center gap-2">
+                    <DollarSign size={16} style={{ color: "var(--teal)" }} />
+                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Payment History</h2>
+                  </div>
+                  <button onClick={fetchPayments} className="text-xs font-semibold" style={{ color: "var(--teal)" }}>Refresh</button>
+                </div>
+                {payments.length === 0 ? (
+                  <p className="text-sm text-center py-10" style={{ color: "rgba(26,26,26,0.4)" }}>No payments recorded yet.</p>
+                ) : (
+                  <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.07)" }}>
+                    {payments.map(p => (
+                      <div key={p.id} className="flex items-center gap-4 px-5 py-4">
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: "var(--teal)" }}>
+                          {p.student_name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{p.student_name}</p>
+                          <p className="text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>{p.student_email}</p>
+                          {p.notes && <p className="text-xs mt-0.5 italic" style={{ color: "rgba(26,26,26,0.4)" }}>{p.notes}</p>}
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-sm font-bold" style={{ color: "var(--navy)" }}>{p.currency} {Number(p.amount).toLocaleString()}</p>
+                          <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>{new Date(p.payment_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                        </div>
+                        <button onClick={async () => { if (confirm(`Delete payment from ${p.student_name}?`)) { await supabase.from("payments").delete().eq("id", p.id); fetchPayments(); } }}
+                          className="w-9 h-9 rounded-lg border flex items-center justify-center hover:bg-red-50 flex-shrink-0"
+                          style={{ borderColor: "rgba(220,38,38,0.2)", color: "#dc2626" }}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
