@@ -90,7 +90,7 @@ function LoginForm() {
 
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signUp({
+    const { data, error: authError } = await supabase.auth.signUp({
       email: registerForm.email.trim().toLowerCase(),
       password: registerForm.password,
       options: {
@@ -98,23 +98,38 @@ function LoginForm() {
       },
     });
 
-    setLoading(false);
-
     if (authError) {
-      const msg = authError.message || JSON.stringify(authError);
-      if (msg.includes("{}") || msg === "{}") {
-        setError("Account registration is currently closed. Please contact the administrator to get access.");
-      } else {
-        setError(msg);
-      }
+      setLoading(false);
+      setError(authError.message || "Registration failed. Please try again.");
       return;
     }
 
+    if (data?.user) {
+      // Insert profile with pending status
+      await supabase.from("profiles").upsert({
+        id: data.user.id,
+        email: registerForm.email.trim().toLowerCase(),
+        full_name: registerForm.fullName.trim(),
+        role: "student",
+        status: "pending",
+      });
+
+      // Log registration for admin notification
+      await supabase.from("audit_logs").insert([{
+        user_id: data.user.id,
+        user_email: registerForm.email.trim().toLowerCase(),
+        user_role: "student",
+        action: "student_registration",
+        resource: registerForm.fullName.trim(),
+        metadata: { requested_at: new Date().toISOString() },
+      }]);
+    }
+
+    setLoading(false);
     setSuccess(
-      "Account created successfully. You can now sign in."
+      "Registration submitted! Your account is pending admin approval. You will be notified once access is granted."
     );
-    setTab("login");
-    setLoginForm({ email: registerForm.email, password: "" });
+    setRegisterForm({ fullName: "", email: "", password: "", confirm: "" });
   };
 
   return (
