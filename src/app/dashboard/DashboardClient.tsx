@@ -231,7 +231,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
 
   useEffect(() => {
     if (!activeSection) return;
-    const hasSubs = ["exam-templates", "recalls"].includes(activeSection);
+    const hasSubs = ["exam-templates", "recalls", "recorded-sessions"].includes(activeSection);
     if (!hasSubs) fetchItems(activeSection, null);
     else if (activeSubsection) fetchItems(activeSection, activeSubsection);
   }, [activeSection, activeSubsection, fetchItems]);
@@ -284,7 +284,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     window.location.href = "/";
   };
 
-  const hasSubs = activeSection ? ["exam-templates", "recalls"].includes(activeSection) : false;
+  const hasSubs = activeSection ? ["exam-templates", "recalls", "recorded-sessions"].includes(activeSection) : false;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--paper)" }}>

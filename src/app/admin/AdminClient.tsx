@@ -46,7 +46,7 @@ const CONTENT_SECTIONS = [
   { id: "recalls",           label: "2. Recalls",            icon: <BookOpen size={15} />, color: "var(--teal)",       bucket: "recalls",           accept: "application/pdf",                            fileLabel: "PDF",   hasSubs: true  },
   { id: "flashcards",        label: "3. Flashcards",         icon: <Image size={15} />,    color: "var(--gold)",       bucket: "flashcards",        accept: "image/jpeg,image/png,image/webp,image/gif",  fileLabel: "Image", hasSubs: false },
   { id: "videos",            label: "4. Videos",             icon: <Video size={15} />,    color: "var(--teal-bright)",bucket: "course-videos",     accept: "video/mp4,video/webm,video/quicktime",       fileLabel: "Video", hasSubs: false },
-  { id: "recorded-sessions", label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions", accept: "audio/*,video/mp4,video/mpeg,.mp3,.mpeg,.mpg,.mp4,.m4a,.wav,.ogg,.aac,.wma,.flac",   fileLabel: "Audio", hasSubs: false },
+  { id: "recorded-sessions", label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions", accept: "audio/*,video/mp4,video/mpeg,.mp3,.mpeg,.mpg,.mp4,.m4a,.wav,.ogg,.aac,.wma,.flac",   fileLabel: "Audio", hasSubs: true  },
 ] as const;
 
 type SectionId = (typeof CONTENT_SECTIONS)[number]["id"];
