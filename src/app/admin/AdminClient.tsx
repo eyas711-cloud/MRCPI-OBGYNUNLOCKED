@@ -499,7 +499,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
   const fetchStudents = useCallback(async () => {
     setLoadingStudents(true);
-    const { data } = await supabase.from("profiles").select("id, email, full_name, role, status, created_at, registration_notes").neq("id", user.id).order("created_at", { ascending: false });
+    const { data } = await supabase.from("profiles").select("id, email, full_name, role, status, created_at, registration_notes").neq("id", user.id).eq("role", "student").order("created_at", { ascending: false });
     const rows = (data ?? []) as StudentRow[];
     setStudents(rows);
     setPendingCount(rows.filter((s) => s.status === "pending").length);
