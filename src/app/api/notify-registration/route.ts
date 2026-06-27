@@ -16,6 +16,8 @@ export async function POST(req: Request) {
 
   const adminEmails = ["eyas711@gmail.com", "einass_m_salih@yahoo.com"];
 
+  try { await transporter.verify(); console.log("SMTP connection OK"); } catch (e) { console.error("SMTP verify failed:", e); return NextResponse.json({ error: "SMTP failed" }, { status: 500 }); }
+
   await transporter.sendMail({
     from: `"MRCPI-OBGYN Unlocked" <${process.env.SMTP_USER}>`,
     to: adminEmails.join(", "),
