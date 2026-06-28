@@ -191,9 +191,13 @@ function ContentPanel({ user }: { user: AdminUser }) {
     const ext = file.name.split(".").pop()?.toLowerCase();
     const path = `${activeSec}/${activeSub || "general"}/${Date.now()}-${file.name.replace(/\s+/g, "_")}`;
 
-    // Force correct audio MIME type — .mpeg/.mpg are mis-detected as video/mpeg by the OS
+    // Force correct MIME types — browsers sometimes mis-detect or leave type empty
     const audioExtMap: Record<string, string> = { mpeg: "audio/mpeg", mpg: "audio/mpeg", mp3: "audio/mpeg", mp4: "audio/mp4", m4a: "audio/mp4", wav: "audio/wav", ogg: "audio/ogg" };
-    const contentType = activeSec === "recorded-sessions" && ext && audioExtMap[ext] ? audioExtMap[ext] : file.type;
+    const videoExtMap: Record<string, string> = { mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime", avi: "video/x-msvideo", mkv: "video/x-matroska" };
+    let contentType = file.type;
+    if (activeSec === "recorded-sessions" && ext && audioExtMap[ext]) contentType = audioExtMap[ext];
+    else if (activeSec === "videos" && ext && videoExtMap[ext]) contentType = videoExtMap[ext];
+    if (!contentType) contentType = "application/octet-stream";
 
     const { error: storErr } = await supabase.storage.from(section.bucket).upload(path, file, { upsert: false, contentType });
     if (storErr) { setErr(storErr.message); setUploading(false); return; }
