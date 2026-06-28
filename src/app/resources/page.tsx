@@ -47,7 +47,7 @@ export default function ResourcesPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
             <div>
-              <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>Downloadable Guides</p>
+              <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>Study Guides</p>
               <h2 className="font-serif font-semibold" style={{ fontSize: "clamp(1.5rem,2.5vw,2rem)", color: "var(--navy)" }}>Study materials & templates</h2>
             </div>
             <p className="text-sm" style={{ color: "rgba(26,26,26,0.5)" }}>3 free guides · 3 member-only resources</p>
