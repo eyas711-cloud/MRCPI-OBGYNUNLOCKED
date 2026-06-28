@@ -50,7 +50,13 @@ export default function ResourcesPage() {
               <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>Study Guides</p>
               <h2 className="font-serif font-semibold" style={{ fontSize: "clamp(1.5rem,2.5vw,2rem)", color: "var(--navy)" }}>Study materials & templates</h2>
             </div>
-            <p className="text-sm" style={{ color: "rgba(26,26,26,0.5)" }}>3 free guides · 3 member-only resources</p>
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
+              style={{ backgroundColor: "var(--gold)", color: "var(--navy)" }}
+            >
+              Unlock with Course <ArrowRight size={14} />
+            </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {freeGuides.map((g, i) => (
@@ -62,7 +68,7 @@ export default function ResourcesPage() {
                 {g.locked && (
                   <div className="absolute top-4 right-4">
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(201,162,39,0.1)", color: "var(--gold)" }}>
-                      Members Only
+                      Member Only
                     </span>
                   </div>
                 )}
@@ -77,11 +83,7 @@ export default function ResourcesPage() {
                 </div>
                 <h3 className="font-serif font-semibold text-base mb-2" style={{ color: "var(--navy)" }}>{g.title}</h3>
                 <p className="text-xs leading-relaxed mb-5" style={{ color: "rgba(26,26,26,0.6)" }}>{g.desc}</p>
-                {g.locked ? (
-                  <Link href="/courses" className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--gold)" }}>
-                    Unlock with Course <ArrowRight size={13} />
-                  </Link>
-                ) : (
+                {!g.locked && (
                   <Link href="/login" className="inline-flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--teal)" }}>
                     View Guide <ArrowRight size={13} />
                   </Link>
