@@ -2,9 +2,9 @@ import Link from "next/link";
 import { ArrowRight, FileText, Lightbulb } from "lucide-react";
 
 const freeGuides = [
-  { title: "MRCPI OBGYN OSCE Blueprint Overview", type: "PDF Guide", pages: "12 pages", desc: "A structured overview of the current MRCPI O&G OSCE format, domains, and marking criteria.", locked: false },
-  { title: "OSCE Communication Framework", type: "PDF Guide", pages: "8 pages", desc: "A step-by-step consultation structure for communication and counselling stations.", locked: false },
-  { title: "Antenatal History Taking Template", type: "PDF Template", pages: "4 pages", desc: "Structured antenatal history-taking guide aligned to the MRCPI OSCE mark scheme.", locked: false },
+  { title: "MRCPI OBGYN OSCE Blueprint Overview", type: "PDF Guide", pages: "12 pages", desc: "A structured overview of the current MRCPI O&G OSCE format, domains, and marking criteria.", locked: true },
+  { title: "OSCE Communication Framework", type: "PDF Guide", pages: "8 pages", desc: "A step-by-step consultation structure for communication and counselling stations.", locked: true },
+  { title: "Antenatal History Taking Template", type: "PDF Template", pages: "4 pages", desc: "Structured antenatal history-taking guide aligned to the MRCPI OSCE mark scheme.", locked: true },
   { title: "Emergency Obstetrics Quick Reference", type: "PDF Reference", pages: "6 pages", desc: "Key management algorithms for common obstetric emergencies — PPH, eclampsia, cord prolapse.", locked: true },
   { title: "Gynaecological Examination Checklist", type: "PDF Checklist", pages: "5 pages", desc: "Systematic examination checklist with examiner mark-scheme checkpoints.", locked: true },
   { title: "OSCE Flashcard Pack — 100 Cards", type: "Digital Flashcards", pages: "100 cards", desc: "Rapid-revision flashcard set covering core clinical knowledge for all OSCE domains.", locked: true },
