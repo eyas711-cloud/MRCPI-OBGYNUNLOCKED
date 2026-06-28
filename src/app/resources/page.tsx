@@ -51,7 +51,7 @@ export default function ResourcesPage() {
               <h2 className="font-serif font-semibold" style={{ fontSize: "clamp(1.5rem,2.5vw,2rem)", color: "var(--navy)" }}>Study materials & templates</h2>
             </div>
             <Link
-              href="/register"
+              href="/login"
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
               style={{ backgroundColor: "var(--gold)", color: "var(--navy)" }}
             >
