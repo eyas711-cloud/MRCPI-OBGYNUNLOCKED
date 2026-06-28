@@ -139,7 +139,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
   const [subsections, setSubsections] = useState<Subsection[]>([]);
 
   // Upload form
-  const [form, setForm] = useState({ title: "", description: "" });
+  const [form, setForm] = useState({ title: "", description: "", youtubeUrl: "" });
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -184,30 +184,39 @@ function ContentPanel({ user }: { user: AdminUser }) {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (activeSec !== "videos" && !file) return;
     if (section.hasSubs && !activeSub) { setErr("Please select a sub-section first."); return; }
     setUploading(true); setErr(null); setProgress(20);
 
-    const ext = file.name.split(".").pop()?.toLowerCase();
-    const path = `${activeSec}/${activeSub || "general"}/${Date.now()}-${file.name.replace(/\s+/g, "_")}`;
+    let storagePath = "";
 
-    // Force correct MIME types — browsers sometimes mis-detect or leave type empty
-    const audioExtMap: Record<string, string> = { mpeg: "audio/mpeg", mpg: "audio/mpeg", mp3: "audio/mpeg", mp4: "audio/mp4", m4a: "audio/mp4", wav: "audio/wav", ogg: "audio/ogg" };
-    const videoExtMap: Record<string, string> = { mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime", avi: "video/x-msvideo", mkv: "video/x-matroska" };
-    let contentType = file.type;
-    if (activeSec === "recorded-sessions" && ext && audioExtMap[ext]) contentType = audioExtMap[ext];
-    else if (activeSec === "videos" && ext && videoExtMap[ext]) contentType = videoExtMap[ext];
-    if (!contentType) contentType = "application/octet-stream";
+    if (activeSec === "videos") {
+      // YouTube URL — store directly, no file upload needed
+      const ytUrl = form.youtubeUrl.trim();
+      if (!ytUrl) { setErr("Please enter a YouTube URL."); setUploading(false); return; }
+      storagePath = ytUrl;
+      setProgress(70);
+    } else {
+      const ext = file!.name.split(".").pop()?.toLowerCase();
+      const path = `${activeSec}/${activeSub || "general"}/${Date.now()}-${file!.name.replace(/\s+/g, "_")}`;
 
-    const { error: storErr } = await supabase.storage.from(section.bucket).upload(path, file, {
-      upsert: false,
-      contentType,
-      onUploadProgress: (p) => {
-        const pct = Math.round((p.loaded / p.total) * 70) + 10;
-        setProgress(Math.min(pct, 80));
-      },
-    });
-    if (storErr) { setErr(storErr.message); setUploading(false); return; }
+      // Force correct MIME types — browsers sometimes mis-detect or leave type empty
+      const audioExtMap: Record<string, string> = { mpeg: "audio/mpeg", mpg: "audio/mpeg", mp3: "audio/mpeg", mp4: "audio/mp4", m4a: "audio/mp4", wav: "audio/wav", ogg: "audio/ogg" };
+      let contentType = file!.type;
+      if (activeSec === "recorded-sessions" && ext && audioExtMap[ext]) contentType = audioExtMap[ext];
+      if (!contentType) contentType = "application/octet-stream";
+
+      const { error: storErr } = await supabase.storage.from(section.bucket).upload(path, file!, {
+        upsert: false,
+        contentType,
+        onUploadProgress: (p) => {
+          const pct = Math.round((p.loaded / p.total) * 70) + 10;
+          setProgress(Math.min(pct, 80));
+        },
+      });
+      if (storErr) { setErr(storErr.message); setUploading(false); return; }
+      storagePath = path;
+    }
     setProgress(90);
 
     const { error: dbErr } = await supabase.from("content_items").insert([{
@@ -215,20 +224,20 @@ function ContentPanel({ user }: { user: AdminUser }) {
       subsection_id: activeSub || null,
       title: form.title,
       description: form.description || null,
-      file_name: file.name,
-      file_size: file.size,
-      storage_path: path,
+      file_name: activeSec === "videos" ? "youtube" : file!.name,
+      file_size: activeSec === "videos" ? null : file!.size,
+      storage_path: storagePath,
       uploaded_by: user.id,
       uploaded_by_email: user.email,
     }]);
 
     if (dbErr) { setErr(dbErr.message); setUploading(false); return; }
 
-    await logAudit(user.id, user.email, user.role, `upload_${activeSec}`, form.title, { file: file.name, subsection: activeSub });
+    await logAudit(user.id, user.email, user.role, `upload_${activeSec}`, form.title, { file: activeSec === "videos" ? storagePath : file!.name, subsection: activeSub });
     setProgress(100);
     setUploading(false);
     setDone(true);
-    setForm({ title: "", description: "" });
+    setForm({ title: "", description: "", youtubeUrl: "" });
     setFile(null);
     if (fileRef.current) fileRef.current.value = "";
     setTimeout(() => { setDone(false); setProgress(0); fetchItems(); }, 1800);
@@ -290,12 +299,12 @@ function ContentPanel({ user }: { user: AdminUser }) {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Upload form */}
+        {/* Upload / Add form */}
         <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
           <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
             <Upload size={14} style={{ color: section.color }} />
             <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: section.color }}>
-              Upload {section.fileLabel}
+              {activeSec === "videos" ? "Add YouTube Video" : `Upload ${section.fileLabel}`}
               {activeSub && subsections.length > 0 && ` — ${subsections.find((s) => s.id === activeSub)?.name}`}
             </p>
           </div>
@@ -320,40 +329,58 @@ function ContentPanel({ user }: { user: AdminUser }) {
                 style={{ borderColor: "rgba(15,76,92,0.2)" }}
               />
             </div>
-            {/* Drop zone */}
-            <div>
-              <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>
-                {section.fileLabel} File *{" "}
-                <span className="font-normal" style={{ color: "rgba(26,26,26,0.4)" }}>
-                  ({section.accept.split(",").map((m) => m.split("/")[1]?.toUpperCase()).filter(Boolean).join(", ")})
-                </span>
-              </label>
-              <div
-                className="rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition-colors"
-                style={{
-                  borderColor: file ? section.color : "rgba(15,76,92,0.2)",
-                  backgroundColor: file ? `color-mix(in srgb, ${section.color} 5%, transparent)` : "transparent",
-                }}
-                onClick={() => fileRef.current?.click()}
-              >
+
+            {activeSec === "videos" ? (
+              /* YouTube URL input */
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>YouTube URL *</label>
                 <input
-                  ref={fileRef} type="file" className="hidden"
-                  accept={section.accept}
-                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  type="url" required value={form.youtubeUrl ?? ""}
+                  onChange={(e) => setForm({ ...form, youtubeUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                  style={{ borderColor: "rgba(15,76,92,0.2)" }}
                 />
-                <div className="flex justify-center mb-2" style={{ color: file ? section.color : "rgba(15,76,92,0.3)" }}>
-                  {section.id === "flashcards" ? <Image size={22} /> : section.id === "videos" ? <Video size={22} /> : section.id === "recorded-sessions" ? <Mic size={22} /> : <FileText size={22} />}
-                </div>
-                {file ? (
-                  <div>
-                    <p className="text-sm font-semibold" style={{ color: "var(--navy)" }}>{file.name}</p>
-                    <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.5)" }}>{fmtSize(file.size)}</p>
-                  </div>
-                ) : (
-                  <p className="text-sm" style={{ color: "rgba(26,26,26,0.45)" }}>Click to select a file</p>
-                )}
+                <p className="text-xs mt-1.5" style={{ color: "rgba(26,26,26,0.45)" }}>
+                  Upload the video to YouTube as <strong>Unlisted</strong>, then paste the URL here. Students will watch it embedded on this platform.
+                </p>
               </div>
-            </div>
+            ) : (
+              /* File drop zone */
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>
+                  {section.fileLabel} File *{" "}
+                  <span className="font-normal" style={{ color: "rgba(26,26,26,0.4)" }}>
+                    ({section.accept.split(",").map((m) => m.split("/")[1]?.toUpperCase()).filter(Boolean).join(", ")})
+                  </span>
+                </label>
+                <div
+                  className="rounded-lg border-2 border-dashed p-6 text-center cursor-pointer transition-colors"
+                  style={{
+                    borderColor: file ? section.color : "rgba(15,76,92,0.2)",
+                    backgroundColor: file ? `color-mix(in srgb, ${section.color} 5%, transparent)` : "transparent",
+                  }}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <input
+                    ref={fileRef} type="file" className="hidden"
+                    accept={section.accept}
+                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  />
+                  <div className="flex justify-center mb-2" style={{ color: file ? section.color : "rgba(15,76,92,0.3)" }}>
+                    {section.id === "flashcards" ? <Image size={22} /> : section.id === "recorded-sessions" ? <Mic size={22} /> : <FileText size={22} />}
+                  </div>
+                  {file ? (
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: "var(--navy)" }}>{file.name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.5)" }}>{fmtSize(file.size)}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm" style={{ color: "rgba(26,26,26,0.45)" }}>Click to select a file</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {uploading && (
               <div>
@@ -368,17 +395,17 @@ function ContentPanel({ user }: { user: AdminUser }) {
             {err && <p className="text-sm text-red-600">{err}</p>}
             {done && (
               <div className="flex items-center gap-2 text-sm" style={{ color: "var(--teal)" }}>
-                <CheckCircle size={14} /> Uploaded successfully!
+                <CheckCircle size={14} /> {activeSec === "videos" ? "Video added successfully!" : "Uploaded successfully!"}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={uploading || !file || (section.hasSubs && !activeSub)}
+              disabled={uploading || (activeSec !== "videos" && !file) || (section.hasSubs && !activeSub)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-40"
               style={{ backgroundColor: section.color === "var(--navy)" ? "var(--navy)" : section.color, color: section.color === "var(--navy)" ? "white" : "var(--navy)" }}
             >
-              {uploading ? <><Loader size={13} className="animate-spin" /> Uploading…</> : <><Upload size={13} /> Upload {section.fileLabel}</>}
+              {uploading ? <><Loader size={13} className="animate-spin" /> Saving…</> : activeSec === "videos" ? <><Video size={13} /> Add Video</> : <><Upload size={13} /> Upload {section.fileLabel}</>}
             </button>
             {section.hasSubs && !activeSub && (
               <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>Select a sub-section above before uploading.</p>

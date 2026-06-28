@@ -116,6 +116,17 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
 }
 
 // ── File viewer ───────────────────────────────────────────────────────────────
+function getYouTubeEmbedUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    let videoId: string | null = null;
+    if (u.hostname.includes("youtube.com")) videoId = u.searchParams.get("v");
+    else if (u.hostname === "youtu.be") videoId = u.pathname.slice(1);
+    if (!videoId) return null;
+    return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+  } catch { return null; }
+}
+
 function FileViewer({
   item,
   bucket,
@@ -128,14 +139,17 @@ function FileViewer({
   onClose: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
+  const isYouTube = item.file_name === "youtube" || item.storage_path?.startsWith("http");
+  const embedUrl = isYouTube ? getYouTubeEmbedUrl(item.storage_path) : null;
 
   useEffect(() => {
+    if (isYouTube) return;
     // 15-minute signed URLs — short expiry limits URL sharing
     supabase.storage
       .from(bucket)
       .createSignedUrl(item.storage_path, 900)
       .then(({ data }) => setUrl(data?.signedUrl ?? null));
-  }, [item, bucket]);
+  }, [item, bucket, isYouTube]);
 
   return (
     <div
@@ -147,11 +161,11 @@ function FileViewer({
         className="bg-white rounded-2xl overflow-hidden shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header — no download button for students */}
+        {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-sm truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
-            <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>
+            {!isYouTube && <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>}
           </div>
           <button onClick={onClose} aria-label="Close" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-4">
             <X size={16} style={{ color: "var(--navy)" }} />
@@ -159,10 +173,24 @@ function FileViewer({
         </div>
         {/* Content */}
         <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center min-h-[400px]">
-          {!url ? (
+          {isYouTube ? (
+            embedUrl ? (
+              <div className="w-full" style={{ aspectRatio: "16/9" }}>
+                <iframe
+                  src={embedUrl}
+                  className="w-full h-full"
+                  style={{ minHeight: "400px" }}
+                  title={item.title}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <p className="text-sm text-red-500">Invalid YouTube URL</p>
+            )
+          ) : !url ? (
             <Loader size={24} className="animate-spin" style={{ color: "var(--teal)" }} />
           ) : fileType === "pdf" ? (
-            // #toolbar=0 hides Chrome's built-in PDF download/print toolbar
             <iframe src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full h-full min-h-[500px]" title={item.title} style={{ height: "65vh" }} />
           ) : fileType === "image" ? (
             <img
@@ -171,15 +199,6 @@ function FileViewer({
               onContextMenu={(e) => e.preventDefault()}
               draggable={false}
               style={{ userSelect: "none", WebkitUserSelect: "none" }}
-            />
-          ) : fileType === "video" ? (
-            <video
-              controls
-              src={url}
-              className="max-w-full max-h-[60vh]"
-              controlsList="nodownload nofullscreen"
-              disablePictureInPicture
-              onContextMenu={(e) => e.preventDefault()}
             />
           ) : fileType === "audio" ? (
             <DashAudioPlayer signedUrl={url} fileName={item.file_name} title={item.title} />
