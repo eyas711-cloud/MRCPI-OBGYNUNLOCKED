@@ -74,7 +74,8 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <p className="font-semibold text-sm mb-1" style={{ color: "var(--navy)" }}>WhatsApp</p>
-                    <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>Message us on WhatsApp</p>
+                    <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>+20 155 991 2306</p>
+                    <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>+966 563 618 146</p>
                     <p className="text-xs mt-1" style={{ color: "rgba(26,26,26,0.4)" }}>For quick consultation enquiries</p>
                   </div>
                 </a>
