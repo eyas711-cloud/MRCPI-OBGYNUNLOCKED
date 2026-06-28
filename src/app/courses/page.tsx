@@ -111,11 +111,18 @@ export default async function CoursesPage() {
                   {priceVisible && price && (
                     <p className="font-serif font-bold text-3xl mb-2 text-white">{price}</p>
                   )}
-                  <p className="text-sm leading-relaxed mb-6" style={{ color: "rgba(255,255,255,0.65)" }}>
+                  {!priceVisible && (
+                    <p className="text-sm font-semibold mb-3" style={{ color: "var(--teal-bright)" }}>Email us for fees enquiry</p>
+                  )}
+                  <p className="text-sm leading-relaxed mb-3" style={{ color: "rgba(255,255,255,0.65)" }}>
                     {enrolmentOpen
                       ? "Contact us for enrolment details and to secure your place."
                       : "Enrolment is currently closed. Join our waitlist by contacting us."}
                   </p>
+                  <div className="space-y-1 mb-4">
+                    <a href="mailto:info@mrcpiobgynunlocked.com" className="block text-xs hover:underline" style={{ color: "rgba(255,255,255,0.55)" }}>info@mrcpiobgynunlocked.com</a>
+                    <a href="mailto:adminmrcpi@gmail.com" className="block text-xs hover:underline" style={{ color: "rgba(255,255,255,0.55)" }}>adminmrcpi@gmail.com</a>
+                  </div>
                   <div className="my-6 border-t" style={{ borderColor: "rgba(255,255,255,0.1)" }} />
                   <ul className="space-y-3 mb-8">
                     {["Secure student dashboard", "Certificate on completion", "GDPR-compliant data handling"].map((f) => (

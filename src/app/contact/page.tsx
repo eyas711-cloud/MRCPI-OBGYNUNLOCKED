@@ -57,6 +57,7 @@ export default function ContactPage() {
                   <div>
                     <p className="font-semibold text-sm mb-1" style={{ color: "var(--navy)" }}>Email</p>
                     <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>info@mrcpiobgynunlocked.com</p>
+                    <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>adminmrcpi@gmail.com</p>
                     <p className="text-xs mt-1" style={{ color: "rgba(26,26,26,0.4)" }}>Response within 24 hours</p>
                   </div>
                 </a>
