@@ -50,6 +50,9 @@ export default function Footer() {
               <a href="mailto:info@mrcpiobgynunlocked.com" className="flex items-center gap-2 text-white/55 hover:text-white transition-colors">
                 <Mail size={13} /> info@mrcpiobgynunlocked.com
               </a>
+              <a href="mailto:adminmrcpi@gmail.com" className="flex items-center gap-2 text-white/55 hover:text-white transition-colors">
+                <Mail size={13} /> adminmrcpi@gmail.com
+              </a>
               <a href="https://wa.me/201559912306" className="flex items-center gap-2 text-white/55 hover:text-white transition-colors">
                 <Phone size={13} /> WhatsApp: +20 155 991 2306
               </a>
