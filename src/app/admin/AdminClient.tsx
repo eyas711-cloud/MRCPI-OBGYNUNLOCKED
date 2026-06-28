@@ -1652,6 +1652,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     whatsapp_number: settings.whatsapp_number ?? "",
                     instagram_url: settings.instagram_url ?? "",
                     twitter_url: settings.twitter_url ?? "",
+                    facebook_url: settings.facebook_url ?? "",
+                    tiktok_url: settings.tiktok_url ?? "",
                   });
                 }} className="p-5 space-y-4">
                   {[
@@ -1659,6 +1661,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     { key: "whatsapp_number", label: "WhatsApp Number", placeholder: "+966 5X XXX XXXX", type: "text" },
                     { key: "instagram_url", label: "Instagram URL", placeholder: "https://instagram.com/...", type: "url" },
                     { key: "twitter_url", label: "X / Twitter URL", placeholder: "https://x.com/...", type: "url" },
+                    { key: "facebook_url", label: "Facebook URL", placeholder: "https://facebook.com/...", type: "url" },
+                    { key: "tiktok_url", label: "TikTok URL", placeholder: "https://tiktok.com/@...", type: "url" },
                   ].map(f => (
                     <div key={f.key}>
                       <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>{f.label}</label>
