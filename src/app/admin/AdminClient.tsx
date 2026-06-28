@@ -244,13 +244,17 @@ function ContentPanel({ user }: { user: AdminUser }) {
   };
 
   const handleDelete = async (item: ContentItem) => {
-    await supabase.storage.from(section.bucket).remove([item.storage_path]);
+    if (item.file_name !== "youtube") await supabase.storage.from(section.bucket).remove([item.storage_path]);
     await supabase.from("content_items").delete().eq("id", item.id);
     await logAudit(user.id, user.email, user.role, `delete_${activeSec}`, item.title);
     fetchItems();
   };
 
   const openPreview = async (item: ContentItem) => {
+    if (item.file_name === "youtube" || item.storage_path?.startsWith("http")) {
+      setPreviewItem({ item, url: item.storage_path });
+      return;
+    }
     const { data } = await supabase.storage.from(section.bucket).createSignedUrl(item.storage_path, 3600);
     if (data?.signedUrl) setPreviewItem({ item, url: data.signedUrl });
   };
@@ -437,10 +441,10 @@ function ContentPanel({ user }: { user: AdminUser }) {
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `color-mix(in srgb, ${section.color} 10%, transparent)`, color: section.color }}>
                     {section.id === "flashcards" ? <Image size={14} /> : section.id === "videos" ? <Video size={14} /> : section.id === "recorded-sessions" ? <Mic size={14} /> : <FileText size={14} />}
                   </div>
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => openPreview(item)}>
                     <p className="text-sm font-medium truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
                     <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>
-                      {item.file_name} · {fmtSize(item.file_size)} · {new Date(item.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      {item.file_name === "youtube" ? "YouTube Video" : item.file_name} · {item.file_name === "youtube" ? "" : fmtSize(item.file_size) + " · "}{new Date(item.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   </div>
                   <button onClick={() => openPreview(item)} aria-label={`Preview ${item.title}`} className="w-9 h-9 rounded flex items-center justify-center hover:bg-gray-50 flex-shrink-0" style={{ color: "rgba(26,26,26,0.45)" }}>
@@ -490,7 +494,16 @@ function ContentPanel({ user }: { user: AdminUser }) {
               {section.id === "flashcards" ? (
                 <img src={previewItem.url} alt={previewItem.item.title} className="max-w-full max-h-[65vh] object-contain p-4" />
               ) : section.id === "videos" ? (
-                <video controls src={previewItem.url} className="max-w-full max-h-[65vh]" />
+                (() => {
+                  try {
+                    const u = new URL(previewItem.url);
+                    let vid: string | null = null;
+                    if (u.hostname.includes("youtube.com")) vid = u.searchParams.get("v");
+                    else if (u.hostname === "youtu.be") vid = u.pathname.slice(1);
+                    if (vid) return <div className="w-full" style={{ aspectRatio: "16/9" }}><iframe src={`https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1`} className="w-full h-full" style={{ minHeight: "400px" }} title={previewItem.item.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>;
+                  } catch { /* not a URL */ }
+                  return <video controls src={previewItem.url} className="max-w-full max-h-[65vh]" />;
+                })()
               ) : section.id === "recorded-sessions" ? (
                 <AudioPlayer signedUrl={previewItem.url} fileName={previewItem.item.file_name} title={previewItem.item.title} />
               ) : (
