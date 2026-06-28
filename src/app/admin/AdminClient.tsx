@@ -199,9 +199,16 @@ function ContentPanel({ user }: { user: AdminUser }) {
     else if (activeSec === "videos" && ext && videoExtMap[ext]) contentType = videoExtMap[ext];
     if (!contentType) contentType = "application/octet-stream";
 
-    const { error: storErr } = await supabase.storage.from(section.bucket).upload(path, file, { upsert: false, contentType });
+    const { error: storErr } = await supabase.storage.from(section.bucket).upload(path, file, {
+      upsert: false,
+      contentType,
+      onUploadProgress: (p) => {
+        const pct = Math.round((p.loaded / p.total) * 70) + 10;
+        setProgress(Math.min(pct, 80));
+      },
+    });
     if (storErr) { setErr(storErr.message); setUploading(false); return; }
-    setProgress(75);
+    setProgress(90);
 
     const { error: dbErr } = await supabase.from("content_items").insert([{
       section_id: activeSec,
