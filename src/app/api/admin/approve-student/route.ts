@@ -31,8 +31,10 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 export async function POST(req: Request) {
+  console.log("[approve-student] POST called");
   const supabase = createClient();
   const { data: { user } } = await supabase.auth.getUser();
+  console.log("[approve-student] user:", user?.email);
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
