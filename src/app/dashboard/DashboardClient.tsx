@@ -148,7 +148,7 @@ function FileViewer({
       .from(bucket)
       .createSignedUrl(item.storage_path, 900)
       .then(({ data }) => setUrl(data?.signedUrl ?? null));
-  }, [item, bucket, isYouTube]);
+  }, [item, bucket, isVimeo]);
 
   return (
     <div
@@ -164,7 +164,7 @@ function FileViewer({
         <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-sm truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
-            {!isYouTube && <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>}
+            {!isVimeo && <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>}
           </div>
           <button onClick={onClose} aria-label="Close" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-4">
             <X size={16} style={{ color: "var(--navy)" }} />
