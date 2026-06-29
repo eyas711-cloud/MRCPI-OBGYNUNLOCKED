@@ -23,6 +23,10 @@ async function sendEmail(to: string, subject: string, html: string) {
       html,
     }),
   });
+  if (!res.ok) {
+    const body = await res.text();
+    console.error("[sendEmail] Resend error:", res.status, body);
+  }
   return res.ok;
 }
 
@@ -77,18 +81,21 @@ export async function POST(req: Request) {
 
   // Send email notification for approve or reject
   if (action === "approve" || action === "reject" || action === "reinstate") {
+    console.log("[approve-student] Sending email for action:", action, "studentId:", studentId);
     const serviceClient = createServiceClient();
-    const { data: student } = await serviceClient
+    const { data: student, error: studentErr } = await serviceClient
       .from("profiles")
       .select("email, full_name")
       .eq("id", studentId)
       .single();
 
+    console.log("[approve-student] Student fetch:", student?.email, "error:", studentErr?.message);
+
     if (student?.email) {
       const firstName = student.full_name?.split(" ")[0] || "Doctor";
 
       if (action === "approve" || action === "reinstate") {
-        await sendEmail(
+        const emailResult = await sendEmail(
           student.email,
           "Your MRCPI OBGYN Unlocked account has been approved",
           `
@@ -123,6 +130,7 @@ export async function POST(req: Request) {
           </div>
           `
         );
+        console.log("[approve-student] Approval email sent:", emailResult);
       } else if (action === "reject") {
         await sendEmail(
           student.email,
