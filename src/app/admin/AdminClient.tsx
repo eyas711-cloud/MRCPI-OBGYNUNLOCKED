@@ -722,7 +722,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     return () => clearInterval(interval);
   }, [fetchStudents]);
 
-  const handleStudentAction = async (studentId: string, action: "approve" | "reject" | "block" | "reinstate") => {
+  const handleStudentAction = async (studentId: string, action: "approve" | "reject" | "block" | "reinstate" | "terminate") => {
     setActionLoading(studentId + action);
     const res = await fetch("/api/admin/approve-student", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -1011,13 +1011,22 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                 </>
                               )}
                               {s.status === "active" && (
-                                <button onClick={() => { if (confirm(`Block access for ${s.full_name || s.email}? They will immediately lose access to the platform.`)) handleStudentAction(s.id, "block"); }} disabled={actionLoading === s.id + "block"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(107,33,168,0.35)", color: "#6b21a8" }}>{actionLoading === s.id + "block" ? "…" : "Block Access"}</button>
+                                <>
+                                  <button onClick={() => { if (confirm(`Block access for ${s.full_name || s.email}? They will immediately lose access to the platform.`)) handleStudentAction(s.id, "block"); }} disabled={actionLoading === s.id + "block"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(107,33,168,0.35)", color: "#6b21a8" }}>{actionLoading === s.id + "block" ? "…" : "Block Access"}</button>
+                                  <button onClick={() => { if (confirm(`TERMINATE account for ${s.full_name || s.email}? This permanently deletes their account and cannot be undone.`)) handleStudentAction(s.id, "terminate"); }} disabled={actionLoading === s.id + "terminate"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(200,50,50,0.35)", color: "rgba(180,40,40,0.9)" }}>{actionLoading === s.id + "terminate" ? "…" : "Terminate"}</button>
+                                </>
                               )}
                               {s.status === "blocked" && (
-                                <button onClick={() => handleStudentAction(s.id, "reinstate")} disabled={actionLoading === s.id + "reinstate"} className="px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>{actionLoading === s.id + "reinstate" ? "…" : "Reinstate"}</button>
+                                <>
+                                  <button onClick={() => handleStudentAction(s.id, "reinstate")} disabled={actionLoading === s.id + "reinstate"} className="px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>{actionLoading === s.id + "reinstate" ? "…" : "Reinstate"}</button>
+                                  <button onClick={() => { if (confirm(`TERMINATE account for ${s.full_name || s.email}? This permanently deletes their account and cannot be undone.`)) handleStudentAction(s.id, "terminate"); }} disabled={actionLoading === s.id + "terminate"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(200,50,50,0.35)", color: "rgba(180,40,40,0.9)" }}>{actionLoading === s.id + "terminate" ? "…" : "Terminate"}</button>
+                                </>
                               )}
                               {s.status === "rejected" && (
-                                <button onClick={() => handleStudentAction(s.id, "approve")} disabled={actionLoading === s.id + "approve"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--teal)" }}>{actionLoading === s.id + "approve" ? "…" : "Approve"}</button>
+                                <>
+                                  <button onClick={() => handleStudentAction(s.id, "approve")} disabled={actionLoading === s.id + "approve"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--teal)" }}>{actionLoading === s.id + "approve" ? "…" : "Approve"}</button>
+                                  <button onClick={() => { if (confirm(`TERMINATE account for ${s.full_name || s.email}? This permanently deletes their account and cannot be undone.`)) handleStudentAction(s.id, "terminate"); }} disabled={actionLoading === s.id + "terminate"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(200,50,50,0.35)", color: "rgba(180,40,40,0.9)" }}>{actionLoading === s.id + "terminate" ? "…" : "Terminate"}</button>
+                                </>
                               )}
                             </div>
                           </div>

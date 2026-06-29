@@ -34,10 +34,28 @@ export async function POST(req: Request) {
     reject: "rejected",
     block: "blocked",
     reinstate: "active",
+    terminate: "terminated",
   };
 
   const newStatus = statusMap[action];
   if (!newStatus) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+
+  if (action === "terminate") {
+    // Get student email before deleting
+    const { data: student } = await supabase.from("profiles").select("email, full_name").eq("id", studentId).single();
+    await supabase.from("profiles").delete().eq("id", studentId);
+    // Delete auth user via service role
+    await supabase.auth.admin.deleteUser(studentId);
+    await supabase.from("audit_logs").insert([{
+      user_id: user.id,
+      user_email: user.email,
+      user_role: profile.role,
+      action: "student_terminate",
+      resource: studentId,
+      metadata: { deleted_email: student?.email },
+    }]);
+    return NextResponse.json({ ok: true });
+  }
 
   await supabase.from("profiles").update({ status: newStatus }).eq("id", studentId);
 
