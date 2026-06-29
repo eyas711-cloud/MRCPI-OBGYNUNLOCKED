@@ -1,5 +1,13 @@
 import { createClient } from "@/lib/supabase-server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+
+function createServiceClient() {
+  return createSupabaseClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 async function sendEmail(to: string, subject: string, html: string) {
   const res = await fetch("https://api.resend.com/emails", {
@@ -41,11 +49,10 @@ export async function POST(req: Request) {
   if (!newStatus) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
 
   if (action === "terminate") {
-    // Get student email before deleting
-    const { data: student } = await supabase.from("profiles").select("email, full_name").eq("id", studentId).single();
-    await supabase.from("profiles").delete().eq("id", studentId);
-    // Delete auth user via service role
-    await supabase.auth.admin.deleteUser(studentId);
+    const serviceClient = createServiceClient();
+    const { data: student } = await serviceClient.from("profiles").select("email, full_name").eq("id", studentId).single();
+    await serviceClient.from("profiles").delete().eq("id", studentId);
+    await serviceClient.auth.admin.deleteUser(studentId);
     await supabase.from("audit_logs").insert([{
       user_id: user.id,
       user_email: user.email,
@@ -70,7 +77,8 @@ export async function POST(req: Request) {
 
   // Send email notification for approve or reject
   if (action === "approve" || action === "reject" || action === "reinstate") {
-    const { data: student } = await supabase
+    const serviceClient = createServiceClient();
+    const { data: student } = await serviceClient
       .from("profiles")
       .select("email, full_name")
       .eq("id", studentId)
