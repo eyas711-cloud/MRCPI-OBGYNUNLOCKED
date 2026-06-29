@@ -5,7 +5,7 @@ import {
   Users, BookOpen, Video, FileText, Calendar, BarChart3,
   Upload, Plus, Trash2, Settings, Shield, Bell,
   TrendingUp, DollarSign, Eye, CheckCircle, X, Loader, LogOut,
-  Image, Mic, MessageSquare, Star, Download, Send,
+  Image, Mic, MessageSquare, Star, Download, Send, Pencil,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
@@ -150,6 +150,9 @@ function ContentPanel({ user }: { user: AdminUser }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [previewItem, setPreviewItem] = useState<{ item: ContentItem; url: string } | null>(null);
+  const [editItem, setEditItem] = useState<ContentItem | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", description: "" });
+  const [editSaving, setEditSaving] = useState(false);
 
   const section = CONTENT_SECTIONS.find((s) => s.id === activeSec)!;
 
@@ -257,6 +260,20 @@ function ContentPanel({ user }: { user: AdminUser }) {
     }
     const { data } = await supabase.storage.from(section.bucket).createSignedUrl(item.storage_path, 3600);
     if (data?.signedUrl) setPreviewItem({ item, url: data.signedUrl });
+  };
+
+  const openEdit = (item: ContentItem) => {
+    setEditItem(item);
+    setEditForm({ title: item.title, description: item.description ?? "" });
+  };
+
+  const handleEditSave = async () => {
+    if (!editItem) return;
+    setEditSaving(true);
+    await supabase.from("content_items").update({ title: editForm.title, description: editForm.description || null }).eq("id", editItem.id);
+    setEditSaving(false);
+    setEditItem(null);
+    fetchItems();
   };
 
   return (
@@ -450,6 +467,9 @@ function ContentPanel({ user }: { user: AdminUser }) {
                   <button onClick={() => openPreview(item)} aria-label={`Preview ${item.title}`} className="w-9 h-9 rounded flex items-center justify-center hover:bg-gray-50 flex-shrink-0" style={{ color: "rgba(26,26,26,0.45)" }}>
                     <Eye size={14} aria-hidden="true" />
                   </button>
+                  <button onClick={() => openEdit(item)} aria-label={`Edit ${item.title}`} className="w-9 h-9 rounded flex items-center justify-center hover:bg-blue-50 flex-shrink-0" style={{ color: "rgba(26,26,26,0.45)" }}>
+                    <Pencil size={14} aria-hidden="true" />
+                  </button>
                   <button onClick={() => handleDelete(item)} aria-label={`Delete ${item.title}`} className="w-9 h-9 rounded flex items-center justify-center hover:bg-red-50 flex-shrink-0" style={{ color: "rgba(200,50,50,0.5)" }}>
                     <Trash2 size={14} aria-hidden="true" />
                   </button>
@@ -461,6 +481,47 @@ function ContentPanel({ user }: { user: AdminUser }) {
       </div>
 
       {/* In-page preview modal */}
+      {/* Edit modal */}
+      {editItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.6)" }} onClick={() => setEditItem(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-serif font-semibold text-lg" style={{ color: "var(--navy)" }}>Edit Content</h3>
+              <button onClick={() => setEditItem(null)} className="w-8 h-8 rounded flex items-center justify-center hover:bg-gray-100" style={{ color: "rgba(26,26,26,0.45)" }}><X size={16} /></button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Title</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                  className="w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none"
+                  style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--ink)" }}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Description</label>
+                <textarea
+                  rows={4}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                  placeholder="Optional description…"
+                  className="w-full px-4 py-2.5 rounded-lg border text-sm focus:outline-none resize-none"
+                  style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--ink)" }}
+                />
+              </div>
+            </div>
+            <div className="flex items-center justify-end gap-3 mt-6">
+              <button onClick={() => setEditItem(null)} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ color: "rgba(26,26,26,0.5)" }}>Cancel</button>
+              <button onClick={handleEditSave} disabled={editSaving || !editForm.title.trim()} className="px-5 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                {editSaving ? "Saving…" : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {previewItem && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
