@@ -139,7 +139,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
   const [subsections, setSubsections] = useState<Subsection[]>([]);
 
   // Upload form
-  const [form, setForm] = useState({ title: "", description: "", youtubeUrl: "" });
+  const [form, setForm] = useState({ title: "", description: "", vimeoUrl: "" });
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -191,9 +191,9 @@ function ContentPanel({ user }: { user: AdminUser }) {
     let storagePath = "";
 
     if (activeSec === "videos") {
-      // YouTube URL — store directly, no file upload needed
-      const ytUrl = form.youtubeUrl.trim();
-      if (!ytUrl) { setErr("Please enter a YouTube URL."); setUploading(false); return; }
+      // Vimeo URL — store directly, no file upload needed
+      const ytUrl = form.vimeoUrl.trim();
+      if (!ytUrl) { setErr("Please enter a Vimeo URL."); setUploading(false); return; }
       storagePath = ytUrl;
       setProgress(70);
     } else {
@@ -224,7 +224,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
       subsection_id: activeSub || null,
       title: form.title,
       description: form.description || null,
-      file_name: activeSec === "videos" ? "youtube" : file!.name,
+      file_name: activeSec === "videos" ? "vimeo" : file!.name,
       file_size: activeSec === "videos" ? null : file!.size,
       storage_path: storagePath,
       uploaded_by: user.id,
@@ -237,21 +237,21 @@ function ContentPanel({ user }: { user: AdminUser }) {
     setProgress(100);
     setUploading(false);
     setDone(true);
-    setForm({ title: "", description: "", youtubeUrl: "" });
+    setForm({ title: "", description: "", vimeoUrl: "" });
     setFile(null);
     if (fileRef.current) fileRef.current.value = "";
     setTimeout(() => { setDone(false); setProgress(0); fetchItems(); }, 1800);
   };
 
   const handleDelete = async (item: ContentItem) => {
-    if (item.file_name !== "youtube") await supabase.storage.from(section.bucket).remove([item.storage_path]);
+    if (item.file_name !== "vimeo") await supabase.storage.from(section.bucket).remove([item.storage_path]);
     await supabase.from("content_items").delete().eq("id", item.id);
     await logAudit(user.id, user.email, user.role, `delete_${activeSec}`, item.title);
     fetchItems();
   };
 
   const openPreview = async (item: ContentItem) => {
-    if (item.file_name === "youtube" || item.storage_path?.startsWith("http")) {
+    if (item.file_name === "vimeo" || item.storage_path?.startsWith("http")) {
       setPreviewItem({ item, url: item.storage_path });
       return;
     }
@@ -308,7 +308,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
           <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
             <Upload size={14} style={{ color: section.color }} />
             <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: section.color }}>
-              {activeSec === "videos" ? "Add YouTube Video" : `Upload ${section.fileLabel}`}
+              {activeSec === "videos" ? "Add Vimeo Video" : `Upload ${section.fileLabel}`}
               {activeSub && subsections.length > 0 && ` — ${subsections.find((s) => s.id === activeSub)?.name}`}
             </p>
           </div>
@@ -335,18 +335,18 @@ function ContentPanel({ user }: { user: AdminUser }) {
             </div>
 
             {activeSec === "videos" ? (
-              /* YouTube URL input */
+              /* Vimeo URL input */
               <div>
-                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>YouTube URL *</label>
+                <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Vimeo URL *</label>
                 <input
-                  type="url" required value={form.youtubeUrl ?? ""}
-                  onChange={(e) => setForm({ ...form, youtubeUrl: e.target.value })}
-                  placeholder="https://www.youtube.com/watch?v=..."
+                  type="url" required value={form.vimeoUrl ?? ""}
+                  onChange={(e) => setForm({ ...form, vimeoUrl: e.target.value })}
+                  placeholder="https://vimeo.com/123456789"
                   className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
                   style={{ borderColor: "rgba(15,76,92,0.2)" }}
                 />
                 <p className="text-xs mt-1.5" style={{ color: "rgba(26,26,26,0.45)" }}>
-                  Upload the video to YouTube as <strong>Unlisted</strong>, then paste the URL here. Students will watch it embedded on this platform.
+                  Upload the video to Vimeo, then paste the URL here. Students will watch it embedded on this platform.
                 </p>
               </div>
             ) : (
@@ -444,7 +444,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
                   <div className="flex-1 min-w-0 cursor-pointer" onClick={() => openPreview(item)}>
                     <p className="text-sm font-medium truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
                     <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>
-                      {item.file_name === "youtube" ? "YouTube Video" : item.file_name} · {item.file_name === "youtube" ? "" : fmtSize(item.file_size) + " · "}{new Date(item.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                      {item.file_name === "vimeo" ? "Vimeo Video" : item.file_name} · {item.file_name === "vimeo" ? "" : fmtSize(item.file_size) + " · "}{new Date(item.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                     </p>
                   </div>
                   <button onClick={() => openPreview(item)} aria-label={`Preview ${item.title}`} className="w-9 h-9 rounded flex items-center justify-center hover:bg-gray-50 flex-shrink-0" style={{ color: "rgba(26,26,26,0.45)" }}>
@@ -497,10 +497,12 @@ function ContentPanel({ user }: { user: AdminUser }) {
                 (() => {
                   try {
                     const u = new URL(previewItem.url);
-                    let vid: string | null = null;
-                    if (u.hostname.includes("youtube.com")) vid = u.searchParams.get("v");
-                    else if (u.hostname === "youtu.be") vid = u.pathname.slice(1);
-                    if (vid) return <div className="w-full" style={{ aspectRatio: "16/9" }}><iframe src={`https://www.youtube.com/embed/${vid}?rel=0&modestbranding=1`} className="w-full h-full" style={{ minHeight: "400px" }} title={previewItem.item.title} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen /></div>;
+                    let embedSrc: string | null = null;
+                    if (u.hostname.includes("vimeo.com")) {
+                      const vid = u.pathname.split("/").filter(Boolean)[0];
+                      if (vid) embedSrc = `https://player.vimeo.com/video/${vid}?badge=0&autopause=0&player_id=0`;
+                    }
+                    if (embedSrc) return <div className="w-full" style={{ aspectRatio: "16/9" }}><iframe src={embedSrc} className="w-full h-full" style={{ minHeight: "400px" }} title={previewItem.item.title} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen /></div>;
                   } catch { /* not a URL */ }
                   return <video controls src={previewItem.url} className="max-w-full max-h-[65vh]" />;
                 })()

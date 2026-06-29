@@ -116,14 +116,13 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
 }
 
 // ── File viewer ───────────────────────────────────────────────────────────────
-function getYouTubeEmbedUrl(url: string): string | null {
+function getVimeoEmbedUrl(url: string): string | null {
   try {
     const u = new URL(url);
-    let videoId: string | null = null;
-    if (u.hostname.includes("youtube.com")) videoId = u.searchParams.get("v");
-    else if (u.hostname === "youtu.be") videoId = u.pathname.slice(1);
+    if (!u.hostname.includes("vimeo.com")) return null;
+    const videoId = u.pathname.split("/").filter(Boolean)[0];
     if (!videoId) return null;
-    return `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+    return `https://player.vimeo.com/video/${videoId}?badge=0&autopause=0&player_id=0`;
   } catch { return null; }
 }
 
@@ -139,11 +138,11 @@ function FileViewer({
   onClose: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
-  const isYouTube = item.file_name === "youtube" || item.storage_path?.startsWith("http");
-  const embedUrl = isYouTube ? getYouTubeEmbedUrl(item.storage_path) : null;
+  const isVimeo = item.file_name === "vimeo" || item.storage_path?.startsWith("http");
+  const embedUrl = isVimeo ? getVimeoEmbedUrl(item.storage_path) : null;
 
   useEffect(() => {
-    if (isYouTube) return;
+    if (isVimeo) return;
     // 15-minute signed URLs — short expiry limits URL sharing
     supabase.storage
       .from(bucket)
@@ -173,7 +172,7 @@ function FileViewer({
         </div>
         {/* Content */}
         <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center min-h-[400px]">
-          {isYouTube ? (
+          {isVimeo ? (
             embedUrl ? (
               <div className="w-full" style={{ aspectRatio: "16/9" }}>
                 <iframe
@@ -181,12 +180,12 @@ function FileViewer({
                   className="w-full h-full"
                   style={{ minHeight: "400px" }}
                   title={item.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allow="autoplay; fullscreen; picture-in-picture"
                   allowFullScreen
                 />
               </div>
             ) : (
-              <p className="text-sm text-red-500">Invalid YouTube URL</p>
+              <p className="text-sm text-red-500">Invalid Vimeo URL</p>
             )
           ) : !url ? (
             <Loader size={24} className="animate-spin" style={{ color: "var(--teal)" }} />
