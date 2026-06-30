@@ -1773,7 +1773,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                         <table className="w-full text-sm border-collapse" style={{ minWidth: 700 }}>
                           <thead>
                             <tr style={{ backgroundColor: "rgba(11,30,61,0.04)", borderBottom: "1px solid rgba(15,76,92,0.1)" }}>
-                              {["No", "Name", "Paid (SAR)", "Pending (SAR)", "Telegram", "Web Acc.", "Comments", ""].map((h, i) => (
+                              {["No", "Name", "Paid (SAR)", "Pending (SAR)", "Telegram", "Web Access", "Comments", ""].map((h, i) => (
                                 <th key={i} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider"
                                   style={{ color: "rgba(26,26,26,0.5)", whiteSpace: "nowrap" }}>{h}</th>
                               ))}
@@ -1848,7 +1848,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                   <td className="px-3 py-2 text-center">
                                     <button onClick={() => saveCell(row.id, "telegram", !row.telegram)}
                                       className="w-7 h-7 rounded-full flex items-center justify-center mx-auto text-white text-xs font-bold transition-all hover:opacity-80"
-                                      style={{ backgroundColor: row.telegram ? "var(--teal-bright)" : "rgba(26,26,26,0.15)" }}>
+                                      style={{ backgroundColor: row.telegram ? "#16a34a" : "rgba(26,26,26,0.15)" }}>
                                       {row.telegram ? "✓" : "✗"}
                                     </button>
                                   </td>
@@ -1857,7 +1857,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                   <td className="px-3 py-2 text-center">
                                     <button onClick={() => saveCell(row.id, "web_account", !row.web_account)}
                                       className="w-7 h-7 rounded-full flex items-center justify-center mx-auto text-white text-xs font-bold transition-all hover:opacity-80"
-                                      style={{ backgroundColor: row.web_account ? "var(--navy)" : "rgba(26,26,26,0.15)" }}>
+                                      style={{ backgroundColor: row.web_account ? "#16a34a" : "rgba(26,26,26,0.15)" }}>
                                       {row.web_account ? "✓" : "✗"}
                                     </button>
                                   </td>
