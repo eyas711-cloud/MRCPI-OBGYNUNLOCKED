@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import {
   FileText, Image, Video, Mic, ChevronRight, ChevronLeft,
@@ -87,89 +87,44 @@ function audioMimeFromExt(fileName: string): string {
   return (ext && map[ext]) || "audio/mpeg";
 }
 
-function formatTime(s: number) {
+function fmtTime(s: number) {
   const m = Math.floor(s / 60);
-  const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, "0")}`;
+  return `${m}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
 }
+
+const BAR_COUNT = 40;
+const BAR_HEIGHTS = Array.from({ length: BAR_COUNT }, (_, i) => 20 + Math.abs(Math.sin(i * 0.8)) * 50 + Math.abs(Math.sin(i * 0.3)) * 20);
 
 function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fileName: string; title: string }) {
   const [unsupported, setUnsupported] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(1);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animFrameRef = useRef<number>(0);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const ctxRef = useRef<AudioContext | null>(null);
   const progressRef = useRef<HTMLDivElement>(null);
 
-  const startVisualizer = async () => {
-    const audio = audioRef.current;
-    const canvas = canvasRef.current;
-    if (!audio || !canvas) return;
-    if (!ctxRef.current) {
-      const audioCtx = new AudioContext();
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 128;
-      const source = audioCtx.createMediaElementSource(audio);
-      source.connect(analyser);
-      analyser.connect(audioCtx.destination);
-      ctxRef.current = audioCtx;
-      analyserRef.current = analyser;
-    }
-    if (ctxRef.current.state === "suspended") await ctxRef.current.resume();
-    const analyser = analyserRef.current!;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    const ctx = canvas.getContext("2d")!;
-    const draw = () => {
-      animFrameRef.current = requestAnimationFrame(draw);
-      analyser.getByteFrequencyData(dataArray);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      const barWidth = (canvas.width / bufferLength) * 2;
-      let x = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        const barHeight = (dataArray[i] / 255) * canvas.height;
-        const alpha = 0.4 + (dataArray[i] / 255) * 0.6;
-        ctx.fillStyle = `rgba(21,176,151,${alpha})`;
-        ctx.beginPath();
-        ctx.roundRect(x, canvas.height - barHeight, barWidth - 2, barHeight, 3);
-        ctx.fill();
-        x += barWidth;
-      }
-    };
-    draw();
-  };
-
-  const stopVisualizer = () => {
-    cancelAnimationFrame(animFrameRef.current);
-    const canvas = canvasRef.current;
-    if (canvas) canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
-  };
-
   const togglePlay = () => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    if (playing) { audio.pause(); } else { audio.play(); }
+    const a = audioRef.current;
+    if (!a) return;
+    playing ? a.pause() : a.play();
   };
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const bar = progressRef.current;
-    const audio = audioRef.current;
-    if (!bar || !audio || !duration) return;
+    const a = audioRef.current;
+    if (!bar || !a || !duration) return;
     const rect = bar.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-    audio.currentTime = ratio * duration;
-    setCurrentTime(ratio * duration);
+    a.currentTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * duration;
   };
 
-  useEffect(() => {
-    return () => { cancelAnimationFrame(animFrameRef.current); ctxRef.current?.close(); };
-  }, []);
+  const handleVolume = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const v = parseFloat(e.target.value);
+    setVolume(v);
+    if (audioRef.current) audioRef.current.volume = v;
+  };
 
-  const progress = duration ? (currentTime / duration) * 100 : 0;
+  const pct = duration ? (currentTime / duration) * 100 : 0;
 
   return (
     <div className="p-8 flex flex-col items-center gap-5 w-full">
@@ -178,45 +133,76 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
       </div>
       <p className="font-semibold text-center text-lg" style={{ color: "var(--navy)" }}>{title}</p>
 
-      {/* Waveform canvas */}
-      <canvas ref={canvasRef} width={600} height={80} className="w-full max-w-xl rounded-xl"
-        style={{ backgroundColor: "rgba(11,30,61,0.04)", minHeight: "80px" }} />
+      {/* Animated waveform visualizer */}
+      <div className="w-full max-w-xl h-20 rounded-xl flex items-end justify-center gap-0.5 px-4 overflow-hidden"
+        style={{ backgroundColor: "rgba(11,30,61,0.04)" }}>
+        {BAR_HEIGHTS.map((h, i) => (
+          <div key={i} className="flex-1 rounded-t-sm"
+            style={{
+              height: playing ? `${h}%` : "20%",
+              backgroundColor: "var(--teal-bright)",
+              opacity: playing ? 0.7 + (i % 3) * 0.1 : 0.25,
+              transition: playing ? `height ${0.3 + (i % 5) * 0.1}s ease-in-out` : "height 0.4s ease",
+              animationDelay: `${i * 0.05}s`,
+              animation: playing ? `bounce-bar ${0.6 + (i % 4) * 0.2}s ease-in-out infinite alternate` : "none",
+            }}
+          />
+        ))}
+      </div>
 
-      {/* Custom controls */}
-      <div className="w-full max-w-xl flex flex-col gap-3">
-        {/* Progress bar */}
-        <div ref={progressRef} onClick={handleSeek} className="w-full h-3 rounded-full cursor-pointer relative"
-          style={{ backgroundColor: "rgba(11,30,61,0.1)" }}>
-          <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, backgroundColor: "var(--teal-bright)" }} />
-          <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow border-2 border-white"
-            style={{ left: `calc(${progress}% - 8px)`, backgroundColor: "var(--teal-bright)" }} />
+      <style>{`
+        @keyframes bounce-bar {
+          from { transform: scaleY(0.4); }
+          to { transform: scaleY(1); }
+        }
+      `}</style>
+
+      {/* Progress bar */}
+      <div className="w-full max-w-xl flex flex-col gap-2">
+        <div ref={progressRef} onClick={handleSeek}
+          className="w-full h-2 rounded-full cursor-pointer relative"
+          style={{ backgroundColor: "rgba(11,30,61,0.12)" }}>
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "var(--teal-bright)" }} />
+          <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow border-2 border-white cursor-grab"
+            style={{ left: `calc(${pct}% - 8px)`, backgroundColor: "var(--teal-bright)" }} />
         </div>
-
-        {/* Time + Play button */}
-        <div className="flex items-center gap-4">
-          <button onClick={togglePlay}
-            className="w-12 h-12 rounded-full flex items-center justify-center text-white flex-shrink-0 transition-all hover:opacity-90"
-            style={{ backgroundColor: "var(--teal-bright)" }}>
-            {playing
-              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
-              : <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-            }
-          </button>
-          <span className="text-sm font-mono" style={{ color: "rgba(26,26,26,0.5)" }}>
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </span>
+        <div className="flex justify-between text-xs font-mono" style={{ color: "rgba(26,26,26,0.45)" }}>
+          <span>{fmtTime(currentTime)}</span>
+          <span>{fmtTime(duration)}</span>
         </div>
       </div>
 
-      {/* Hidden audio element */}
+      {/* Controls row */}
+      <div className="w-full max-w-xl flex items-center gap-4">
+        <button onClick={togglePlay}
+          className="w-12 h-12 rounded-full flex items-center justify-center text-white flex-shrink-0 hover:opacity-90 transition-opacity"
+          style={{ backgroundColor: "var(--teal-bright)" }}>
+          {playing
+            ? <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+            : <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>}
+        </button>
+
+        {/* Volume */}
+        <div className="flex items-center gap-2 flex-1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ color: "rgba(26,26,26,0.4)", flexShrink: 0 }}>
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+            {volume > 0.5 && <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>}
+            {volume > 0 && <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>}
+          </svg>
+          <input type="range" min="0" max="1" step="0.01" value={volume} onChange={handleVolume}
+            className="flex-1 h-1.5 rounded-full appearance-none cursor-pointer"
+            style={{ accentColor: "var(--teal-bright)" }}
+          />
+        </div>
+      </div>
+
       {!unsupported ? (
         <audio ref={audioRef} onError={() => setUnsupported(true)}
-          onPlay={() => { setPlaying(true); startVisualizer(); }}
-          onPause={() => { setPlaying(false); stopVisualizer(); }}
-          onEnded={() => { setPlaying(false); stopVisualizer(); setCurrentTime(0); }}
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          onEnded={() => { setPlaying(false); setCurrentTime(0); }}
           onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime ?? 0)}
-          onLoadedMetadata={() => setDuration(audioRef.current?.duration ?? 0)}
-        >
+          onLoadedMetadata={() => setDuration(audioRef.current?.duration ?? 0)}>
           <source src={signedUrl} type={audioMimeFromExt(fileName)} />
           <source src={signedUrl} type="audio/mpeg" />
           <source src={signedUrl} type="audio/mp4" />
