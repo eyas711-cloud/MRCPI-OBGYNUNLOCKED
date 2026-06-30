@@ -15,6 +15,7 @@ export type AdminUser = { id: string; email: string; name: string | null; role: 
 type StudentRow = {
   id: string; email: string; full_name: string | null;
   role: string; status: string; created_at: string; registration_notes: string | null;
+  last_seen: string | null;
 };
 
 type Subsection = { id: string; section_id: string; name: string; sort_order: number };
@@ -632,7 +633,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
   const fetchStudents = useCallback(async () => {
     setLoadingStudents(true);
-    const { data } = await supabase.from("profiles").select("id, email, full_name, role, status, created_at, registration_notes").neq("id", user.id).eq("role", "student").order("created_at", { ascending: false });
+    const { data } = await supabase.from("profiles").select("id, email, full_name, role, status, created_at, registration_notes, last_seen").neq("id", user.id).eq("role", "student").order("created_at", { ascending: false });
     const rows = (data ?? []) as StudentRow[];
     setStudents(rows);
     setPendingCount(rows.filter((s) => s.status === "pending").length);
@@ -997,9 +998,17 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                           <div key={s.id} className="flex items-center gap-4 px-5 py-4">
                             <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: avatarColor }}>{ini}</div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{s.full_name || "(No name)"}</p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{s.full_name || "(No name)"}</p>
+                                {s.last_seen && (new Date().getTime() - new Date(s.last_seen).getTime()) < 2 * 60 * 1000 && (
+                                  <span className="flex items-center gap-1 text-xs font-semibold" style={{ color: "#16a34a" }}>
+                                    <span className="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse" />
+                                    Online
+                                  </span>
+                                )}
+                              </div>
                               <p className="text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>{s.email}</p>
-                              <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.35)" }}>Registered {new Date(s.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                              <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.35)" }}>Registered {new Date(s.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}{s.last_seen ? ` · Last seen ${new Date(s.last_seen).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })}` : ""}</p>
                             </div>
                             <span className="text-xs px-2 py-1 rounded-full capitalize flex-shrink-0" style={{ backgroundColor: "rgba(15,76,92,0.08)", color: "var(--navy)" }}>{s.role}</span>
                             <span className="text-xs px-2.5 py-1 rounded-full font-semibold capitalize flex-shrink-0" style={{ backgroundColor: badgeBg, color: badgeColor }}>{s.status}</span>
