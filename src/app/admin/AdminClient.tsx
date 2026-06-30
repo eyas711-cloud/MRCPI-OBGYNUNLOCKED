@@ -669,7 +669,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [announcementSubject, setAnnouncementSubject] = useState("Announcement from MRCPI OBGYN Unlocked");
   const [announcementBody, setAnnouncementBody] = useState("");
   const [announcementSending, setAnnouncementSending] = useState(false);
+  const [announcementTesting, setAnnouncementTesting] = useState(false);
   const [announcementResult, setAnnouncementResult] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const [announcementPreview, setAnnouncementPreview] = useState(false);
 
   // Payments state
   const [payments, setPayments] = useState<PaymentRow[]>([]);
@@ -1972,15 +1974,50 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     This will be sent to all students with <strong>active</strong> status. The email will be signed by MRCPI OBGYN Unlocked.
                   </div>
                   {announcementResult && (
-                    <p className="text-sm font-medium" style={{ color: announcementResult.type === "ok" ? "var(--teal)" : "#dc2626" }}>
-                      {announcementResult.type === "ok" ? <span className="flex items-center gap-1.5"><CheckCircle size={14} />{announcementResult.text}</span> : announcementResult.text}
+                    <p className="text-sm font-medium flex items-center gap-1.5" style={{ color: announcementResult.type === "ok" ? "var(--teal)" : "#dc2626" }}>
+                      {announcementResult.type === "ok" && <CheckCircle size={14} />}
+                      {announcementResult.text}
                     </p>
                   )}
-                  <button type="submit" disabled={announcementSending || !announcementBody.trim()}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
-                    style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
-                    {announcementSending ? <><Loader size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send Announcement</>}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button type="submit" disabled={announcementSending || !announcementBody.trim()}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                      style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                      {announcementSending ? <><Loader size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send to All Students</>}
+                    </button>
+                    <button type="button"
+                      disabled={announcementTesting || !announcementBody.trim()}
+                      onClick={async () => {
+                        setAnnouncementTesting(true);
+                        setAnnouncementResult(null);
+                        try {
+                          const res = await fetch("/api/admin/send-announcement", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ subject: announcementSubject, body: announcementBody, testOnly: true }),
+                          });
+                          const data = await res.json();
+                          setAnnouncementResult(res.ok
+                            ? { type: "ok", text: "Test email sent to your inbox." }
+                            : { type: "err", text: data.error ?? "Failed to send test." }
+                          );
+                        } catch {
+                          setAnnouncementResult({ type: "err", text: "Network error." });
+                        }
+                        setAnnouncementTesting(false);
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50 border"
+                      style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--navy)", backgroundColor: "white" }}>
+                      {announcementTesting ? <><Loader size={14} className="animate-spin" /> Sending…</> : "Send test to myself"}
+                    </button>
+                    <button type="button"
+                      disabled={!announcementBody.trim()}
+                      onClick={() => setAnnouncementPreview(true)}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50 border"
+                      style={{ borderColor: "rgba(15,76,92,0.25)", color: "rgba(26,26,26,0.6)", backgroundColor: "white" }}>
+                      <Eye size={14} /> Preview email
+                    </button>
+                  </div>
                 </form>
               </div>
 
@@ -2053,6 +2090,64 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
         </div>
       </main>
+
+      {/* Announcement email preview modal */}
+      {announcementPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.7)" }} onClick={() => setAnnouncementPreview(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Email Preview</p>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>This is exactly what students will see in their inbox</p>
+              </div>
+              <button onClick={() => setAnnouncementPreview(false)} className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-gray-100">
+                <X size={16} style={{ color: "var(--navy)" }} />
+              </button>
+            </div>
+            {/* Simulated email client chrome */}
+            <div className="flex-shrink-0 px-5 py-3 border-b text-xs space-y-1" style={{ backgroundColor: "#f9fafb", borderColor: "rgba(15,76,92,0.08)" }}>
+              <div className="flex gap-2"><span className="font-semibold w-12 text-right flex-shrink-0" style={{ color: "rgba(26,26,26,0.45)" }}>From:</span><span style={{ color: "var(--navy)" }}>MRCPI OBGYN Unlocked &lt;{process.env.NEXT_PUBLIC_SUPABASE_URL ? "admin@mrcpiobgynunlocked.com" : "admin@mrcpiobgynunlocked.com"}&gt;</span></div>
+              <div className="flex gap-2"><span className="font-semibold w-12 text-right flex-shrink-0" style={{ color: "rgba(26,26,26,0.45)" }}>To:</span><span style={{ color: "var(--navy)" }}>student@example.com</span></div>
+              <div className="flex gap-2"><span className="font-semibold w-12 text-right flex-shrink-0" style={{ color: "rgba(26,26,26,0.45)" }}>Subject:</span><span className="font-medium" style={{ color: "var(--navy)" }}>{announcementSubject || "(no subject)"}</span></div>
+            </div>
+            <div className="flex-1 overflow-auto p-4" style={{ backgroundColor: "#f0ede8" }}>
+              {/* Render the email HTML */}
+              <div dangerouslySetInnerHTML={{
+                __html: (() => {
+                  const bodyHtml = announcementBody
+                    .split("\n")
+                    .map(line => line.trim()
+                      ? `<p style="color:#1a1a1a;font-size:15px;line-height:1.7;margin:0 0 12px 0;">${line}</p>`
+                      : "<br/>")
+                    .join("");
+                  return `
+                    <div style="font-family:Georgia,serif;max-width:560px;margin:0 auto;padding:24px 16px;">
+                      <div style="background:#0B1E3D;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
+                        <p style="color:rgba(255,255,255,0.45);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;margin:0 0 6px 0;">Announcement</p>
+                        <h1 style="color:#15B097;font-size:20px;margin:0;letter-spacing:0.05em;">MRCPI OBGYN Unlocked</h1>
+                      </div>
+                      <div style="background:#ffffff;padding:32px;border-radius:0 0 12px 12px;border:1px solid rgba(15,76,92,0.15);border-top:none;">
+                        <h2 style="color:#0B1E3D;font-size:17px;margin:0 0 20px 0;font-weight:700;">${announcementSubject || "(no subject)"}</h2>
+                        ${bodyHtml || '<p style="color:#999;">Write your message above to preview it here.</p>'}
+                        <hr style="border:none;border-top:1px solid rgba(15,76,92,0.1);margin:24px 0;" />
+                        <p style="color:rgba(26,26,26,0.5);font-size:13px;margin:0;">
+                          If you have questions, contact us at
+                          <a href="mailto:info@mrcpiobgynunlocked.com" style="color:#15B097;">info@mrcpiobgynunlocked.com</a>
+                          or via WhatsApp at <a href="https://wa.me/201559912306" style="color:#15B097;">+20 155 991 2306</a>.
+                        </p>
+                      </div>
+                      <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
+                        © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
+                        <a href="https://mrcpiobgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpiobgynunlocked.com</a>
+                      </p>
+                    </div>
+                  `;
+                })()
+              }} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
