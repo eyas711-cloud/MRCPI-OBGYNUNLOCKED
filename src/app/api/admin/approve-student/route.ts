@@ -10,22 +10,22 @@ function createServiceClient() {
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const res = await fetch("https://api.resend.com/emails", {
+  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+      "api-key": process.env.BREVO_SMTP_KEY!,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: "MRCPI OBGYN Unlocked <noreply@mrcpiobgynunlocked.com>",
-      to: [to],
+      sender: { name: "MRCPI OBGYN Unlocked", email: "noreply@mrcpiobgynunlocked.com" },
+      to: [{ email: to }],
       subject,
-      html,
+      htmlContent: html,
     }),
   });
   if (!res.ok) {
     const body = await res.text();
-    console.error("[sendEmail] Resend error:", res.status, body);
+    console.error("[sendEmail] Brevo error:", res.status, body);
   }
   return res.ok;
 }
