@@ -122,7 +122,7 @@ function getVimeoEmbedUrl(url: string): string | null {
     if (!u.hostname.includes("vimeo.com")) return null;
     const videoId = u.pathname.split("/").filter(Boolean)[0];
     if (!videoId) return null;
-    return `https://player.vimeo.com/video/${videoId}?badge=0&autopause=0&player_id=0`;
+    return `https://player.vimeo.com/video/${videoId}?badge=0&autopause=0&player_id=0&controls=1&progress_bar=1&playbar=1&transparent=0`;
   } catch { return null; }
 }
 
