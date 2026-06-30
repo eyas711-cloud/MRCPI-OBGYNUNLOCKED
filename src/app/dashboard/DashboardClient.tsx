@@ -87,21 +87,28 @@ function audioMimeFromExt(fileName: string): string {
   return (ext && map[ext]) || "audio/mpeg";
 }
 
+function formatTime(s: number) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
 function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fileName: string; title: string }) {
   const [unsupported, setUnsupported] = useState(false);
   const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameRef = useRef<number>(0);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
 
   const startVisualizer = () => {
     const audio = audioRef.current;
     const canvas = canvasRef.current;
     if (!audio || !canvas) return;
-
     if (!ctxRef.current) {
       const audioCtx = new AudioContext();
       const analyser = audioCtx.createAnalyser();
@@ -111,14 +118,11 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
       analyser.connect(audioCtx.destination);
       ctxRef.current = audioCtx;
       analyserRef.current = analyser;
-      sourceRef.current = source;
     }
-
     const analyser = analyserRef.current!;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     const ctx = canvas.getContext("2d")!;
-
     const draw = () => {
       animFrameRef.current = requestAnimationFrame(draw);
       analyser.getByteFrequencyData(dataArray);
@@ -128,8 +132,10 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
       for (let i = 0; i < bufferLength; i++) {
         const barHeight = (dataArray[i] / 255) * canvas.height;
         const alpha = 0.4 + (dataArray[i] / 255) * 0.6;
-        ctx.fillStyle = `rgba(21, 176, 151, ${alpha})`;
-        ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+        ctx.fillStyle = `rgba(21,176,151,${alpha})`;
+        ctx.beginPath();
+        ctx.roundRect(x, canvas.height - barHeight, barWidth - 2, barHeight, 3);
+        ctx.fill();
         x += barWidth;
       }
     };
@@ -139,58 +145,83 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
   const stopVisualizer = () => {
     cancelAnimationFrame(animFrameRef.current);
     const canvas = canvasRef.current;
-    if (canvas) {
-      const ctx = canvas.getContext("2d");
-      ctx?.clearRect(0, 0, canvas.width, canvas.height);
-    }
+    if (canvas) canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (playing) { audio.pause(); } else { audio.play(); }
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const bar = progressRef.current;
+    const audio = audioRef.current;
+    if (!bar || !audio || !duration) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audio.currentTime = ratio * duration;
+    setCurrentTime(ratio * duration);
   };
 
   useEffect(() => {
     return () => { cancelAnimationFrame(animFrameRef.current); ctxRef.current?.close(); };
   }, []);
 
+  const progress = duration ? (currentTime / duration) * 100 : 0;
+
   return (
-    <div className="p-8 flex flex-col items-center gap-4 w-full">
+    <div className="p-8 flex flex-col items-center gap-5 w-full">
       <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal-bright)" }}>
         <Mic size={32} />
       </div>
-      <p className="font-semibold text-center" style={{ color: "var(--navy)" }}>{title}</p>
+      <p className="font-semibold text-center text-lg" style={{ color: "var(--navy)" }}>{title}</p>
 
-      {/* Waveform visualizer */}
-      <canvas
-        ref={canvasRef}
-        width={500}
-        height={80}
-        className="w-full max-w-lg rounded-xl"
-        style={{ backgroundColor: "rgba(11,30,61,0.04)", display: playing ? "block" : "none" }}
-      />
-      {!playing && (
-        <div className="w-full max-w-lg h-20 rounded-xl flex items-center justify-center gap-1" style={{ backgroundColor: "rgba(11,30,61,0.04)" }}>
-          {Array.from({ length: 32 }).map((_, i) => (
-            <div key={i} className="w-1.5 rounded-full" style={{ height: `${8 + Math.sin(i * 0.5) * 8 + Math.random() * 8}px`, backgroundColor: "rgba(21,176,151,0.25)" }} />
-          ))}
+      {/* Waveform canvas */}
+      <canvas ref={canvasRef} width={600} height={80} className="w-full max-w-xl rounded-xl"
+        style={{ backgroundColor: "rgba(11,30,61,0.04)", minHeight: "80px" }} />
+
+      {/* Custom controls */}
+      <div className="w-full max-w-xl flex flex-col gap-3">
+        {/* Progress bar */}
+        <div ref={progressRef} onClick={handleSeek} className="w-full h-3 rounded-full cursor-pointer relative"
+          style={{ backgroundColor: "rgba(11,30,61,0.1)" }}>
+          <div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, backgroundColor: "var(--teal-bright)" }} />
+          <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow border-2 border-white"
+            style={{ left: `calc(${progress}% - 8px)`, backgroundColor: "var(--teal-bright)" }} />
         </div>
-      )}
 
+        {/* Time + Play button */}
+        <div className="flex items-center gap-4">
+          <button onClick={togglePlay}
+            className="w-12 h-12 rounded-full flex items-center justify-center text-white flex-shrink-0 transition-all hover:opacity-90"
+            style={{ backgroundColor: "var(--teal-bright)" }}>
+            {playing
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+            }
+          </button>
+          <span className="text-sm font-mono" style={{ color: "rgba(26,26,26,0.5)" }}>
+            {formatTime(currentTime)} / {formatTime(duration)}
+          </span>
+        </div>
+      </div>
+
+      {/* Hidden audio element */}
       {!unsupported ? (
-        <audio
-          ref={audioRef}
-          controls
-          className="w-full max-w-lg"
-          onError={() => setUnsupported(true)}
+        <audio ref={audioRef} onError={() => setUnsupported(true)}
           onPlay={() => { setPlaying(true); startVisualizer(); }}
           onPause={() => { setPlaying(false); stopVisualizer(); }}
-          onEnded={() => { setPlaying(false); stopVisualizer(); }}
+          onEnded={() => { setPlaying(false); stopVisualizer(); setCurrentTime(0); }}
+          onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime ?? 0)}
+          onLoadedMetadata={() => setDuration(audioRef.current?.duration ?? 0)}
         >
           <source src={signedUrl} type={audioMimeFromExt(fileName)} />
           <source src={signedUrl} type="audio/mpeg" />
           <source src={signedUrl} type="audio/mp4" />
         </audio>
-      ) : null}
-      {unsupported && (
-        <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>
-          This audio format is not supported by your browser.
-        </p>
+      ) : (
+        <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>Audio format not supported by your browser.</p>
       )}
     </div>
   );
