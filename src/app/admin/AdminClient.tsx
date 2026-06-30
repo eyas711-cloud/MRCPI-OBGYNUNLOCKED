@@ -28,6 +28,13 @@ type ContentItem = {
 
 type AuditRow = { id: string; user_email: string; action: string; resource: string | null; created_at: string };
 
+type BatchRow = { id: string; name: string; notes: string | null; created_at: string };
+type BatchStudent = {
+  id: string; batch_id: string; sort_order: number;
+  student_name: string; paid: number; pending: number;
+  telegram: boolean; web_account: boolean; comments: string | null;
+};
+
 type SlotRow = { id: string; date_label: string; slots: string[]; sort_order: number; visible: boolean };
 
 type BookingRow = { id: string; name: string; email: string; date: string; time_slot: string; notes: string | null; status: string; meet_link: string | null; created_at: string };
@@ -665,6 +672,19 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  // Batch records state
+  const [batches, setBatches] = useState<BatchRow[]>([]);
+  const [activeBatchId, setActiveBatchId] = useState<string | null>(null);
+  const [batchStudents, setBatchStudents] = useState<BatchStudent[]>([]);
+  const [batchLoading, setBatchLoading] = useState(false);
+  const [newBatchModal, setNewBatchModal] = useState(false);
+  const [newBatchName, setNewBatchName] = useState("");
+  const [newBatchNotes, setNewBatchNotes] = useState("");
+  const [newBatchSaving, setNewBatchSaving] = useState(false);
+  const [editingCell, setEditingCell] = useState<{ rowId: string; field: string } | null>(null);
+  const [cellValue, setCellValue] = useState("");
+  const [batchSavingRow, setBatchSavingRow] = useState<string | null>(null);
+
   // Announcement email state
   const [announcementSubject, setAnnouncementSubject] = useState("Announcement from MRCPI OBGYN Unlocked");
   const [announcementBody, setAnnouncementBody] = useState("");
@@ -753,6 +773,20 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setMtdRevenue(mtd.reduce((sum, p) => sum + Number(p.amount), 0));
   }, []);
 
+  const fetchBatches = useCallback(async () => {
+    const { data } = await supabase.from("payment_batches").select("*").order("created_at", { ascending: false });
+    const rows = (data ?? []) as BatchRow[];
+    setBatches(rows);
+    if (rows.length > 0) setActiveBatchId(prev => prev ?? rows[0].id);
+  }, []);
+
+  const fetchBatchStudents = useCallback(async (batchId: string) => {
+    setBatchLoading(true);
+    const { data } = await supabase.from("batch_students").select("*").eq("batch_id", batchId).order("sort_order");
+    setBatchStudents((data ?? []) as BatchStudent[]);
+    setBatchLoading(false);
+  }, []);
+
   const fetchSlots = useCallback(async () => {
     const { data } = await supabase.from("mock_osce_slots").select("*").order("sort_order");
     setSlots(data ?? []);
@@ -784,16 +818,20 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Success Stories") fetchTestimonials();
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
-    if (activeNav === "Payments") fetchPayments();
+    if (activeNav === "Payments") { fetchPayments(); fetchBatches(); }
     if (activeNav === "Settings") fetchSettings();
     if (activeNav === "Courses") fetchSettings();
-  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings]);
+  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches]);
 
   useEffect(() => {
     fetchStudents();
     const interval = setInterval(fetchStudents, 30000);
     return () => clearInterval(interval);
   }, [fetchStudents]);
+
+  useEffect(() => {
+    if (activeBatchId) fetchBatchStudents(activeBatchId);
+  }, [activeBatchId, fetchBatchStudents]);
 
   const handleStudentAction = async (studentId: string, action: "approve" | "reject" | "block" | "reinstate" | "terminate") => {
     setActionLoading(studentId + action);
@@ -1644,6 +1682,311 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   </button>
                 </form>
               </div>
+
+              {/* ── Batch Records ── */}
+              <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(15,76,92,0.08)", backgroundColor: "rgba(11,30,61,0.02)" }}>
+                  <div className="flex items-center gap-2">
+                    <FileText size={16} style={{ color: "var(--navy)" }} />
+                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Batch Records</h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {batches.length > 0 && (
+                      <select
+                        value={activeBatchId ?? ""}
+                        onChange={e => setActiveBatchId(e.target.value)}
+                        className="px-3 py-1.5 rounded-lg border text-sm focus:outline-none"
+                        style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }}
+                      >
+                        {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      </select>
+                    )}
+                    <button
+                      onClick={() => setNewBatchModal(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                      style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}
+                    >
+                      <Plus size={12} /> New Batch
+                    </button>
+                  </div>
+                </div>
+
+                {batches.length === 0 ? (
+                  <div className="p-10 text-center">
+                    <FileText size={32} className="mx-auto mb-3 opacity-20" />
+                    <p className="text-sm" style={{ color: "rgba(26,26,26,0.45)" }}>No batches yet. Create your first batch to start tracking.</p>
+                  </div>
+                ) : batchLoading ? (
+                  <div className="p-8 text-center"><Loader size={18} className="animate-spin mx-auto" style={{ color: "var(--teal)" }} /></div>
+                ) : (() => {
+                  const totalPaid = batchStudents.reduce((s, r) => s + Number(r.paid), 0);
+                  const totalPending = batchStudents.reduce((s, r) => s + Number(r.pending), 0);
+                  const cleared = batchStudents.filter(r => Number(r.pending) === 0 && Number(r.paid) > 0).length;
+                  const hasPending = batchStudents.filter(r => Number(r.pending) > 0).length;
+
+                  const saveCell = async (rowId: string, field: string, value: string | number | boolean) => {
+                    setBatchSavingRow(rowId);
+                    await supabase.from("batch_students").update({ [field]: value }).eq("id", rowId);
+                    setBatchStudents(prev => prev.map(r => r.id === rowId ? { ...r, [field]: value } : r));
+                    setBatchSavingRow(null);
+                  };
+
+                  const commitEdit = async () => {
+                    if (!editingCell) return;
+                    const { rowId, field } = editingCell;
+                    const numFields = ["paid", "pending"];
+                    const val = numFields.includes(field) ? parseFloat(cellValue) || 0 : cellValue;
+                    await saveCell(rowId, field, val);
+                    setEditingCell(null);
+                  };
+
+                  const startEdit = (rowId: string, field: string, current: string | number | null) => {
+                    setEditingCell({ rowId, field });
+                    setCellValue(String(current ?? ""));
+                  };
+
+                  return (
+                    <div>
+                      {/* Summary chips */}
+                      <div className="flex flex-wrap gap-3 px-5 py-3 border-b" style={{ borderColor: "rgba(15,76,92,0.07)", backgroundColor: "rgba(21,176,151,0.03)" }}>
+                        <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}>
+                          {batchStudents.length} students
+                        </span>
+                        <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}>
+                          Total paid: SAR {totalPaid.toLocaleString()}
+                        </span>
+                        <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: totalPending > 0 ? "rgba(201,162,39,0.15)" : "rgba(21,176,151,0.12)", color: totalPending > 0 ? "var(--gold)" : "var(--teal)" }}>
+                          Total pending: SAR {totalPending.toLocaleString()}
+                        </span>
+                        <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}>
+                          {cleared} cleared
+                        </span>
+                        {hasPending > 0 && (
+                          <span className="text-xs px-2.5 py-1 rounded-full font-semibold" style={{ backgroundColor: "rgba(201,162,39,0.15)", color: "var(--gold)" }}>
+                            {hasPending} with pending
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Table */}
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse" style={{ minWidth: 700 }}>
+                          <thead>
+                            <tr style={{ backgroundColor: "rgba(11,30,61,0.04)", borderBottom: "1px solid rgba(15,76,92,0.1)" }}>
+                              {["No", "Name", "Paid (SAR)", "Pending (SAR)", "Telegram", "Web Acc.", "Comments", ""].map((h, i) => (
+                                <th key={i} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider"
+                                  style={{ color: "rgba(26,26,26,0.5)", whiteSpace: "nowrap" }}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {batchStudents.map((row, idx) => {
+                              const saving = batchSavingRow === row.id;
+                              const rowBg = Number(row.pending) > 0 ? "rgba(201,162,39,0.04)" : "transparent";
+                              return (
+                                <tr key={row.id} style={{ borderBottom: "1px solid rgba(15,76,92,0.06)", backgroundColor: rowBg }}
+                                  className="hover:bg-opacity-80 transition-colors">
+                                  {/* No */}
+                                  <td className="px-3 py-2 text-xs font-mono" style={{ color: "rgba(26,26,26,0.4)", width: 40 }}>{idx + 1}</td>
+
+                                  {/* Name */}
+                                  <td className="px-3 py-2" style={{ minWidth: 130 }}>
+                                    {editingCell?.rowId === row.id && editingCell.field === "student_name" ? (
+                                      <input autoFocus value={cellValue}
+                                        onChange={e => setCellValue(e.target.value)}
+                                        onBlur={commitEdit}
+                                        onKeyDown={e => e.key === "Enter" && commitEdit()}
+                                        className="w-full px-2 py-1 rounded border text-sm focus:outline-none"
+                                        style={{ borderColor: "var(--teal-bright)" }} />
+                                    ) : (
+                                      <span className="cursor-pointer font-medium block px-1 py-0.5 rounded hover:bg-teal-50"
+                                        style={{ color: "var(--navy)" }}
+                                        onClick={() => startEdit(row.id, "student_name", row.student_name)}>
+                                        {row.student_name || <span className="opacity-30 italic">Click to edit</span>}
+                                        {saving && <Loader size={10} className="inline ml-1 animate-spin" />}
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Paid */}
+                                  <td className="px-3 py-2" style={{ minWidth: 100 }}>
+                                    {editingCell?.rowId === row.id && editingCell.field === "paid" ? (
+                                      <input autoFocus type="number" min="0" value={cellValue}
+                                        onChange={e => setCellValue(e.target.value)}
+                                        onBlur={commitEdit}
+                                        onKeyDown={e => e.key === "Enter" && commitEdit()}
+                                        className="w-full px-2 py-1 rounded border text-sm focus:outline-none"
+                                        style={{ borderColor: "var(--teal-bright)" }} />
+                                    ) : (
+                                      <span className="cursor-pointer block px-1 py-0.5 rounded hover:bg-teal-50 font-semibold"
+                                        style={{ color: Number(row.paid) > 0 ? "var(--teal)" : "rgba(26,26,26,0.35)" }}
+                                        onClick={() => startEdit(row.id, "paid", row.paid)}>
+                                        {Number(row.paid) > 0 ? Number(row.paid).toLocaleString() : "—"}
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Pending */}
+                                  <td className="px-3 py-2" style={{ minWidth: 100 }}>
+                                    {editingCell?.rowId === row.id && editingCell.field === "pending" ? (
+                                      <input autoFocus type="number" min="0" value={cellValue}
+                                        onChange={e => setCellValue(e.target.value)}
+                                        onBlur={commitEdit}
+                                        onKeyDown={e => e.key === "Enter" && commitEdit()}
+                                        className="w-full px-2 py-1 rounded border text-sm focus:outline-none"
+                                        style={{ borderColor: "var(--teal-bright)" }} />
+                                    ) : (
+                                      <span className="cursor-pointer block px-1 py-0.5 rounded hover:bg-yellow-50 font-semibold"
+                                        style={{ color: Number(row.pending) > 0 ? "var(--gold)" : "rgba(26,26,26,0.35)" }}
+                                        onClick={() => startEdit(row.id, "pending", row.pending)}>
+                                        {Number(row.pending) > 0 ? Number(row.pending).toLocaleString() : "—"}
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Telegram */}
+                                  <td className="px-3 py-2 text-center">
+                                    <button onClick={() => saveCell(row.id, "telegram", !row.telegram)}
+                                      className="w-7 h-7 rounded-full flex items-center justify-center mx-auto text-white text-xs font-bold transition-all hover:opacity-80"
+                                      style={{ backgroundColor: row.telegram ? "var(--teal-bright)" : "rgba(26,26,26,0.15)" }}>
+                                      {row.telegram ? "✓" : "✗"}
+                                    </button>
+                                  </td>
+
+                                  {/* Web Account */}
+                                  <td className="px-3 py-2 text-center">
+                                    <button onClick={() => saveCell(row.id, "web_account", !row.web_account)}
+                                      className="w-7 h-7 rounded-full flex items-center justify-center mx-auto text-white text-xs font-bold transition-all hover:opacity-80"
+                                      style={{ backgroundColor: row.web_account ? "var(--navy)" : "rgba(26,26,26,0.15)" }}>
+                                      {row.web_account ? "✓" : "✗"}
+                                    </button>
+                                  </td>
+
+                                  {/* Comments */}
+                                  <td className="px-3 py-2" style={{ minWidth: 160 }}>
+                                    {editingCell?.rowId === row.id && editingCell.field === "comments" ? (
+                                      <input autoFocus value={cellValue}
+                                        onChange={e => setCellValue(e.target.value)}
+                                        onBlur={commitEdit}
+                                        onKeyDown={e => e.key === "Enter" && commitEdit()}
+                                        className="w-full px-2 py-1 rounded border text-sm focus:outline-none"
+                                        style={{ borderColor: "var(--teal-bright)" }} />
+                                    ) : (
+                                      <span className="cursor-pointer block px-1 py-0.5 rounded hover:bg-gray-50 text-xs"
+                                        style={{ color: row.comments ? "rgba(26,26,26,0.7)" : "rgba(26,26,26,0.25)" }}
+                                        onClick={() => startEdit(row.id, "comments", row.comments)}>
+                                        {row.comments || <span className="italic">Add note…</span>}
+                                      </span>
+                                    )}
+                                  </td>
+
+                                  {/* Delete */}
+                                  <td className="px-2 py-2">
+                                    <button onClick={async () => {
+                                      if (!confirm(`Remove ${row.student_name || "this student"}?`)) return;
+                                      await supabase.from("batch_students").delete().eq("id", row.id);
+                                      setBatchStudents(prev => prev.filter(r => r.id !== row.id));
+                                    }} className="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50"
+                                      style={{ color: "rgba(200,50,50,0.5)" }}>
+                                      <Trash2 size={13} />
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+
+                            {/* Totals row */}
+                            <tr style={{ borderTop: "2px solid rgba(15,76,92,0.12)", backgroundColor: "rgba(11,30,61,0.03)" }}>
+                              <td className="px-3 py-2.5" colSpan={2}>
+                                <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "var(--navy)" }}>Totals</span>
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <span className="text-sm font-bold" style={{ color: "var(--teal)" }}>SAR {totalPaid.toLocaleString()}</span>
+                              </td>
+                              <td className="px-3 py-2.5">
+                                <span className="text-sm font-bold" style={{ color: totalPending > 0 ? "var(--gold)" : "var(--teal)" }}>SAR {totalPending.toLocaleString()}</span>
+                              </td>
+                              <td colSpan={4} />
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {/* Add row */}
+                      <div className="px-5 py-3 border-t" style={{ borderColor: "rgba(15,76,92,0.07)" }}>
+                        <button onClick={async () => {
+                          if (!activeBatchId) return;
+                          const maxOrder = batchStudents.length > 0 ? Math.max(...batchStudents.map(r => r.sort_order)) : 0;
+                          const { data } = await supabase.from("batch_students").insert([{
+                            batch_id: activeBatchId, sort_order: maxOrder + 1,
+                            student_name: "", paid: 0, pending: 0, telegram: false, web_account: false,
+                          }]).select().single();
+                          if (data) {
+                            setBatchStudents(prev => [...prev, data as BatchStudent]);
+                            setTimeout(() => setEditingCell({ rowId: (data as BatchStudent).id, field: "student_name" }), 50);
+                          }
+                        }} className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-all hover:opacity-80"
+                          style={{ color: "var(--teal)", backgroundColor: "rgba(21,176,151,0.08)" }}>
+                          <Plus size={13} /> Add Student
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* New batch modal */}
+              {newBatchModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.6)" }} onClick={() => setNewBatchModal(false)}>
+                  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="font-serif font-semibold text-lg" style={{ color: "var(--navy)" }}>New Batch</h3>
+                      <button onClick={() => setNewBatchModal(false)} className="w-8 h-8 rounded flex items-center justify-center hover:bg-gray-100"><X size={16} /></button>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Batch Name *</label>
+                        <input autoFocus type="text" value={newBatchName} onChange={e => setNewBatchName(e.target.value)}
+                          placeholder="e.g. March 2026"
+                          className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Notes (optional)</label>
+                        <input type="text" value={newBatchNotes} onChange={e => setNewBatchNotes(e.target.value)}
+                          placeholder="e.g. Cohort 3 — online intensive"
+                          className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-end gap-3 mt-6">
+                      <button onClick={() => setNewBatchModal(false)} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ color: "rgba(26,26,26,0.5)" }}>Cancel</button>
+                      <button disabled={newBatchSaving || !newBatchName.trim()}
+                        onClick={async () => {
+                          setNewBatchSaving(true);
+                          const { data } = await supabase.from("payment_batches").insert([{
+                            name: newBatchName.trim(),
+                            notes: newBatchNotes.trim() || null,
+                          }]).select().single();
+                          if (data) {
+                            const b = data as BatchRow;
+                            setBatches(prev => [b, ...prev]);
+                            setActiveBatchId(b.id);
+                            setBatchStudents([]);
+                          }
+                          setNewBatchName("");
+                          setNewBatchNotes("");
+                          setNewBatchSaving(false);
+                          setNewBatchModal(false);
+                        }}
+                        className="px-5 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                        style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                        {newBatchSaving ? "Creating…" : "Create Batch"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Payments list */}
               <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
