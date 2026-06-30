@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase-server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import nodemailer from "nodemailer";
 
 function createServiceClient() {
   return createSupabaseClient(
@@ -10,24 +11,26 @@ function createServiceClient() {
 }
 
 async function sendEmail(to: string, subject: string, html: string) {
-  const res = await fetch("https://api.brevo.com/v3/smtp/email", {
-    method: "POST",
-    headers: {
-      "api-key": process.env.BREVO_SMTP_KEY!,
-      "Content-Type": "application/json",
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
     },
-    body: JSON.stringify({
-      sender: { name: "MRCPI OBGYN Unlocked", email: "noreply@mrcpiobgynunlocked.com" },
-      to: [{ email: to }],
-      subject,
-      htmlContent: html,
-    }),
   });
-  if (!res.ok) {
-    const body = await res.text();
-    console.error("[sendEmail] Brevo error:", res.status, body);
+  try {
+    await transporter.sendMail({
+      from: `"MRCPI OBGYN Unlocked" <${process.env.SMTP_USER}>`,
+      to,
+      subject,
+      html,
+    });
+    console.log("[sendEmail] Email sent to:", to);
+    return true;
+  } catch (e) {
+    console.error("[sendEmail] Error:", e);
+    return false;
   }
-  return res.ok;
 }
 
 export async function POST(req: Request) {
