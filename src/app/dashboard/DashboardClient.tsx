@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import {
   FileText, Image, Video, Mic, ChevronRight, ChevronLeft,
@@ -89,16 +89,98 @@ function audioMimeFromExt(fileName: string): string {
 
 function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fileName: string; title: string }) {
   const [unsupported, setUnsupported] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animFrameRef = useRef<number>(0);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const ctxRef = useRef<AudioContext | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+
+  const startVisualizer = () => {
+    const audio = audioRef.current;
+    const canvas = canvasRef.current;
+    if (!audio || !canvas) return;
+
+    if (!ctxRef.current) {
+      const audioCtx = new AudioContext();
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      const source = audioCtx.createMediaElementSource(audio);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      ctxRef.current = audioCtx;
+      analyserRef.current = analyser;
+      sourceRef.current = source;
+    }
+
+    const analyser = analyserRef.current!;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    const ctx = canvas.getContext("2d")!;
+
+    const draw = () => {
+      animFrameRef.current = requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArray);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const barWidth = (canvas.width / bufferLength) * 2;
+      let x = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        const barHeight = (dataArray[i] / 255) * canvas.height;
+        const alpha = 0.4 + (dataArray[i] / 255) * 0.6;
+        ctx.fillStyle = `rgba(21, 176, 151, ${alpha})`;
+        ctx.fillRect(x, canvas.height - barHeight, barWidth - 2, barHeight);
+        x += barWidth;
+      }
+    };
+    draw();
+  };
+
+  const stopVisualizer = () => {
+    cancelAnimationFrame(animFrameRef.current);
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      ctx?.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  };
+
+  useEffect(() => {
+    return () => { cancelAnimationFrame(animFrameRef.current); ctxRef.current?.close(); };
+  }, []);
 
   return (
-    <div className="p-8 text-center">
-      <Mic size={48} className="mx-auto mb-4" style={{ color: "var(--teal-bright)" }} />
-      <p className="font-semibold mb-4" style={{ color: "var(--navy)" }}>{title}</p>
+    <div className="p-8 flex flex-col items-center gap-4 w-full">
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal-bright)" }}>
+        <Mic size={32} />
+      </div>
+      <p className="font-semibold text-center" style={{ color: "var(--navy)" }}>{title}</p>
+
+      {/* Waveform visualizer */}
+      <canvas
+        ref={canvasRef}
+        width={500}
+        height={80}
+        className="w-full max-w-lg rounded-xl"
+        style={{ backgroundColor: "rgba(11,30,61,0.04)", display: playing ? "block" : "none" }}
+      />
+      {!playing && (
+        <div className="w-full max-w-lg h-20 rounded-xl flex items-center justify-center gap-1" style={{ backgroundColor: "rgba(11,30,61,0.04)" }}>
+          {Array.from({ length: 32 }).map((_, i) => (
+            <div key={i} className="w-1.5 rounded-full" style={{ height: `${8 + Math.sin(i * 0.5) * 8 + Math.random() * 8}px`, backgroundColor: "rgba(21,176,151,0.25)" }} />
+          ))}
+        </div>
+      )}
+
       {!unsupported ? (
         <audio
+          ref={audioRef}
           controls
-          className="w-full max-w-sm"
+          className="w-full max-w-lg"
           onError={() => setUnsupported(true)}
+          onPlay={() => { setPlaying(true); startVisualizer(); }}
+          onPause={() => { setPlaying(false); stopVisualizer(); }}
+          onEnded={() => { setPlaying(false); stopVisualizer(); }}
         >
           <source src={signedUrl} type={audioMimeFromExt(fileName)} />
           <source src={signedUrl} type="audio/mpeg" />
@@ -106,9 +188,8 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
         </audio>
       ) : null}
       {unsupported && (
-        <p className="mt-2 text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>
-          This audio format is not supported by your browser.<br />
-          <span className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>Please contact support if this issue persists.</span>
+        <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>
+          This audio format is not supported by your browser.
         </p>
       )}
     </div>
