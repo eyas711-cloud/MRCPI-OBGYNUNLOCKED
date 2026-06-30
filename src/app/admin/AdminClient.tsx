@@ -665,6 +665,12 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordMsg, setPasswordMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  // Announcement email state
+  const [announcementSubject, setAnnouncementSubject] = useState("Announcement from MRCPI OBGYN Unlocked");
+  const [announcementBody, setAnnouncementBody] = useState("");
+  const [announcementSending, setAnnouncementSending] = useState(false);
+  const [announcementResult, setAnnouncementResult] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+
   // Payments state
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [paymentForm, setPaymentForm] = useState({ student_name: "", student_email: "", amount: "", currency: "SAR", payment_date: new Date().toISOString().slice(0, 10), notes: "" });
@@ -1906,7 +1912,79 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 </form>
               </div>
 
-              {/* 4. Change Password */}
+              {/* 4. Announcement Email */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <Send size={15} style={{ color: "var(--teal-bright)" }} />
+                  <div className="flex-1">
+                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Announcement Email</h2>
+                    <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>Send a custom email to all active enrolled students</p>
+                  </div>
+                </div>
+                <form onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!announcementBody.trim()) return;
+                  setAnnouncementSending(true);
+                  setAnnouncementResult(null);
+                  try {
+                    const res = await fetch("/api/admin/send-announcement", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ subject: announcementSubject, body: announcementBody }),
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      setAnnouncementResult({ type: "ok", text: `Sent to ${data.count} active student${data.count !== 1 ? "s" : ""}.` });
+                      setAnnouncementBody("");
+                    } else {
+                      setAnnouncementResult({ type: "err", text: data.error ?? "Failed to send." });
+                    }
+                  } catch {
+                    setAnnouncementResult({ type: "err", text: "Network error. Please try again." });
+                  }
+                  setAnnouncementSending(false);
+                }} className="p-5 space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Subject *</label>
+                    <input
+                      type="text" required
+                      value={announcementSubject}
+                      onChange={e => setAnnouncementSubject(e.target.value)}
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                      style={{ borderColor: "rgba(15,76,92,0.2)" }}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>
+                      Message *
+                      <span className="font-normal ml-1" style={{ color: "rgba(26,26,26,0.45)" }}>— write your announcement below</span>
+                    </label>
+                    <textarea
+                      required rows={8}
+                      value={announcementBody}
+                      onChange={e => setAnnouncementBody(e.target.value)}
+                      placeholder={"Dear students,\n\nWe are pleased to announce that new recorded sessions have been added to your dashboard.\n\nBest regards,\nDr. Einas Diab"}
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none resize-none"
+                      style={{ borderColor: "rgba(15,76,92,0.2)", fontFamily: "inherit", lineHeight: "1.6" }}
+                    />
+                  </div>
+                  <div className="rounded-lg p-3 text-xs" style={{ backgroundColor: "rgba(21,176,151,0.07)", color: "rgba(26,26,26,0.6)", border: "1px solid rgba(21,176,151,0.18)" }}>
+                    This will be sent to all students with <strong>active</strong> status. The email will be signed by MRCPI OBGYN Unlocked.
+                  </div>
+                  {announcementResult && (
+                    <p className="text-sm font-medium" style={{ color: announcementResult.type === "ok" ? "var(--teal)" : "#dc2626" }}>
+                      {announcementResult.type === "ok" ? <span className="flex items-center gap-1.5"><CheckCircle size={14} />{announcementResult.text}</span> : announcementResult.text}
+                    </p>
+                  )}
+                  <button type="submit" disabled={announcementSending || !announcementBody.trim()}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                    style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                    {announcementSending ? <><Loader size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send Announcement</>}
+                  </button>
+                </form>
+              </div>
+
+              {/* 5. Change Password */}
               <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                 <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
                   <Shield size={15} style={{ color: "var(--teal)" }} />
