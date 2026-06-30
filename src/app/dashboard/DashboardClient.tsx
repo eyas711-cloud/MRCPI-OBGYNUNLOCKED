@@ -174,11 +174,11 @@ function FileViewer({
         <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center min-h-[400px]">
           {isVimeo ? (
             embedUrl ? (
-              <div className="w-full" style={{ aspectRatio: "16/9" }}>
+              <div className="w-full h-full" style={{ minHeight: "70vh" }}>
                 <iframe
                   src={embedUrl}
-                  className="w-full h-full"
-                  style={{ minHeight: "400px" }}
+                  className="w-full"
+                  style={{ height: "70vh" }}
                   title={item.title}
                   allow="autoplay; fullscreen; picture-in-picture"
                   allowFullScreen
