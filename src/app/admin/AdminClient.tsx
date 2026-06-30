@@ -90,40 +90,122 @@ function audioMimeFromExt(fileName: string): string {
   return (ext && map[ext]) || "audio/mpeg";
 }
 
+function fmtTime(s: number) {
+  const m = Math.floor(s / 60);
+  return `${m}:${Math.floor(s % 60).toString().padStart(2, "0")}`;
+}
+
 function AudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fileName: string; title: string }) {
   const [unsupported, setUnsupported] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef<number>(0);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+
+  const initVisualizer = async () => {
+    const audio = audioRef.current;
+    const canvas = canvasRef.current;
+    if (!audio || !canvas) return;
+    if (!audioCtxRef.current) {
+      const audioCtx = new AudioContext();
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 128;
+      const source = audioCtx.createMediaElementSource(audio);
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      audioCtxRef.current = audioCtx;
+      analyserRef.current = analyser;
+    }
+    if (audioCtxRef.current.state === "suspended") await audioCtxRef.current.resume();
+    const analyser = analyserRef.current!;
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    const ctx = canvas.getContext("2d")!;
+    const draw = () => {
+      animRef.current = requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(data);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const bw = (canvas.width / data.length) * 2;
+      let x = 0;
+      for (let i = 0; i < data.length; i++) {
+        const h = (data[i] / 255) * canvas.height;
+        ctx.fillStyle = `rgba(21,176,151,${0.4 + (data[i] / 255) * 0.6})`;
+        ctx.fillRect(x, canvas.height - h, bw - 2, h);
+        x += bw;
+      }
+    };
+    draw();
+  };
+
+  const stopVisualizer = () => {
+    cancelAnimationFrame(animRef.current);
+    const canvas = canvasRef.current;
+    if (canvas) canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const togglePlay = () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    playing ? audio.pause() : audio.play();
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    const bar = progressRef.current;
+    const audio = audioRef.current;
+    if (!bar || !audio || !duration) return;
+    const rect = bar.getBoundingClientRect();
+    audio.currentTime = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width)) * duration;
+  };
+
+  useEffect(() => () => { cancelAnimationFrame(animRef.current); audioCtxRef.current?.close(); }, []);
+
+  const pct = duration ? (currentTime / duration) * 100 : 0;
+
+  if (unsupported) return (
+    <div className="p-8 text-center space-y-3">
+      <Mic size={40} className="mx-auto" style={{ color: "var(--teal-bright)" }} />
+      <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>Format not supported in browser.</p>
+      <a href={signedUrl} download={fileName} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm" style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+        <Download size={14} /> Download to listen
+      </a>
+    </div>
+  );
 
   return (
-    <div className="p-8 text-center">
-      <Mic size={48} className="mx-auto mb-4" style={{ color: "var(--teal-bright)" }} />
-      <p className="font-semibold mb-4" style={{ color: "var(--navy)" }}>{title}</p>
-      {!unsupported ? (
-        <audio
-          controls
-          className="w-full max-w-sm"
-          onError={() => setUnsupported(true)}
-        >
-          <source src={signedUrl} type={audioMimeFromExt(fileName)} />
-          <source src={signedUrl} type="audio/mpeg" />
-          <source src={signedUrl} type="audio/mp4" />
-        </audio>
-      ) : null}
-      {unsupported && (
-        <div className="mt-2 space-y-3">
-          <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>
-            This file format cannot be played in the browser.<br />
-            <span className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>Supported formats: MP3, M4A, WAV, OGG</span>
-          </p>
-          <a
-            href={signedUrl}
-            download={fileName}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg font-semibold text-sm"
-            style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}
-          >
-            <Download size={14} /> Download to listen
-          </a>
+    <div className="p-8 flex flex-col items-center gap-5 w-full">
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal-bright)" }}>
+        <Mic size={32} />
+      </div>
+      <p className="font-semibold text-center text-lg" style={{ color: "var(--navy)" }}>{title}</p>
+      <canvas ref={canvasRef} width={600} height={80} className="w-full max-w-xl rounded-xl" style={{ backgroundColor: "rgba(11,30,61,0.04)", minHeight: "80px" }} />
+      <div className="w-full max-w-xl flex flex-col gap-3">
+        <div ref={progressRef} onClick={handleSeek} className="w-full h-3 rounded-full cursor-pointer relative" style={{ backgroundColor: "rgba(11,30,61,0.1)" }}>
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: "var(--teal-bright)" }} />
+          <div className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow border-2 border-white" style={{ left: `calc(${pct}% - 8px)`, backgroundColor: "var(--teal-bright)" }} />
         </div>
-      )}
+        <div className="flex items-center gap-4">
+          <button onClick={togglePlay} className="w-12 h-12 rounded-full flex items-center justify-center text-white flex-shrink-0 hover:opacity-90" style={{ backgroundColor: "var(--teal-bright)" }}>
+            {playing
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>}
+          </button>
+          <span className="text-sm font-mono" style={{ color: "rgba(26,26,26,0.5)" }}>{fmtTime(currentTime)} / {fmtTime(duration)}</span>
+        </div>
+      </div>
+      <audio ref={audioRef} onError={() => setUnsupported(true)}
+        onPlay={() => { setPlaying(true); initVisualizer(); }}
+        onPause={() => { setPlaying(false); stopVisualizer(); }}
+        onEnded={() => { setPlaying(false); stopVisualizer(); setCurrentTime(0); }}
+        onTimeUpdate={() => setCurrentTime(audioRef.current?.currentTime ?? 0)}
+        onLoadedMetadata={() => setDuration(audioRef.current?.duration ?? 0)}>
+        <source src={signedUrl} type={audioMimeFromExt(fileName)} />
+        <source src={signedUrl} type="audio/mpeg" />
+        <source src={signedUrl} type="audio/mp4" />
+      </audio>
     </div>
   );
 }

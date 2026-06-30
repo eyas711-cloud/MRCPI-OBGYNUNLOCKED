@@ -105,7 +105,7 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
   const ctxRef = useRef<AudioContext | null>(null);
   const progressRef = useRef<HTMLDivElement>(null);
 
-  const startVisualizer = () => {
+  const startVisualizer = async () => {
     const audio = audioRef.current;
     const canvas = canvasRef.current;
     if (!audio || !canvas) return;
@@ -119,6 +119,7 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
       ctxRef.current = audioCtx;
       analyserRef.current = analyser;
     }
+    if (ctxRef.current.state === "suspended") await ctxRef.current.resume();
     const analyser = analyserRef.current!;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
