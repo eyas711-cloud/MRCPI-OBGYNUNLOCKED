@@ -261,11 +261,11 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   // ── Review state ─────────────────────────────────────────────────────────────
   // Ping last_seen every 60 seconds
   useEffect(() => {
-    const ping = () => supabase.from("profiles").update({ last_seen: new Date().toISOString() }).eq("id", user.id);
+    const ping = () => fetch("/api/ping", { method: "POST" });
     ping();
     const interval = setInterval(ping, 60000);
     return () => clearInterval(interval);
-  }, [user.id]);
+  }, []);
 
   const [myReview, setMyReview] = useState<{ id: string; rating: number; review_text: string; status: string } | null | undefined>(undefined);
   const [reviewForm, setReviewForm] = useState({ rating: 5, review_text: "" });
