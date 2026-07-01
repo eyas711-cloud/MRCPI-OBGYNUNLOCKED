@@ -619,7 +619,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
                 <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{previewItem.item.file_name} · {fmtSize(previewItem.item.file_size)}</p>
               </div>
               <div className="flex items-center gap-2 ml-4">
-                <
+                <a
                   href={previewItem.url}
                   download={previewItem.item.file_name}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
