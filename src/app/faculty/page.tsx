@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Award, BookOpen, Stethoscope } from "lucide-react";
 
 const credentials = [
+  { title: "Membership of Obstetrics and Gynaecology of the Royal College of Physicians of Ireland", date: "", institution: "Royal College of Physicians of Ireland", category: "MRCPI" },
   { title: "Sexual Health Diploma", date: "February 2023", institution: "American University of Science and Technology", category: "Clinical" },
   { title: "Mini Masters of Family Counselling & Mental Health", date: "January 2023", institution: "American University of Science and Technology", category: "Mental Health" },
   { title: "Infection Control Diploma", date: "December 2022", institution: "American University of Science and Technology", category: "Clinical" },
