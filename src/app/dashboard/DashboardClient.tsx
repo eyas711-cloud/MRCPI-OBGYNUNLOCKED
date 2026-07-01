@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   FileText, Image, Video, Mic, ChevronRight, ChevronLeft,
   Play, Bell, LogOut, Award, Search, X, Loader,
-  BookOpen, Star, MessageSquare, CheckCircle, Clock, Maximize2,
+  BookOpen, Star, MessageSquare, CheckCircle, Clock, Maximize2, Minimize2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -242,15 +242,24 @@ function FileViewer({
   const embedUrl = isVimeo ? getVimeoEmbedUrl(item.storage_path) : null;
 
   const pdfWrapperRef = useRef<HTMLDivElement>(null);
+  const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
+  useEffect(() => {
+    const handler = () => setIsPdfFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
   const openFullscreen = () => {
-    const el = pdfWrapperRef.current as HTMLDivElement & {
-      mozRequestFullScreen?: () => void;
-      webkitRequestFullscreen?: () => void;
-    } | null;
+    const el = pdfWrapperRef.current as HTMLDivElement & { mozRequestFullScreen?: () => void; webkitRequestFullscreen?: () => void; } | null;
     if (!el) return;
     if (el.requestFullscreen) el.requestFullscreen();
     else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
     else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  };
+  const exitFullscreen = () => {
+    const doc = document as Document & { mozCancelFullScreen?: () => void; webkitExitFullscreen?: () => void; };
+    if (doc.exitFullscreen) doc.exitFullscreen();
+    else if (doc.mozCancelFullScreen) doc.mozCancelFullScreen();
+    else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
   };
 
   useEffect(() => {
@@ -279,8 +288,8 @@ function FileViewer({
             {!isVimeo && <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>}
           </div>
           {fileType === "pdf" && url && (
-            <button onClick={openFullscreen} aria-label="Fullscreen" title="Fullscreen" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-2" style={{ border: "1.5px solid rgba(15,76,92,0.18)" }}>
-              <Maximize2 size={16} style={{ color: "var(--navy)" }} />
+            <button onClick={isPdfFullscreen ? exitFullscreen : openFullscreen} aria-label={isPdfFullscreen ? "Exit Fullscreen" : "Fullscreen"} title={isPdfFullscreen ? "Exit Fullscreen" : "Fullscreen"} className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-2" style={{ border: "1.5px solid rgba(15,76,92,0.18)" }}>
+              {isPdfFullscreen ? <Minimize2 size={16} style={{ color: "var(--navy)" }} /> : <Maximize2 size={16} style={{ color: "var(--navy)" }} />}
             </button>
           )}
           <button onClick={onClose} aria-label="Close" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-2">

@@ -5,7 +5,7 @@ import {
   Users, BookOpen, Video, FileText, Calendar, BarChart3,
   Upload, Plus, Trash2, Settings, Shield, Bell,
   TrendingUp, DollarSign, Eye, CheckCircle, X, Loader, LogOut,
-  Image, Mic, MessageSquare, Star, Download, Send, Pencil, Maximize2,
+  Image, Mic, MessageSquare, Star, Download, Send, Pencil, Maximize2, Minimize2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
@@ -224,12 +224,24 @@ function ContentPanel({ user }: { user: AdminUser }) {
   const [loadingItems, setLoadingItems] = useState(false);
   const [previewItem, setPreviewItem] = useState<{ item: ContentItem; url: string } | null>(null);
   const adminPdfWrapperRef = useRef<HTMLDivElement>(null);
+  const [isAdminPdfFullscreen, setIsAdminPdfFullscreen] = useState(false);
+  useEffect(() => {
+    const handler = () => setIsAdminPdfFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", handler);
+    return () => document.removeEventListener("fullscreenchange", handler);
+  }, []);
   const openAdminPdfFullscreen = () => {
     const el = adminPdfWrapperRef.current as HTMLDivElement & { mozRequestFullScreen?: () => void; webkitRequestFullscreen?: () => void; } | null;
     if (!el) return;
     if (el.requestFullscreen) el.requestFullscreen();
     else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
     else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  };
+  const exitAdminPdfFullscreen = () => {
+    const doc = document as Document & { mozCancelFullScreen?: () => void; webkitExitFullscreen?: () => void; };
+    if (doc.exitFullscreen) doc.exitFullscreen();
+    else if (doc.mozCancelFullScreen) doc.mozCancelFullScreen();
+    else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
   };
   const [editItem, setEditItem] = useState<ContentItem | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "" });
@@ -620,8 +632,8 @@ function ContentPanel({ user }: { user: AdminUser }) {
               </div>
               <div className="flex items-center gap-2 ml-4">
                 {section.fileLabel === "PDF" && (
-                  <button onClick={openAdminPdfFullscreen} aria-label="Fullscreen" title="Fullscreen" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100" style={{ border: "1.5px solid rgba(15,76,92,0.18)" }}>
-                    <Maximize2 size={16} style={{ color: "var(--navy)" }} />
+                  <button onClick={isAdminPdfFullscreen ? exitAdminPdfFullscreen : openAdminPdfFullscreen} aria-label={isAdminPdfFullscreen ? "Exit Fullscreen" : "Fullscreen"} title={isAdminPdfFullscreen ? "Exit Fullscreen" : "Fullscreen"} className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100" style={{ border: "1.5px solid rgba(15,76,92,0.18)" }}>
+                    {isAdminPdfFullscreen ? <Minimize2 size={16} style={{ color: "var(--navy)" }} /> : <Maximize2 size={16} style={{ color: "var(--navy)" }} />}
                   </button>
                 )}
                 <a
