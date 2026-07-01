@@ -223,9 +223,9 @@ function ContentPanel({ user }: { user: AdminUser }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [previewItem, setPreviewItem] = useState<{ item: ContentItem; url: string } | null>(null);
-  const adminPdfIframeRef = useRef<HTMLIFrameElement>(null);
+  const adminPdfWrapperRef = useRef<HTMLDivElement>(null);
   const openAdminPdfFullscreen = () => {
-    const el = adminPdfIframeRef.current as HTMLIFrameElement & { mozRequestFullScreen?: () => void; webkitRequestFullscreen?: () => void; } | null;
+    const el = adminPdfWrapperRef.current as HTMLDivElement & { mozRequestFullScreen?: () => void; webkitRequestFullscreen?: () => void; } | null;
     if (!el) return;
     if (el.requestFullscreen) el.requestFullscreen();
     else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
@@ -619,12 +619,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
                 <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{previewItem.item.file_name} · {fmtSize(previewItem.item.file_size)}</p>
               </div>
               <div className="flex items-center gap-2 ml-4">
-                {(section.fileLabel === "PDF") && (
-                  <button onClick={openAdminPdfFullscreen} aria-label="Fullscreen" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100" title="Fullscreen">
-                    <Maximize2 size={16} style={{ color: "var(--navy)" }} />
-                  </button>
-                )}
-                <a
+                <
                   href={previewItem.url}
                   download={previewItem.item.file_name}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
@@ -667,7 +662,10 @@ function ContentPanel({ user }: { user: AdminUser }) {
                   return <p className="text-sm text-red-500">Invalid Vimeo URL</p>;
                 })()
               ) : (
-                <iframe ref={adminPdfIframeRef} src={previewItem.url} className="w-full min-h-[500px]" title={previewItem.item.title} style={{ height: "65vh" }} />
+                <div ref={adminPdfWrapperRef} onDoubleClick={openAdminPdfFullscreen} className="w-full flex flex-col" style={{ height: "65vh", cursor: "zoom-in" }} title="Double-click for fullscreen">
+                  <iframe src={previewItem.url} className="w-full flex-1" style={{ height: "100%" }} title={previewItem.item.title} />
+                  <p className="text-center text-xs py-1" style={{ color: "rgba(26,26,26,0.35)" }}>Double-click to fullscreen</p>
+                </div>
               )}
             </div>
           </div>

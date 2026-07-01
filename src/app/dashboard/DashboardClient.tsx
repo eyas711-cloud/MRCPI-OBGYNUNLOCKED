@@ -241,8 +241,9 @@ function FileViewer({
   const isVimeo = item.file_name === "vimeo" || item.storage_path?.startsWith("http");
   const embedUrl = isVimeo ? getVimeoEmbedUrl(item.storage_path) : null;
 
+  const pdfWrapperRef = useRef<HTMLDivElement>(null);
   const openFullscreen = () => {
-    const el = pdfIframeRef.current as HTMLIFrameElement & {
+    const el = pdfWrapperRef.current as HTMLDivElement & {
       mozRequestFullScreen?: () => void;
       webkitRequestFullscreen?: () => void;
     } | null;
@@ -277,11 +278,6 @@ function FileViewer({
             <p className="font-semibold text-sm truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
             {!isVimeo && <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>}
           </div>
-          {fileType === "pdf" && url && (
-            <button onClick={openFullscreen} aria-label="Fullscreen" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100" title="Fullscreen">
-              <Maximize2 size={16} style={{ color: "var(--navy)" }} />
-            </button>
-          )}
           <button onClick={onClose} aria-label="Close" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-4">
             <X size={16} style={{ color: "var(--navy)" }} />
           </button>
@@ -306,7 +302,10 @@ function FileViewer({
           ) : !url ? (
             <Loader size={24} className="animate-spin" style={{ color: "var(--teal)" }} />
           ) : fileType === "pdf" ? (
-            <iframe ref={pdfIframeRef} src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full h-full min-h-[500px]" title={item.title} style={{ height: "65vh" }} />
+            <div ref={pdfWrapperRef} onDoubleClick={openFullscreen} className="w-full h-full flex flex-col" style={{ height: "65vh", cursor: "zoom-in" }} title="Double-click for fullscreen">
+              <iframe ref={pdfIframeRef} src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full flex-1" style={{ height: "100%" }} title={item.title} />
+              <p className="text-center text-xs py-1" style={{ color: "rgba(26,26,26,0.35)" }}>Double-click to fullscreen</p>
+            </div>
           ) : fileType === "image" ? (
             <img
               src={url} alt={item.title}
