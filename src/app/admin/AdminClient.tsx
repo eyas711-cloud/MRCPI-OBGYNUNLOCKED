@@ -495,7 +495,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
 
             <button
               type="submit"
-              disabled={uploading || (activeSec !== "videos" && !file) || (section.hasSubs && !activeSub)}
+              disabled={uploading || (activeSec !== "videos" && activeSec !== "recorded-sessions" && !file) || (section.hasSubs && !activeSub)}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-40"
               style={{ backgroundColor: section.color === "var(--navy)" ? "var(--navy)" : section.color, color: section.color === "var(--navy)" ? "white" : "var(--navy)" }}
             >
