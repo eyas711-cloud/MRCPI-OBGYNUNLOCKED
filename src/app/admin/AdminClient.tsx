@@ -849,8 +849,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Success Stories") fetchTestimonials();
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
-    if (activeNav === "Payments") { fetchPayments(); fetchBatches(); }
-    if (activeNav === "Settings") { fetchSettings(); fetchReminderStudents(); }
+    if (activeNav === "Payments") { fetchPayments(); fetchBatches(); fetchReminderStudents(); }
+    if (activeNav === "Settings") { fetchSettings(); }
     if (activeNav === "Courses") fetchSettings();
   }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents]);
 
@@ -2037,6 +2037,167 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 </div>
               )}
 
+              {/* Payment Reminders */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <Bell size={15} style={{ color: "var(--gold)" }} />
+                  <div className="flex-1">
+                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Payment Reminders</h2>
+                    <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>Send pending-balance reminders to students from your batch records</p>
+                  </div>
+                  {dueIds.length > 0 && (
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(201,162,39,0.15)", color: "var(--gold)" }}>
+                      {dueIds.length} due
+                    </span>
+                  )}
+                </div>
+                <div className="p-5 space-y-5">
+
+                  {/* Interval selector */}
+                  <div>
+                    <p className="text-xs font-semibold mb-2" style={{ color: "var(--navy)" }}>Reminder Interval</p>
+                    <div className="flex gap-2">
+                      {([14, 30] as const).map(d => (
+                        <button key={d} type="button"
+                          onClick={() => { setReminderInterval(d); setDueIds([]); setAdminNotified(false); }}
+                          className="px-5 py-2 rounded-lg text-sm font-semibold border transition-all"
+                          style={{
+                            backgroundColor: reminderInterval === d ? "var(--navy)" : "white",
+                            color: reminderInterval === d ? "white" : "rgba(26,26,26,0.6)",
+                            borderColor: reminderInterval === d ? "var(--navy)" : "rgba(15,76,92,0.2)",
+                          }}>
+                          {d} days
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs mt-2" style={{ color: "rgba(26,26,26,0.45)" }}>
+                      Students who have not been reminded in the last {reminderInterval} days are flagged as due.
+                    </p>
+                  </div>
+
+                  {/* Check & notify */}
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" disabled={checkingDue}
+                      onClick={() => checkDueStudents(reminderInterval, false)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all hover:opacity-90 disabled:opacity-50"
+                      style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", backgroundColor: "white" }}>
+                      {checkingDue ? <><Loader size={13} className="animate-spin" /> Checking…</> : <><Eye size={13} /> Check who is due</>}
+                    </button>
+                    <button type="button" disabled={checkingDue || adminNotified}
+                      onClick={() => checkDueStudents(reminderInterval, true)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all hover:opacity-90 disabled:opacity-50"
+                      style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", backgroundColor: "white" }}>
+                      {adminNotified ? <><CheckCircle size={13} style={{ color: "var(--teal)" }} /> Notified</> : <><Send size={13} /> Notify me by email</>}
+                    </button>
+                  </div>
+
+                  {/* Students list */}
+                  {reminderLoading ? (
+                    <div className="py-6 text-center"><Loader size={16} className="animate-spin mx-auto" style={{ color: "var(--teal)" }} /></div>
+                  ) : reminderStudents.length === 0 ? (
+                    <p className="text-sm py-4 text-center" style={{ color: "rgba(26,26,26,0.4)" }}>No students with pending balances found.</p>
+                  ) : (
+                    <div className="rounded-xl border overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+                      <table className="w-full text-sm border-collapse">
+                        <thead>
+                          <tr style={{ backgroundColor: "rgba(11,30,61,0.04)", borderBottom: "1px solid rgba(15,76,92,0.08)" }}>
+                            {["Student", "Email", "Paid", "Pending", "Last Reminded", ""].map((h, i) => (
+                              <th key={i} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(26,26,26,0.45)" }}>{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {reminderStudents.map(s => {
+                            const isDue = dueIds.includes(s.id);
+                            const result = reminderResults[s.id];
+                            const isSending = sendingReminder === s.id;
+                            const daysSince = s.last_reminded_at
+                              ? Math.floor((Date.now() - new Date(s.last_reminded_at).getTime()) / 86400000)
+                              : null;
+                            return (
+                              <tr key={s.id} style={{ borderBottom: "1px solid rgba(15,76,92,0.06)", backgroundColor: isDue ? "rgba(201,162,39,0.04)" : "transparent" }}>
+                                <td className="px-3 py-3">
+                                  <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{s.student_name}</p>
+                                  {isDue && <span className="text-xs font-semibold" style={{ color: "var(--gold)" }}>● Due now</span>}
+                                </td>
+                                <td className="px-3 py-3 text-xs" style={{ color: s.email ? "rgba(26,26,26,0.7)" : "rgba(26,26,26,0.3)" }}>
+                                  {s.email || <span className="italic">No email — add in Batch Records</span>}
+                                </td>
+                                <td className="px-3 py-3 text-sm font-semibold" style={{ color: "var(--teal)" }}>SAR {Number(s.paid).toLocaleString()}</td>
+                                <td className="px-3 py-3 text-sm font-semibold" style={{ color: "var(--gold)" }}>SAR {Number(s.pending).toLocaleString()}</td>
+                                <td className="px-3 py-3 text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>
+                                  {s.last_reminded_at
+                                    ? <>{new Date(s.last_reminded_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}<br/><span style={{ color: "rgba(26,26,26,0.35)" }}>{daysSince}d ago</span></>
+                                    : <span style={{ color: "rgba(26,26,26,0.35)" }}>Never</span>}
+                                </td>
+                                <td className="px-3 py-3">
+                                  <div className="flex flex-col gap-1.5 items-end">
+                                    {result && (
+                                      <p className="text-xs font-medium" style={{ color: result.type === "ok" ? "var(--teal)" : "#dc2626" }}>{result.text}</p>
+                                    )}
+                                    <button
+                                      disabled={isSending || !s.email}
+                                      onClick={async () => {
+                                        setSendingReminder(s.id);
+                                        try {
+                                          const res = await fetch("/api/admin/send-payment-reminder", {
+                                            method: "POST",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ studentId: s.id }),
+                                          });
+                                          const data = await res.json();
+                                          setReminderResults(prev => ({
+                                            ...prev,
+                                            [s.id]: res.ok ? { type: "ok", text: "Sent ✓" } : { type: "err", text: data.error ?? "Failed" },
+                                          }));
+                                          if (res.ok) {
+                                            setReminderStudents(prev => prev.map(r => r.id === s.id ? { ...r, last_reminded_at: new Date().toISOString() } : r));
+                                            setDueIds(prev => prev.filter(id => id !== s.id));
+                                          }
+                                        } catch {
+                                          setReminderResults(prev => ({ ...prev, [s.id]: { type: "err", text: "Network error" } }));
+                                        }
+                                        setSendingReminder(null);
+                                      }}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-40"
+                                      style={{ backgroundColor: isDue ? "var(--gold)" : "rgba(21,176,151,0.1)", color: isDue ? "var(--navy)" : "var(--teal)" }}>
+                                      {isSending ? <><Loader size={11} className="animate-spin" /> Sending…</> : <><Send size={11} /> Send Reminder</>}
+                                    </button>
+                                    {s.email && (
+                                      <button
+                                        disabled={isSending}
+                                        onClick={async () => {
+                                          setSendingReminder(s.id + "_test");
+                                          try {
+                                            const res = await fetch("/api/admin/send-payment-reminder", {
+                                              method: "POST",
+                                              headers: { "Content-Type": "application/json" },
+                                              body: JSON.stringify({ studentId: s.id, testOnly: true }),
+                                            });
+                                            setReminderResults(prev => ({
+                                              ...prev,
+                                              [s.id]: res.ok ? { type: "ok", text: "Test sent to your inbox" } : { type: "err", text: "Failed" },
+                                            }));
+                                          } catch { /* ignore */ }
+                                          setSendingReminder(null);
+                                        }}
+                                        className="text-xs underline"
+                                        style={{ color: "rgba(26,26,26,0.4)" }}>
+                                        Test
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Payments list */}
               <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                 <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
@@ -2306,168 +2467,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 </form>
               </div>
 
-              {/* 4. Payment Reminders */}
-              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
-                <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
-                  <Bell size={15} style={{ color: "var(--gold)" }} />
-                  <div className="flex-1">
-                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Payment Reminders</h2>
-                    <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>Send pending-balance reminders to students from your batch records</p>
-                  </div>
-                  {dueIds.length > 0 && (
-                    <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(201,162,39,0.15)", color: "var(--gold)" }}>
-                      {dueIds.length} due
-                    </span>
-                  )}
-                </div>
-                <div className="p-5 space-y-5">
-
-                  {/* Interval selector */}
-                  <div>
-                    <p className="text-xs font-semibold mb-2" style={{ color: "var(--navy)" }}>Reminder Interval</p>
-                    <div className="flex gap-2">
-                      {([14, 30] as const).map(d => (
-                        <button key={d} type="button"
-                          onClick={() => { setReminderInterval(d); setDueIds([]); setAdminNotified(false); }}
-                          className="px-5 py-2 rounded-lg text-sm font-semibold border transition-all"
-                          style={{
-                            backgroundColor: reminderInterval === d ? "var(--navy)" : "white",
-                            color: reminderInterval === d ? "white" : "rgba(26,26,26,0.6)",
-                            borderColor: reminderInterval === d ? "var(--navy)" : "rgba(15,76,92,0.2)",
-                          }}>
-                          {d} days
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs mt-2" style={{ color: "rgba(26,26,26,0.45)" }}>
-                      Students who have not been reminded in the last {reminderInterval} days are flagged as due.
-                    </p>
-                  </div>
-
-                  {/* Check & notify */}
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" disabled={checkingDue}
-                      onClick={() => checkDueStudents(reminderInterval, false)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all hover:opacity-90 disabled:opacity-50"
-                      style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", backgroundColor: "white" }}>
-                      {checkingDue ? <><Loader size={13} className="animate-spin" /> Checking…</> : <><Eye size={13} /> Check who is due</>}
-                    </button>
-                    <button type="button" disabled={checkingDue || adminNotified}
-                      onClick={() => checkDueStudents(reminderInterval, true)}
-                      className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all hover:opacity-90 disabled:opacity-50"
-                      style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", backgroundColor: "white" }}>
-                      {adminNotified ? <><CheckCircle size={13} style={{ color: "var(--teal)" }} /> Notified</> : <><Send size={13} /> Notify me by email</>}
-                    </button>
-                  </div>
-
-                  {/* Students list */}
-                  {reminderLoading ? (
-                    <div className="py-6 text-center"><Loader size={16} className="animate-spin mx-auto" style={{ color: "var(--teal)" }} /></div>
-                  ) : reminderStudents.length === 0 ? (
-                    <p className="text-sm py-4 text-center" style={{ color: "rgba(26,26,26,0.4)" }}>No students with pending balances found.</p>
-                  ) : (
-                    <div className="rounded-xl border overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
-                      <table className="w-full text-sm border-collapse">
-                        <thead>
-                          <tr style={{ backgroundColor: "rgba(11,30,61,0.04)", borderBottom: "1px solid rgba(15,76,92,0.08)" }}>
-                            {["Student", "Email", "Paid", "Pending", "Last Reminded", ""].map((h, i) => (
-                              <th key={i} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(26,26,26,0.45)" }}>{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {reminderStudents.map(s => {
-                            const isDue = dueIds.includes(s.id);
-                            const result = reminderResults[s.id];
-                            const isSending = sendingReminder === s.id;
-                            const daysSince = s.last_reminded_at
-                              ? Math.floor((Date.now() - new Date(s.last_reminded_at).getTime()) / 86400000)
-                              : null;
-                            return (
-                              <tr key={s.id} style={{ borderBottom: "1px solid rgba(15,76,92,0.06)", backgroundColor: isDue ? "rgba(201,162,39,0.04)" : "transparent" }}>
-                                <td className="px-3 py-3">
-                                  <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{s.student_name}</p>
-                                  {isDue && <span className="text-xs font-semibold" style={{ color: "var(--gold)" }}>● Due now</span>}
-                                </td>
-                                <td className="px-3 py-3 text-xs" style={{ color: s.email ? "rgba(26,26,26,0.7)" : "rgba(26,26,26,0.3)" }}>
-                                  {s.email || <span className="italic">No email — add in Batch Records</span>}
-                                </td>
-                                <td className="px-3 py-3 text-sm font-semibold" style={{ color: "var(--teal)" }}>SAR {Number(s.paid).toLocaleString()}</td>
-                                <td className="px-3 py-3 text-sm font-semibold" style={{ color: "var(--gold)" }}>SAR {Number(s.pending).toLocaleString()}</td>
-                                <td className="px-3 py-3 text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>
-                                  {s.last_reminded_at
-                                    ? <>{new Date(s.last_reminded_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}<br/><span style={{ color: "rgba(26,26,26,0.35)" }}>{daysSince}d ago</span></>
-                                    : <span style={{ color: "rgba(26,26,26,0.35)" }}>Never</span>}
-                                </td>
-                                <td className="px-3 py-3">
-                                  <div className="flex flex-col gap-1.5 items-end">
-                                    {result && (
-                                      <p className="text-xs font-medium" style={{ color: result.type === "ok" ? "var(--teal)" : "#dc2626" }}>{result.text}</p>
-                                    )}
-                                    <button
-                                      disabled={isSending || !s.email}
-                                      onClick={async () => {
-                                        setSendingReminder(s.id);
-                                        try {
-                                          const res = await fetch("/api/admin/send-payment-reminder", {
-                                            method: "POST",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ studentId: s.id }),
-                                          });
-                                          const data = await res.json();
-                                          setReminderResults(prev => ({
-                                            ...prev,
-                                            [s.id]: res.ok ? { type: "ok", text: "Sent ✓" } : { type: "err", text: data.error ?? "Failed" },
-                                          }));
-                                          if (res.ok) {
-                                            setReminderStudents(prev => prev.map(r => r.id === s.id ? { ...r, last_reminded_at: new Date().toISOString() } : r));
-                                            setDueIds(prev => prev.filter(id => id !== s.id));
-                                          }
-                                        } catch {
-                                          setReminderResults(prev => ({ ...prev, [s.id]: { type: "err", text: "Network error" } }));
-                                        }
-                                        setSendingReminder(null);
-                                      }}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-                                      style={{ backgroundColor: isDue ? "var(--gold)" : "rgba(21,176,151,0.1)", color: isDue ? "var(--navy)" : "var(--teal)" }}>
-                                      {isSending ? <><Loader size={11} className="animate-spin" /> Sending…</> : <><Send size={11} /> Send Reminder</>}
-                                    </button>
-                                    {s.email && (
-                                      <button
-                                        disabled={isSending}
-                                        onClick={async () => {
-                                          setSendingReminder(s.id + "_test");
-                                          try {
-                                            const res = await fetch("/api/admin/send-payment-reminder", {
-                                              method: "POST",
-                                              headers: { "Content-Type": "application/json" },
-                                              body: JSON.stringify({ studentId: s.id, testOnly: true }),
-                                            });
-                                            setReminderResults(prev => ({
-                                              ...prev,
-                                              [s.id]: res.ok ? { type: "ok", text: "Test sent to your inbox" } : { type: "err", text: "Failed" },
-                                            }));
-                                          } catch { /* ignore */ }
-                                          setSendingReminder(null);
-                                        }}
-                                        className="text-xs underline"
-                                        style={{ color: "rgba(26,26,26,0.4)" }}>
-                                        Test
-                                      </button>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 6. Announcement Email */}
+              {/* 4. Announcement Email */}
               <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                 <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
                   <Send size={15} style={{ color: "var(--teal-bright)" }} />
