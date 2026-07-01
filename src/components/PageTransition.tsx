@@ -39,7 +39,7 @@ export default function PageTransition() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "rgba(11,30,61,0.55)",
+        backgroundColor: "rgba(107,30,46,0.55)",
         backdropFilter: "blur(2px)",
         opacity: fading ? 0 : 1,
         transition: "opacity 0.4s ease",
