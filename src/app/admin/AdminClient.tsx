@@ -424,7 +424,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
               />
             </div>
 
-            {activeSec === "videos" ? (
+            {(activeSec === "videos" || activeSec === "recorded-sessions") ? (
               /* Vimeo URL input */
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Vimeo URL *</label>
@@ -436,7 +436,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
                   style={{ borderColor: "rgba(15,76,92,0.2)" }}
                 />
                 <p className="text-xs mt-1.5" style={{ color: "rgba(26,26,26,0.45)" }}>
-                  Upload the video to Vimeo, then paste the URL here. Students will watch it embedded on this platform.
+                  Upload the session to Vimeo, then paste the URL here. Students will watch it embedded on this platform.
                 </p>
               </div>
             ) : (
