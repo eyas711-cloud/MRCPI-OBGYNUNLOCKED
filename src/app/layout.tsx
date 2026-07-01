@@ -4,6 +4,7 @@ import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/components/AuthProvider";
 import AnnouncementBanner from "@/components/AnnouncementBanner";
+import PageTransition from "@/components/PageTransition";
 
 export const metadata: Metadata = {
   title: {
@@ -46,6 +47,7 @@ export default function RootLayout({
           >
             Skip to main content
           </a>
+          <PageTransition />
           <AnnouncementBanner />
           <Nav />
           <main id="main-content">{children}</main>
