@@ -704,6 +704,26 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [announcementResult, setAnnouncementResult] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [announcementPreview, setAnnouncementPreview] = useState(false);
 
+  // Feedback state
+  const [feedbackModal, setFeedbackModal] = useState<{ studentId: string; studentName: string } | null>(null);
+  const [feedbackForm, setFeedbackForm] = useState({ type: "general" as "general" | "progress", title: "", content: "" });
+  const [feedbackSaving, setFeedbackSaving] = useState(false);
+  const [feedbackDone, setFeedbackDone] = useState(false);
+  const [sessionFeedbackModal, setSessionFeedbackModal] = useState<{ bookingId: string; studentId: string; studentName: string; sessionDate: string } | null>(null);
+  const [sessionFeedbackForm, setSessionFeedbackForm] = useState({
+    overall_score: "",
+    overall_notes: "",
+    stations: [
+      { name: "History Taking", score: "", max: 10, comments: "" },
+      { name: "Clinical Examination", score: "", max: 10, comments: "" },
+      { name: "Communication & Counselling", score: "", max: 10, comments: "" },
+      { name: "Management Plan", score: "", max: 10, comments: "" },
+      { name: "Professionalism", score: "", max: 10, comments: "" },
+    ],
+  });
+  const [sessionFeedbackSaving, setSessionFeedbackSaving] = useState(false);
+  const [sessionFeedbackDone, setSessionFeedbackDone] = useState(false);
+
   // Payments state
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [paymentForm, setPaymentForm] = useState({ student_name: "", student_email: "", amount: "", currency: "SAR", payment_date: new Date().toISOString().slice(0, 10), notes: "", payment_status: "paid_full" as "paid_full" | "paid_part", total_fee: "", remaining_fee: "" });
@@ -1154,6 +1174,13 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                             <span className="text-xs px-2 py-1 rounded-full capitalize flex-shrink-0" style={{ backgroundColor: "rgba(15,76,92,0.08)", color: "var(--navy)" }}>{s.role}</span>
                             <span className="text-xs px-2.5 py-1 rounded-full font-semibold capitalize flex-shrink-0" style={{ backgroundColor: badgeBg, color: badgeColor }}>{s.status}</span>
                             <div className="flex items-center gap-2 flex-shrink-0">
+                              {s.status === "active" && (
+                                <button onClick={() => { setFeedbackForm({ type: "general", title: "", content: "" }); setFeedbackDone(false); setFeedbackModal({ studentId: s.id, studentName: s.full_name || s.email }); }}
+                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:opacity-90"
+                                  style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--navy)" }}>
+                                  Write Feedback
+                                </button>
+                              )}
                               {s.status === "pending" && (
                                 <>
                                   <button onClick={() => handleStudentAction(s.id, "approve")} disabled={actionLoading === s.id + "approve"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>{actionLoading === s.id + "approve" ? "…" : "Approve"}</button>
@@ -1527,6 +1554,23 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                               }}>
                               {b.status}
                             </span>
+                            {isConfirmed && (
+                              <button onClick={() => {
+                                setSessionFeedbackForm({ overall_score: "", overall_notes: "", stations: [
+                                  { name: "History Taking", score: "", max: 10, comments: "" },
+                                  { name: "Clinical Examination", score: "", max: 10, comments: "" },
+                                  { name: "Communication & Counselling", score: "", max: 10, comments: "" },
+                                  { name: "Management Plan", score: "", max: 10, comments: "" },
+                                  { name: "Professionalism", score: "", max: 10, comments: "" },
+                                ]});
+                                setSessionFeedbackDone(false);
+                                setSessionFeedbackModal({ bookingId: b.id, studentId: b.user_id ?? "", studentName: b.name, sessionDate: b.date });
+                              }}
+                                className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:opacity-90"
+                                style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--navy)" }}>
+                                Write Scorecard
+                              </button>
+                            )}
                             {confirmSent === b.id ? (
                               <span className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: "rgba(21,176,151,0.1)", color: "var(--teal)" }}>
                                 <CheckCircle size={12} /> Sent!
@@ -2749,6 +2793,147 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   `;
                 })()
               }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── GENERAL FEEDBACK MODAL ── */}
+      {feedbackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.65)" }} onClick={() => setFeedbackModal(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-5 border-b" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Write Feedback</p>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>{feedbackModal.studentName}</p>
+              </div>
+              <button onClick={() => setFeedbackModal(null)} className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-gray-100"><X size={16} /></button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <p className="text-xs font-semibold mb-2" style={{ color: "var(--navy)" }}>Feedback Type</p>
+                <div className="flex gap-3">
+                  {(["general", "progress"] as const).map(t => (
+                    <label key={t} className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" name="fb_type" checked={feedbackForm.type === t} onChange={() => setFeedbackForm(f => ({ ...f, type: t }))} />
+                      <span className="text-sm font-medium" style={{ color: "var(--navy)" }}>{t === "general" ? "General Comment" : "Progress Note"}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Title *</label>
+                <input required value={feedbackForm.title} onChange={e => setFeedbackForm(f => ({ ...f, title: e.target.value }))}
+                  placeholder={feedbackForm.type === "progress" ? "e.g. Week 2 Progress Update" : "e.g. Strong history-taking skills"}
+                  className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Feedback *</label>
+                <textarea required rows={5} value={feedbackForm.content} onChange={e => setFeedbackForm(f => ({ ...f, content: e.target.value }))}
+                  placeholder="Write detailed feedback here…"
+                  className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none resize-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-6">
+              <button onClick={() => setFeedbackModal(null)} className="flex-1 py-3 rounded-xl text-sm font-semibold border" style={{ borderColor: "rgba(15,76,92,0.2)", color: "rgba(26,26,26,0.5)" }}>Cancel</button>
+              <button disabled={feedbackSaving || feedbackDone || !feedbackForm.title || !feedbackForm.content}
+                onClick={async () => {
+                  setFeedbackSaving(true);
+                  await supabase.from("student_feedback").insert([{
+                    student_id: feedbackModal.studentId,
+                    written_by: user.id,
+                    feedback_type: feedbackForm.type,
+                    title: feedbackForm.title.trim(),
+                    content: feedbackForm.content.trim(),
+                  }]);
+                  setFeedbackSaving(false);
+                  setFeedbackDone(true);
+                  setTimeout(() => setFeedbackModal(null), 1200);
+                }}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                {feedbackSaving ? "Saving…" : feedbackDone ? "Saved ✓" : "Save Feedback"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── SESSION SCORECARD MODAL ── */}
+      {sessionFeedbackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.65)" }} onClick={() => setSessionFeedbackModal(null)}>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-6 py-5 border-b flex-shrink-0" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Session Scorecard</p>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>{sessionFeedbackModal.studentName} · {sessionFeedbackModal.sessionDate}</p>
+              </div>
+              <button onClick={() => setSessionFeedbackModal(null)} className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-gray-100"><X size={16} /></button>
+            </div>
+            <div className="flex-1 overflow-auto px-6 py-5 space-y-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--teal)" }}>Station Scores (out of 10)</p>
+                <div className="space-y-3">
+                  {sessionFeedbackForm.stations.map((st, i) => (
+                    <div key={i} className="rounded-xl border p-4" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                      <div className="flex items-center gap-3 mb-2">
+                        <p className="text-sm font-semibold flex-1" style={{ color: "var(--navy)" }}>{st.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <input type="number" min="0" max="10" step="0.5" value={st.score}
+                            onChange={e => setSessionFeedbackForm(f => ({ ...f, stations: f.stations.map((s, j) => j === i ? { ...s, score: e.target.value } : s) }))}
+                            placeholder="—"
+                            className="w-16 px-2 py-1.5 rounded-lg border text-sm text-center font-bold focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
+                          <span className="text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>/ 10</span>
+                        </div>
+                      </div>
+                      <input value={st.comments} onChange={e => setSessionFeedbackForm(f => ({ ...f, stations: f.stations.map((s, j) => j === i ? { ...s, comments: e.target.value } : s) }))}
+                        placeholder="Comments on this station…"
+                        className="w-full px-3 py-2 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.1)" }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="rounded-xl border p-4" style={{ borderColor: "rgba(15,76,92,0.12)", backgroundColor: "rgba(11,30,61,0.02)" }}>
+                <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--teal)" }}>Overall Assessment</p>
+                <div className="flex items-center gap-3 mb-3">
+                  <label className="text-sm font-semibold" style={{ color: "var(--navy)" }}>Overall Score</label>
+                  <input type="number" min="0" max="100" value={sessionFeedbackForm.overall_score}
+                    onChange={e => setSessionFeedbackForm(f => ({ ...f, overall_score: e.target.value }))}
+                    placeholder="—"
+                    className="w-20 px-2 py-1.5 rounded-lg border text-sm text-center font-bold focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
+                  <span className="text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>/ 100</span>
+                </div>
+                <textarea rows={4} value={sessionFeedbackForm.overall_notes}
+                  onChange={e => setSessionFeedbackForm(f => ({ ...f, overall_notes: e.target.value }))}
+                  placeholder="Overall session notes, strengths, areas to improve…"
+                  className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none resize-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 pb-6 pt-4 border-t flex-shrink-0" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+              <button onClick={() => setSessionFeedbackModal(null)} className="flex-1 py-3 rounded-xl text-sm font-semibold border" style={{ borderColor: "rgba(15,76,92,0.2)", color: "rgba(26,26,26,0.5)" }}>Cancel</button>
+              <button disabled={sessionFeedbackSaving || sessionFeedbackDone}
+                onClick={async () => {
+                  setSessionFeedbackSaving(true);
+                  await supabase.from("session_feedback").insert([{
+                    booking_id: sessionFeedbackModal.bookingId || null,
+                    student_id: sessionFeedbackModal.studentId || null,
+                    student_name: sessionFeedbackModal.studentName,
+                    written_by: user.id,
+                    session_date: sessionFeedbackModal.sessionDate,
+                    overall_score: sessionFeedbackForm.overall_score ? parseInt(sessionFeedbackForm.overall_score) : null,
+                    overall_notes: sessionFeedbackForm.overall_notes.trim() || null,
+                    station_scores: sessionFeedbackForm.stations
+                      .filter(s => s.score !== "")
+                      .map(s => ({ name: s.name, score: parseFloat(s.score), max: s.max, comments: s.comments.trim() || null })),
+                  }]);
+                  setSessionFeedbackSaving(false);
+                  setSessionFeedbackDone(true);
+                  setTimeout(() => setSessionFeedbackModal(null), 1200);
+                }}
+                className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                {sessionFeedbackSaving ? "Saving…" : sessionFeedbackDone ? "Saved ✓" : "Save Scorecard"}
+              </button>
             </div>
           </div>
         </div>

@@ -366,6 +366,23 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     return () => clearInterval(interval);
   }, []);
 
+  // Feedback state
+  const [myFeedback, setMyFeedback] = useState<{ id: string; feedback_type: string; title: string; content: string; created_at: string }[]>([]);
+  const [mySessionFeedback, setMySessionFeedback] = useState<{ id: string; session_date: string; overall_score: number | null; overall_notes: string | null; station_scores: { name: string; score: number; max: number; comments: string | null }[]; created_at: string }[]>([]);
+  const [feedbackLoading, setFeedbackLoading] = useState(true);
+  const [feedbackView, setFeedbackView] = useState<"home" | "feedback">("home");
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from("student_feedback").select("id, feedback_type, title, content, created_at").eq("student_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("session_feedback").select("id, session_date, overall_score, overall_notes, station_scores, created_at").eq("student_id", user.id).order("session_date", { ascending: false }),
+    ]).then(([fb, sf]) => {
+      setMyFeedback(fb.data ?? []);
+      setMySessionFeedback(sf.data ?? []);
+      setFeedbackLoading(false);
+    });
+  }, [user.id]);
+
   const [myReview, setMyReview] = useState<{ id: string; rating: number; review_text: string; status: string } | null | undefined>(undefined);
   const [reviewForm, setReviewForm] = useState({ rating: 5, review_text: "" });
   const [reviewSaving, setReviewSaving] = useState(false);
@@ -485,7 +502,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
       <div className="max-w-7xl mx-auto px-6 py-8">
 
         {/* ── HOME: 5 section cards ── */}
-        {!activeSection && (
+        {!activeSection && feedbackView === "home" && (
           <>
             <div className="mb-8">
               <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "var(--teal)" }}>Student Dashboard</p>
@@ -501,7 +518,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
               {SECTIONS.map((s, i) => (
                 <button
                   key={s.id}
-                  onClick={() => setActiveSection(s.id)}
+                  onClick={() => { setActiveSection(s.id); setFeedbackView("home"); }}
                   className="text-left rounded-2xl border bg-white p-6 transition-all hover:shadow-md hover:-translate-y-0.5 group"
                   style={{ borderColor: "rgba(15,76,92,0.12)" }}
                 >
@@ -528,6 +545,29 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
                   </div>
                 </button>
               ))}
+
+              {/* My Feedback card */}
+              <button
+                onClick={() => setFeedbackView("feedback")}
+                className="text-left rounded-2xl border p-6 transition-all hover:shadow-md hover:-translate-y-0.5 group"
+                style={{ borderColor: "rgba(21,176,151,0.25)", backgroundColor: "rgba(21,176,151,0.03)" }}
+              >
+                <div className="flex items-start justify-between mb-5">
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}>
+                    <MessageSquare size={28} />
+                  </div>
+                  {(myFeedback.length + mySessionFeedback.length) > 0 && (
+                    <span className="text-xs font-mono-data font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}>
+                      {myFeedback.length + mySessionFeedback.length} new
+                    </span>
+                  )}
+                </div>
+                <h2 className="font-serif font-semibold text-lg mb-1" style={{ color: "var(--navy)" }}>My Feedback</h2>
+                <p className="text-sm" style={{ color: "rgba(26,26,26,0.55)" }}>Personal notes, progress comments & session scorecards from Dr. Diab</p>
+                <div className="flex items-center gap-1 mt-4 text-xs font-semibold" style={{ color: "var(--teal)" }}>
+                  View Feedback <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                </div>
+              </button>
 
               {/* Mock OSCE booking card */}
               <Link
@@ -656,6 +696,130 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
                 <div className="h-24 flex items-center"><Loader size={18} className="animate-spin" style={{ color: "var(--teal)" }} /></div>
               )}
             </div>
+          </>
+        )}
+
+        {/* ── FEEDBACK VIEW ── */}
+        {!activeSection && feedbackView === "feedback" && (
+          <>
+            <div className="flex items-center gap-3 mb-8">
+              <button onClick={() => setFeedbackView("home")}
+                className="w-9 h-9 rounded-lg border flex items-center justify-center hover:bg-white transition-colors"
+                style={{ borderColor: "rgba(15,76,92,0.15)" }}>
+                <ChevronLeft size={16} style={{ color: "var(--navy)" }} />
+              </button>
+              <div>
+                <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: "var(--teal)" }}>Dr. Einas Diab</p>
+                <h1 className="font-serif font-semibold text-2xl" style={{ color: "var(--navy)" }}>My Feedback</h1>
+              </div>
+            </div>
+
+            {feedbackLoading ? (
+              <div className="py-16 flex justify-center"><Loader size={20} className="animate-spin" style={{ color: "var(--teal)" }} /></div>
+            ) : (myFeedback.length === 0 && mySessionFeedback.length === 0) ? (
+              <div className="rounded-2xl border bg-white p-12 text-center" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <MessageSquare size={32} className="mx-auto mb-3" style={{ color: "rgba(26,26,26,0.2)" }} />
+                <p className="text-sm font-medium" style={{ color: "rgba(26,26,26,0.4)" }}>No feedback yet</p>
+                <p className="text-xs mt-1" style={{ color: "rgba(26,26,26,0.3)" }}>Your personal feedback from Dr. Diab will appear here after sessions.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Session scorecards */}
+                {mySessionFeedback.length > 0 && (
+                  <div>
+                    <p className="font-mono-data text-xs uppercase tracking-widest mb-4" style={{ color: "var(--teal)" }}>Session Scorecards</p>
+                    <div className="space-y-4">
+                      {mySessionFeedback.map(sf => {
+                        const scored = (sf.station_scores ?? []).filter(s => s.score !== null);
+                        const totalScore = scored.reduce((sum, s) => sum + s.score, 0);
+                        const maxScore = scored.reduce((sum, s) => sum + (s.max || 10), 0);
+                        return (
+                          <div key={sf.id} className="rounded-2xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: "rgba(15,76,92,0.08)", backgroundColor: "rgba(11,30,61,0.02)" }}>
+                              <div>
+                                <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Mock OSCE Session</p>
+                                <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>
+                                  {new Date(sf.session_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                                </p>
+                              </div>
+                              {sf.overall_score !== null && (
+                                <div className="text-right">
+                                  <p className="text-2xl font-bold font-serif" style={{ color: sf.overall_score >= 70 ? "var(--teal)" : sf.overall_score >= 50 ? "var(--gold)" : "#dc2626" }}>
+                                    {sf.overall_score}<span className="text-sm font-normal" style={{ color: "rgba(26,26,26,0.4)" }}>/100</span>
+                                  </p>
+                                  <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>Overall Score</p>
+                                </div>
+                              )}
+                            </div>
+                            {scored.length > 0 && (
+                              <div className="px-6 py-4 border-b" style={{ borderColor: "rgba(15,76,92,0.07)" }}>
+                                <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "rgba(26,26,26,0.45)" }}>Station Scores</p>
+                                <div className="space-y-3">
+                                  {scored.map((s, i) => {
+                                    const pct = Math.round((s.score / (s.max || 10)) * 100);
+                                    return (
+                                      <div key={i}>
+                                        <div className="flex items-center justify-between mb-1">
+                                          <p className="text-sm" style={{ color: "var(--navy)" }}>{s.name}</p>
+                                          <p className="text-sm font-bold" style={{ color: pct >= 70 ? "var(--teal)" : pct >= 50 ? "var(--gold)" : "#dc2626" }}>
+                                            {s.score}/{s.max || 10}
+                                          </p>
+                                        </div>
+                                        <div className="h-1.5 rounded-full" style={{ backgroundColor: "rgba(15,76,92,0.1)" }}>
+                                          <div className="h-1.5 rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: pct >= 70 ? "var(--teal)" : pct >= 50 ? "var(--gold)" : "#dc2626" }} />
+                                        </div>
+                                        {s.comments && <p className="text-xs mt-1 italic" style={{ color: "rgba(26,26,26,0.5)" }}>{s.comments}</p>}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                {maxScore > 0 && (
+                                  <p className="text-xs mt-3 font-semibold" style={{ color: "rgba(26,26,26,0.4)" }}>
+                                    Station total: {totalScore}/{maxScore}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                            {sf.overall_notes && (
+                              <div className="px-6 py-4">
+                                <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "rgba(26,26,26,0.45)" }}>Dr. Diab&apos;s Notes</p>
+                                <p className="text-sm leading-relaxed" style={{ color: "rgba(26,26,26,0.75)" }}>{sf.overall_notes}</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* General / progress feedback */}
+                {myFeedback.length > 0 && (
+                  <div>
+                    <p className="font-mono-data text-xs uppercase tracking-widest mb-4" style={{ color: "var(--teal)" }}>Notes &amp; Progress Comments</p>
+                    <div className="space-y-4">
+                      {myFeedback.map(fb => (
+                        <div key={fb.id} className="rounded-2xl border bg-white p-6" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{fb.title}</p>
+                            <span className="text-xs px-2.5 py-1 rounded-full flex-shrink-0 capitalize font-semibold" style={{
+                              backgroundColor: fb.feedback_type === "progress" ? "rgba(201,162,39,0.1)" : "rgba(21,176,151,0.1)",
+                              color: fb.feedback_type === "progress" ? "var(--gold)" : "var(--teal)",
+                            }}>
+                              {fb.feedback_type === "progress" ? "Progress Note" : "General"}
+                            </span>
+                          </div>
+                          <p className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "rgba(26,26,26,0.75)" }}>{fb.content}</p>
+                          <p className="text-xs mt-3" style={{ color: "rgba(26,26,26,0.35)" }}>
+                            {new Date(fb.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
