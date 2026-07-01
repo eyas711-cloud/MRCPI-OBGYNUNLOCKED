@@ -706,7 +706,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
   // Payments state
   const [payments, setPayments] = useState<PaymentRow[]>([]);
-  const [paymentForm, setPaymentForm] = useState({ student_name: "", student_email: "", amount: "", currency: "SAR", payment_date: new Date().toISOString().slice(0, 10), notes: "" });
+  const [paymentForm, setPaymentForm] = useState({ student_name: "", student_email: "", amount: "", currency: "SAR", payment_date: new Date().toISOString().slice(0, 10), notes: "", payment_status: "paid_full" as "paid_full" | "paid_part", total_fee: "", remaining_fee: "" });
   const [paymentSaving, setPaymentSaving] = useState(false);
   const [paymentDone, setPaymentDone] = useState(false);
   const [totalRevenue, setTotalRevenue] = useState(0);
@@ -1651,7 +1651,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 <form onSubmit={async (e) => {
                   e.preventDefault();
                   setPaymentSaving(true);
-                  await supabase.from("payments").insert([{
+                  const receiptNumber = `RCP-${new Date().getFullYear()}-${String(Date.now()).slice(-5)}`;
+                  const isPaidPart = paymentForm.payment_status === "paid_part";
+                  const { data: inserted } = await supabase.from("payments").insert([{
                     student_name: paymentForm.student_name.trim(),
                     student_email: paymentForm.student_email.trim().toLowerCase(),
                     amount: parseFloat(paymentForm.amount),
@@ -1659,11 +1661,23 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     payment_date: paymentForm.payment_date,
                     notes: paymentForm.notes.trim() || null,
                     recorded_by: user.email,
-                  }]);
+                    payment_status: paymentForm.payment_status,
+                    total_fee: paymentForm.total_fee ? parseFloat(paymentForm.total_fee) : parseFloat(paymentForm.amount),
+                    remaining_fee: isPaidPart && paymentForm.remaining_fee ? parseFloat(paymentForm.remaining_fee) : 0,
+                    receipt_number: receiptNumber,
+                  }]).select("id").single();
                   await logAudit(user.id, user.email, user.role, "payment_recorded", paymentForm.student_name, { amount: paymentForm.amount, currency: paymentForm.currency });
+                  // Auto-send receipt email
+                  if (inserted?.id) {
+                    fetch("/api/admin/send-payment-receipt", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ paymentId: inserted.id }),
+                    }).catch(() => {});
+                  }
                   setPaymentSaving(false);
                   setPaymentDone(true);
-                  setPaymentForm({ student_name: "", student_email: "", amount: "", currency: "SAR", payment_date: new Date().toISOString().slice(0, 10), notes: "" });
+                  setPaymentForm({ student_name: "", student_email: "", amount: "", currency: "SAR", payment_date: new Date().toISOString().slice(0, 10), notes: "", payment_status: "paid_full", total_fee: "", remaining_fee: "" });
                   setTimeout(() => { setPaymentDone(false); fetchPayments(); }, 1500);
                 }} className="p-5 space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1680,7 +1694,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                         className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Amount *</label>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Amount Paid *</label>
                       <div className="flex gap-2">
                         <select value={paymentForm.currency} onChange={e => setPaymentForm({ ...paymentForm, currency: e.target.value })}
                           className="px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }}>
@@ -1699,18 +1713,50 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       <input required type="date" value={paymentForm.payment_date} onChange={e => setPaymentForm({ ...paymentForm, payment_date: e.target.value })}
                         className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
                     </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Total Course Fee *</label>
+                      <input required type="number" min="0" step="0.01" value={paymentForm.total_fee} onChange={e => setPaymentForm({ ...paymentForm, total_fee: e.target.value })}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Payment Status *</label>
+                      <div className="flex gap-3 mt-1">
+                        {(["paid_full", "paid_part"] as const).map(s => (
+                          <label key={s} className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="payment_status" value={s} checked={paymentForm.payment_status === s}
+                              onChange={() => setPaymentForm({ ...paymentForm, payment_status: s, remaining_fee: s === "paid_full" ? "" : paymentForm.remaining_fee })} />
+                            <span className="text-sm font-semibold" style={{ color: "var(--navy)" }}>
+                              {s === "paid_full" ? "Paid in Full" : "Paid in Part"}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </div>
+                  {paymentForm.payment_status === "paid_part" && (
+                    <div>
+                      <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Remaining Balance *</label>
+                      <input required={paymentForm.payment_status === "paid_part"} type="number" min="0" step="0.01" value={paymentForm.remaining_fee}
+                        onChange={e => setPaymentForm({ ...paymentForm, remaining_fee: e.target.value })}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Notes (optional)</label>
                     <input value={paymentForm.notes} onChange={e => setPaymentForm({ ...paymentForm, notes: e.target.value })}
                       placeholder="e.g. Mock OSCE session fee, Course subscription..."
                       className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
                   </div>
-                  <button type="submit" disabled={paymentSaving}
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
-                    style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
-                    {paymentSaving ? <><Loader size={14} className="animate-spin" /> Saving…</> : paymentDone ? <><CheckCircle size={14} /> Saved!</> : <><Plus size={14} /> Record Payment</>}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button type="submit" disabled={paymentSaving}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90 disabled:opacity-50"
+                      style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                      {paymentSaving ? <><Loader size={14} className="animate-spin" /> Saving…</> : paymentDone ? <><CheckCircle size={14} /> Saved & Receipt Sent!</> : <><Plus size={14} /> Record Payment & Send Receipt</>}
+                    </button>
+                  </div>
+                  <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>A receipt email will be automatically sent to the student upon saving.</p>
                 </form>
               </div>
 
@@ -2223,7 +2269,13 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                         </div>
                         <div className="text-right flex-shrink-0">
                           <p className="text-sm font-bold" style={{ color: "var(--navy)" }}>{p.currency} {Number(p.amount).toLocaleString()}</p>
-                          <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>{new Date(p.payment_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                          <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.4)" }}>{new Date(p.payment_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</p>
+                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full mt-1 inline-block" style={{
+                            backgroundColor: (p as any).payment_status === "paid_part" ? "rgba(201,162,39,0.12)" : "rgba(21,176,151,0.1)",
+                            color: (p as any).payment_status === "paid_part" ? "var(--gold)" : "var(--teal)",
+                          }}>
+                            {(p as any).payment_status === "paid_part" ? "Paid in Part" : "Paid in Full"}
+                          </span>
                         </div>
                         <button onClick={async () => { if (confirm(`Delete payment from ${p.student_name}?`)) { await supabase.from("payments").delete().eq("id", p.id); fetchPayments(); } }}
                           className="w-9 h-9 rounded-lg border flex items-center justify-center hover:bg-red-50 flex-shrink-0"
