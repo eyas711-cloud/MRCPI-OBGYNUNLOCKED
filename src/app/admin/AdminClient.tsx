@@ -641,7 +641,18 @@ function ContentPanel({ user }: { user: AdminUser }) {
                   return <video controls src={previewItem.url} className="max-w-full max-h-[65vh]" />;
                 })()
               ) : section.id === "recorded-sessions" ? (
-                <AudioPlayer signedUrl={previewItem.url} fileName={previewItem.item.file_name} title={previewItem.item.title} />
+                (() => {
+                  try {
+                    const u = new URL(previewItem.url);
+                    let embedSrc: string | null = null;
+                    if (u.hostname.includes("vimeo.com")) {
+                      const vid = u.pathname.split("/").filter(Boolean)[0];
+                      if (vid) embedSrc = `https://player.vimeo.com/video/${vid}?badge=0&autopause=0&player_id=0`;
+                    }
+                    if (embedSrc) return <div className="w-full" style={{ aspectRatio: "16/9" }}><iframe src={embedSrc} className="w-full h-full" style={{ minHeight: "400px" }} title={previewItem.item.title} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen /></div>;
+                  } catch { /* not a URL */ }
+                  return <p className="text-sm text-red-500">Invalid Vimeo URL</p>;
+                })()
               ) : (
                 <iframe src={previewItem.url} className="w-full min-h-[500px]" title={previewItem.item.title} style={{ height: "65vh" }} />
               )}
