@@ -5,7 +5,7 @@ import {
   Users, BookOpen, Video, FileText, Calendar, BarChart3,
   Upload, Plus, Trash2, Settings, Shield, Bell,
   TrendingUp, DollarSign, Eye, CheckCircle, X, Loader, LogOut,
-  Image, Mic, MessageSquare, Star, Download, Send, Pencil,
+  Image, Mic, MessageSquare, Star, Download, Send, Pencil, Maximize2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
@@ -223,6 +223,14 @@ function ContentPanel({ user }: { user: AdminUser }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loadingItems, setLoadingItems] = useState(false);
   const [previewItem, setPreviewItem] = useState<{ item: ContentItem; url: string } | null>(null);
+  const adminPdfIframeRef = useRef<HTMLIFrameElement>(null);
+  const openAdminPdfFullscreen = () => {
+    const el = adminPdfIframeRef.current as HTMLIFrameElement & { mozRequestFullScreen?: () => void; webkitRequestFullscreen?: () => void; } | null;
+    if (!el) return;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  };
   const [editItem, setEditItem] = useState<ContentItem | null>(null);
   const [editForm, setEditForm] = useState({ title: "", description: "" });
   const [editSaving, setEditSaving] = useState(false);
@@ -611,6 +619,11 @@ function ContentPanel({ user }: { user: AdminUser }) {
                 <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{previewItem.item.file_name} · {fmtSize(previewItem.item.file_size)}</p>
               </div>
               <div className="flex items-center gap-2 ml-4">
+                {(section.fileLabel === "PDF") && (
+                  <button onClick={openAdminPdfFullscreen} aria-label="Fullscreen" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100" title="Fullscreen">
+                    <Maximize2 size={16} style={{ color: "var(--navy)" }} />
+                  </button>
+                )}
                 <a
                   href={previewItem.url}
                   download={previewItem.item.file_name}
@@ -654,7 +667,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
                   return <p className="text-sm text-red-500">Invalid Vimeo URL</p>;
                 })()
               ) : (
-                <iframe src={previewItem.url} className="w-full min-h-[500px]" title={previewItem.item.title} style={{ height: "65vh" }} />
+                <iframe ref={adminPdfIframeRef} src={previewItem.url} className="w-full min-h-[500px]" title={previewItem.item.title} style={{ height: "65vh" }} />
               )}
             </div>
           </div>

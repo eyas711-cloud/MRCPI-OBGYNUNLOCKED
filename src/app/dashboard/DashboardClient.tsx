@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   FileText, Image, Video, Mic, ChevronRight, ChevronLeft,
   Play, Bell, LogOut, Award, Search, X, Loader,
-  BookOpen, Star, MessageSquare, CheckCircle, Clock,
+  BookOpen, Star, MessageSquare, CheckCircle, Clock, Maximize2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
@@ -237,8 +237,20 @@ function FileViewer({
   onClose: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
+  const pdfIframeRef = useRef<HTMLIFrameElement>(null);
   const isVimeo = item.file_name === "vimeo" || item.storage_path?.startsWith("http");
   const embedUrl = isVimeo ? getVimeoEmbedUrl(item.storage_path) : null;
+
+  const openFullscreen = () => {
+    const el = pdfIframeRef.current as HTMLIFrameElement & {
+      mozRequestFullScreen?: () => void;
+      webkitRequestFullscreen?: () => void;
+    } | null;
+    if (!el) return;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+  };
 
   useEffect(() => {
     if (isVimeo) return;
@@ -265,6 +277,11 @@ function FileViewer({
             <p className="font-semibold text-sm truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
             {!isVimeo && <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>}
           </div>
+          {fileType === "pdf" && url && (
+            <button onClick={openFullscreen} aria-label="Fullscreen" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100" title="Fullscreen">
+              <Maximize2 size={16} style={{ color: "var(--navy)" }} />
+            </button>
+          )}
           <button onClick={onClose} aria-label="Close" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-4">
             <X size={16} style={{ color: "var(--navy)" }} />
           </button>
@@ -289,7 +306,7 @@ function FileViewer({
           ) : !url ? (
             <Loader size={24} className="animate-spin" style={{ color: "var(--teal)" }} />
           ) : fileType === "pdf" ? (
-            <iframe src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full h-full min-h-[500px]" title={item.title} style={{ height: "65vh" }} />
+            <iframe ref={pdfIframeRef} src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full h-full min-h-[500px]" title={item.title} style={{ height: "65vh" }} />
           ) : fileType === "image" ? (
             <img
               src={url} alt={item.title}
