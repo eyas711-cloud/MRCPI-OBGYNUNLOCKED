@@ -988,7 +988,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
           fileType={
             activeSection === "flashcards" ? "image" :
             activeSection === "videos" ? "video" :
-            activeSection === "recorded-sessions" ? "audio" :
+            activeSection === "recorded-sessions" ? "video" :
             "pdf"
           }
           onClose={() => setViewItem(null)}

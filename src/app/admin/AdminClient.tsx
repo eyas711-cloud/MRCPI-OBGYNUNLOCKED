@@ -59,7 +59,7 @@ const CONTENT_SECTIONS = [
   { id: "recalls",           label: "2. Recalls",            icon: <BookOpen size={15} />, color: "var(--teal)",       bucket: "recalls",           accept: "application/pdf",                            fileLabel: "PDF",   hasSubs: true  },
   { id: "flashcards",        label: "3. Flashcards",         icon: <Image size={15} />,    color: "var(--gold)",       bucket: "flashcards",        accept: "image/jpeg,image/png,image/webp,image/gif",  fileLabel: "Image", hasSubs: false },
   { id: "videos",            label: "4. Videos",             icon: <Video size={15} />,    color: "var(--teal-bright)",bucket: "course-videos",     accept: "video/mp4,video/webm,video/quicktime",       fileLabel: "Video", hasSubs: false },
-  { id: "recorded-sessions", label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions", accept: "audio/*,video/mp4,video/mpeg,.mp3,.mpeg,.mpg,.mp4,.m4a,.wav,.ogg,.aac,.wma,.flac",   fileLabel: "Audio", hasSubs: true  },
+  { id: "recorded-sessions", label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions", accept: "",                                                                                      fileLabel: "Vimeo", hasSubs: true  },
 ] as const;
 
 type SectionId = (typeof CONTENT_SECTIONS)[number]["id"];
@@ -260,13 +260,13 @@ function ContentPanel({ user }: { user: AdminUser }) {
 
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (activeSec !== "videos" && !file) return;
+    if (activeSec !== "videos" && activeSec !== "recorded-sessions" && !file) return;
     if (section.hasSubs && !activeSub) { setErr("Please select a sub-section first."); return; }
     setUploading(true); setErr(null); setProgress(20);
 
     let storagePath = "";
 
-    if (activeSec === "videos") {
+    if (activeSec === "videos" || activeSec === "recorded-sessions") {
       // Vimeo URL — store directly, no file upload needed
       const ytUrl = form.vimeoUrl.trim();
       if (!ytUrl) { setErr("Please enter a Vimeo URL."); setUploading(false); return; }
@@ -300,8 +300,8 @@ function ContentPanel({ user }: { user: AdminUser }) {
       subsection_id: activeSub || null,
       title: form.title,
       description: form.description || null,
-      file_name: activeSec === "videos" ? "vimeo" : file!.name,
-      file_size: activeSec === "videos" ? null : file!.size,
+      file_name: (activeSec === "videos" || activeSec === "recorded-sessions") ? "vimeo" : file!.name,
+      file_size: (activeSec === "videos" || activeSec === "recorded-sessions") ? null : file!.size,
       storage_path: storagePath,
       uploaded_by: user.id,
       uploaded_by_email: user.email,
@@ -309,7 +309,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
 
     if (dbErr) { setErr(dbErr.message); setUploading(false); return; }
 
-    await logAudit(user.id, user.email, user.role, `upload_${activeSec}`, form.title, { file: activeSec === "videos" ? storagePath : file!.name, subsection: activeSub });
+    await logAudit(user.id, user.email, user.role, `upload_${activeSec}`, form.title, { file: (activeSec === "videos" || activeSec === "recorded-sessions") ? storagePath : file!.name, subsection: activeSub });
     setProgress(100);
     setUploading(false);
     setDone(true);
@@ -320,7 +320,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
   };
 
   const handleDelete = async (item: ContentItem) => {
-    if (item.file_name !== "vimeo") await supabase.storage.from(section.bucket).remove([item.storage_path]);
+    if (item.file_name !== "vimeo" && !item.storage_path?.startsWith("http")) await supabase.storage.from(section.bucket).remove([item.storage_path]);
     await supabase.from("content_items").delete().eq("id", item.id);
     await logAudit(user.id, user.email, user.role, `delete_${activeSec}`, item.title);
     fetchItems();
