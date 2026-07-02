@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   FileText, Image, Video, Mic, ChevronRight, ChevronLeft,
   Play, Bell, LogOut, Award, Search, X, Loader,
-  BookOpen, Star, MessageSquare, CheckCircle, Clock, Maximize2, Minimize2,
+  BookOpen, Star, MessageSquare, CheckCircle, Clock,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import PdfViewer from "@/components/PdfViewer";
@@ -238,38 +238,9 @@ function FileViewer({
   onClose: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
   const pdfIframeRef = useRef<HTMLIFrameElement>(null);
   const isVimeo = item.file_name === "vimeo" || item.storage_path?.startsWith("http");
-  useEffect(() => {
-    setIsMobile(
-      window.innerWidth < 1024 ||
-      "ontouchstart" in window ||
-      navigator.maxTouchPoints > 0
-    );
-  }, []);
   const embedUrl = isVimeo ? getVimeoEmbedUrl(item.storage_path) : null;
-
-  const pdfWrapperRef = useRef<HTMLDivElement>(null);
-  const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
-  useEffect(() => {
-    const handler = () => setIsPdfFullscreen(!!document.fullscreenElement);
-    document.addEventListener("fullscreenchange", handler);
-    return () => document.removeEventListener("fullscreenchange", handler);
-  }, []);
-  const openFullscreen = () => {
-    const el = pdfWrapperRef.current as HTMLDivElement & { mozRequestFullScreen?: () => void; webkitRequestFullscreen?: () => void; } | null;
-    if (!el) return;
-    if (el.requestFullscreen) el.requestFullscreen();
-    else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
-    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
-  };
-  const exitFullscreen = () => {
-    const doc = document as Document & { mozCancelFullScreen?: () => void; webkitExitFullscreen?: () => void; };
-    if (doc.exitFullscreen) doc.exitFullscreen();
-    else if (doc.mozCancelFullScreen) doc.mozCancelFullScreen();
-    else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
-  };
 
   useEffect(() => {
     if (isVimeo) return;
@@ -297,11 +268,6 @@ function FileViewer({
             <p className="font-semibold text-sm truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
             {!isVimeo && <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>}
           </div>
-          {fileType === "pdf" && url && (
-            <button onClick={isPdfFullscreen ? exitFullscreen : openFullscreen} aria-label={isPdfFullscreen ? "Exit Fullscreen" : "Fullscreen"} title={isPdfFullscreen ? "Exit Fullscreen" : "Fullscreen"} className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-2" style={{ border: "1.5px solid rgba(15,76,92,0.18)" }}>
-              {isPdfFullscreen ? <Minimize2 size={16} style={{ color: "var(--navy)" }} /> : <Maximize2 size={16} style={{ color: "var(--navy)" }} />}
-            </button>
-          )}
           <button onClick={onClose} aria-label="Close" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-2">
             <X size={16} style={{ color: "var(--navy)" }} />
           </button>
@@ -325,13 +291,7 @@ function FileViewer({
           ) : !url ? (
             <Loader size={24} className="animate-spin" style={{ color: "var(--teal)" }} />
           ) : fileType === "pdf" ? (
-            isMobile ? (
-              <PdfViewer url={url} title={item.title} />
-            ) : (
-              <div ref={pdfWrapperRef} className="w-full h-full flex flex-col" style={{ minHeight: 0 }}>
-                <iframe ref={pdfIframeRef} src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full flex-1" style={{ minHeight: 0, border: "none" }} title={item.title} />
-              </div>
-            )
+            <PdfViewer url={url} title={item.title} />
           ) : fileType === "image" ? (
             <img
               src={url} alt={item.title}
