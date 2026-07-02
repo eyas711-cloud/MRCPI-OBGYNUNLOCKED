@@ -241,7 +241,13 @@ function FileViewer({
   const [isMobile, setIsMobile] = useState(false);
   const pdfIframeRef = useRef<HTMLIFrameElement>(null);
   const isVimeo = item.file_name === "vimeo" || item.storage_path?.startsWith("http");
-  useEffect(() => { setIsMobile(window.innerWidth < 768); }, []);
+  useEffect(() => {
+    setIsMobile(
+      window.innerWidth < 1024 ||
+      "ontouchstart" in window ||
+      navigator.maxTouchPoints > 0
+    );
+  }, []);
   const embedUrl = isVimeo ? getVimeoEmbedUrl(item.storage_path) : null;
 
   const pdfWrapperRef = useRef<HTMLDivElement>(null);
