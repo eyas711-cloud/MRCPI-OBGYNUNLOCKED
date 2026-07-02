@@ -237,8 +237,10 @@ function FileViewer({
   onClose: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const pdfIframeRef = useRef<HTMLIFrameElement>(null);
   const isVimeo = item.file_name === "vimeo" || item.storage_path?.startsWith("http");
+  useEffect(() => { setIsMobile(window.innerWidth < 768); }, []);
   const embedUrl = isVimeo ? getVimeoEmbedUrl(item.storage_path) : null;
 
   const pdfWrapperRef = useRef<HTMLDivElement>(null);
@@ -316,9 +318,28 @@ function FileViewer({
           ) : !url ? (
             <Loader size={24} className="animate-spin" style={{ color: "var(--teal)" }} />
           ) : fileType === "pdf" ? (
-            <div ref={pdfWrapperRef} className="w-full h-full flex flex-col" style={{ minHeight: 0 }}>
-              <iframe ref={pdfIframeRef} src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full flex-1" style={{ minHeight: 0, border: "none" }} title={item.title} />
-            </div>
+            isMobile ? (
+              <div className="flex flex-col items-center justify-center gap-6 p-8 text-center">
+                <FileText size={56} style={{ color: "var(--teal)" }} />
+                <div>
+                  <p className="font-semibold text-base mb-1" style={{ color: "var(--navy)" }}>{item.title}</p>
+                  <p className="text-sm" style={{ color: "rgba(26,26,26,0.5)" }}>PDF files open best in your browser's built-in viewer.</p>
+                </div>
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm"
+                  style={{ backgroundColor: "var(--teal)", color: "#fff" }}
+                >
+                  <Maximize2 size={16} /> Open PDF
+                </a>
+              </div>
+            ) : (
+              <div ref={pdfWrapperRef} className="w-full h-full flex flex-col" style={{ minHeight: 0 }}>
+                <iframe ref={pdfIframeRef} src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full flex-1" style={{ minHeight: 0, border: "none" }} title={item.title} />
+              </div>
+            )
           ) : fileType === "image" ? (
             <img
               src={url} alt={item.title}
