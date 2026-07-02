@@ -8,6 +8,7 @@ import {
   BookOpen, Star, MessageSquare, CheckCircle, Clock, Maximize2, Minimize2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import PdfViewer from "@/components/PdfViewer";
 
 export type StudentUser = { id: string; email: string; name: string | null };
 
@@ -269,7 +270,7 @@ function FileViewer({
     // 15-minute signed URLs — short expiry limits URL sharing
     supabase.storage
       .from(bucket)
-      .createSignedUrl(item.storage_path, 900)
+      .createSignedUrl(item.storage_path, 7200)
       .then(({ data }) => setUrl(data?.signedUrl ?? null));
   }, [item, bucket, isVimeo]);
 
@@ -319,22 +320,7 @@ function FileViewer({
             <Loader size={24} className="animate-spin" style={{ color: "var(--teal)" }} />
           ) : fileType === "pdf" ? (
             isMobile ? (
-              <div className="flex flex-col items-center justify-center gap-6 p-8 text-center">
-                <FileText size={56} style={{ color: "var(--teal)" }} />
-                <div>
-                  <p className="font-semibold text-base mb-1" style={{ color: "var(--navy)" }}>{item.title}</p>
-                  <p className="text-sm" style={{ color: "rgba(26,26,26,0.5)" }}>PDF files open best in your browser's built-in viewer.</p>
-                </div>
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm"
-                  style={{ backgroundColor: "var(--teal)", color: "#fff" }}
-                >
-                  <Maximize2 size={16} /> Open PDF
-                </a>
-              </div>
+              <PdfViewer url={url} title={item.title} />
             ) : (
               <div ref={pdfWrapperRef} className="w-full h-full flex flex-col" style={{ minHeight: 0 }}>
                 <iframe ref={pdfIframeRef} src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full flex-1" style={{ minHeight: 0, border: "none" }} title={item.title} />
