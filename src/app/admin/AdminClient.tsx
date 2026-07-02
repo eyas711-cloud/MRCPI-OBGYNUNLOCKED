@@ -330,6 +330,29 @@ function ContentPanel({ user }: { user: AdminUser }) {
     if (dbErr) { setErr(dbErr.message); setUploading(false); return; }
 
     await logAudit(user.id, user.email, user.role, `upload_${activeSec}`, form.title, { file: (activeSec === "videos" || activeSec === "recorded-sessions") ? storagePath : file!.name, subsection: activeSub });
+
+    // Notify all active students of new content
+    const contentTypeMap: Record<string, string> = {
+      "videos": "video",
+      "recorded-sessions": "recorded-session",
+      "flashcards": "flashcard",
+      "exam-templates": "pdf",
+      "recalls": "pdf",
+    };
+    const subsectionLabel = activeSub
+      ? subsections.find((s) => s.id === activeSub)?.name || activeSub
+      : null;
+    fetch("/api/admin/notify-new-content", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        sectionLabel: section.label.replace(/^\d+\.\s*/, ""),
+        subsectionLabel,
+        title: form.title,
+        contentType: contentTypeMap[activeSec] || "pdf",
+      }),
+    }).catch(console.error);
+
     setProgress(100);
     setUploading(false);
     setDone(true);
