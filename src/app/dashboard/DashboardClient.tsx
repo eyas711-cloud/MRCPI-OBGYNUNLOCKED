@@ -273,16 +273,17 @@ function FileViewer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center sm:p-4"
       style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-2xl overflow-hidden shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col"
+        className="bg-white sm:rounded-2xl overflow-hidden shadow-2xl w-full max-w-4xl flex flex-col"
+        style={{ height: "100dvh", maxHeight: "100dvh" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+        <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
           <div className="min-w-0 flex-1">
             <p className="font-semibold text-sm truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
             {!isVimeo && <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>}
@@ -297,14 +298,13 @@ function FileViewer({
           </button>
         </div>
         {/* Content */}
-        <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center min-h-[400px]">
+        <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center" style={{ minHeight: 0 }}>
           {isVimeo ? (
             embedUrl ? (
-              <div className="w-full h-full" style={{ minHeight: "70vh" }}>
+              <div className="w-full h-full" style={{ minHeight: "50vh" }}>
                 <iframe
                   src={embedUrl}
-                  className="w-full"
-                  style={{ height: "70vh" }}
+                  className="w-full h-full"
                   title={item.title}
                   allow="autoplay; fullscreen; picture-in-picture"
                   allowFullScreen
@@ -316,8 +316,8 @@ function FileViewer({
           ) : !url ? (
             <Loader size={24} className="animate-spin" style={{ color: "var(--teal)" }} />
           ) : fileType === "pdf" ? (
-            <div ref={pdfWrapperRef} className="w-full" style={{ height: "65vh" }}>
-              <iframe ref={pdfIframeRef} src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full h-full" title={item.title} />
+            <div ref={pdfWrapperRef} className="w-full h-full flex flex-col" style={{ minHeight: 0 }}>
+              <iframe ref={pdfIframeRef} src={`${url}#toolbar=0&navpanes=0&scrollbar=1`} className="w-full flex-1" style={{ minHeight: 0, border: "none" }} title={item.title} />
             </div>
           ) : fileType === "image" ? (
             <img
