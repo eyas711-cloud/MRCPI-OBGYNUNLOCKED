@@ -19,16 +19,23 @@ function ResetPasswordForm() {
   useEffect(() => {
     let cancelled = false;
 
-    // Retry polling — mobile browsers process the hash token asynchronously
-    const checkSession = async () => {
-      for (let i = 0; i < 10; i++) {
+    const init = async () => {
+      // PKCE flow: exchange ?code= query param for a session
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get("code");
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+      }
+
+      // Poll for session (covers both PKCE and implicit hash flow)
+      for (let i = 0; i < 15; i++) {
         if (cancelled) return;
         const { data: { session } } = await supabase.auth.getSession();
         if (session) { setSessionReady(true); return; }
         await new Promise((r) => setTimeout(r, 400));
       }
     };
-    checkSession();
+    init();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
