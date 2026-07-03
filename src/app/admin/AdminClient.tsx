@@ -717,6 +717,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
 // ── Main AdminClient ──────────────────────────────────────────────────────────
 export default function AdminClient({ user }: { user: AdminUser }) {
   const [activeNav, setActiveNav] = useState("Overview");
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [studentFilter, setStudentFilter] = useState<"all" | "pending" | "active" | "blocked" | "rejected">("pending");
@@ -1012,7 +1013,51 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: "var(--paper)" }}>
-      {/* Sidebar */}
+      {/* Mobile nav overlay */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileNavOpen(false)} />
+          <aside className="relative w-64 flex-shrink-0 flex flex-col h-full" style={{ backgroundColor: "var(--navy)" }}>
+            <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+              <div>
+                <p className="font-serif text-white font-semibold text-sm">MRCPI-OBGYN</p>
+                <p className="font-mono-data text-xs mt-0.5" style={{ color: "var(--teal-bright)" }}>Admin Portal</p>
+              </div>
+              <button onClick={() => setMobileNavOpen(false)} className="text-white/60 hover:text-white p-1">
+                <X size={20} />
+              </button>
+            </div>
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+              {navItems.map((n) => (
+                <button key={n.label} onClick={() => { setActiveNav(n.label); setMobileNavOpen(false); }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm font-medium transition-colors"
+                  style={{ backgroundColor: activeNav === n.label ? "rgba(21,176,151,0.15)" : "transparent", color: activeNav === n.label ? "var(--teal-bright)" : "rgba(255,255,255,0.6)" }}
+                >
+                  {n.icon}
+                  <span className="flex-1">{n.label}</span>
+                  {n.label === "Students" && pendingCount > 0 && (
+                    <span className="text-xs font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: "var(--gold)", color: "var(--navy)" }}>{pendingCount}</span>
+                  )}
+                </button>
+              ))}
+            </nav>
+            <div className="p-4 border-t" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "var(--teal)" }}>{initials}</div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">{user.name || user.email}</p>
+                  <p className="text-xs capitalize" style={{ color: "rgba(255,255,255,0.4)" }}>{user.role}</p>
+                </div>
+              </div>
+              <button onClick={handleSignOut} className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors hover:bg-white/5" style={{ color: "rgba(255,255,255,0.5)" }}>
+                <LogOut size={13} /> Sign Out
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* Sidebar — desktop only */}
       <aside className="w-56 flex-shrink-0 border-r hidden lg:flex flex-col" style={{ backgroundColor: "var(--navy)", borderColor: "rgba(255,255,255,0.08)" }}>
         <div className="p-5 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
           <p className="font-serif text-white font-semibold text-sm">MRCPI-OBGYN</p>
@@ -1049,10 +1094,15 @@ export default function AdminClient({ user }: { user: AdminUser }) {
       {/* Main */}
       <main className="flex-1 overflow-auto">
         {/* Top bar */}
-        <div className="sticky top-0 z-10 bg-white border-b px-6 py-4 flex items-center justify-between" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
-          <div>
-            <h1 className="font-serif font-semibold text-lg" style={{ color: "var(--navy)" }}>{activeNav === "Overview" ? "Dashboard Overview" : activeNav}</h1>
-            <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+        <div className="sticky top-0 z-10 bg-white border-b px-4 lg:px-6 py-4 flex items-center justify-between" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMobileNavOpen(true)} className="lg:hidden w-9 h-9 rounded-lg border flex items-center justify-center" style={{ borderColor: "rgba(15,76,92,0.2)" }} aria-label="Open menu">
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect y="2" width="18" height="2" rx="1" fill="currentColor"/><rect y="8" width="18" height="2" rx="1" fill="currentColor"/><rect y="14" width="18" height="2" rx="1" fill="currentColor"/></svg>
+            </button>
+            <div>
+              <h1 className="font-serif font-semibold text-lg" style={{ color: "var(--navy)" }}>{activeNav === "Overview" ? "Dashboard Overview" : activeNav}</h1>
+              <p className="text-xs hidden sm:block" style={{ color: "rgba(26,26,26,0.45)" }}>{new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+            </div>
           </div>
           <div className="flex items-center gap-3">
             <button aria-label="Notifications" className="relative w-11 h-11 rounded-lg border flex items-center justify-center" style={{ borderColor: "rgba(15,76,92,0.2)" }}>
