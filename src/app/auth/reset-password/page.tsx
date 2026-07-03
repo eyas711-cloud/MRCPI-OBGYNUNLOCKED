@@ -17,17 +17,26 @@ function ResetPasswordForm() {
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    // Check if recovery session already exists (fires before listener on mobile/webview)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) setSessionReady(true);
+    let cancelled = false;
+
+    // Retry polling — mobile browsers process the hash token asynchronously
+    const checkSession = async () => {
+      for (let i = 0; i < 10; i++) {
+        if (cancelled) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) { setSessionReady(true); return; }
+        await new Promise((r) => setTimeout(r, 400));
+      }
+    };
+    checkSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
+        setSessionReady(true);
+      }
     });
 
-    // Also listen for the event in case the token is processed after mount
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setSessionReady(true);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => { cancelled = true; subscription.unsubscribe(); };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
