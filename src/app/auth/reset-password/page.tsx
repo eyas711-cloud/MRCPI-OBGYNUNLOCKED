@@ -17,10 +17,17 @@ function ResetPasswordForm() {
   const [sessionReady, setSessionReady] = useState(false);
 
   useEffect(() => {
-    // Supabase puts the recovery token in the URL hash; exchanging it creates a session
-    supabase.auth.onAuthStateChange((event) => {
-      if (event === "PASSWORD_RECOVERY") setSessionReady(true);
+    // Check if recovery session already exists (fires before listener on mobile/webview)
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) setSessionReady(true);
     });
+
+    // Also listen for the event in case the token is processed after mount
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setSessionReady(true);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
