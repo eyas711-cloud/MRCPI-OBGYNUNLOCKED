@@ -142,24 +142,10 @@ function AudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fileNa
 
   return (
     <div className="p-8 flex flex-col items-center gap-5 w-full">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal-bright)" }}>
-        <Mic size={32} />
-      </div>
+      {/* Website logo */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="MRCPI OBGYN Unlocked" className="w-32 h-auto object-contain" />
       <p className="font-semibold text-center text-lg" style={{ color: "var(--navy)" }}>{title}</p>
-
-      {/* Animated waveform */}
-      <div className="w-full max-w-xl h-20 rounded-xl flex items-end justify-center gap-0.5 px-4 overflow-hidden" style={{ backgroundColor: "rgba(11,30,61,0.04)" }}>
-        {ADMIN_BAR_HEIGHTS.map((h, i) => (
-          <div key={i} className="flex-1 rounded-t-sm" style={{
-            height: playing ? `${h}%` : "20%",
-            backgroundColor: "var(--teal-bright)",
-            opacity: playing ? 0.7 + (i % 3) * 0.1 : 0.25,
-            transition: `height ${0.3 + (i % 5) * 0.1}s ease-in-out`,
-            animation: playing ? `bounce-admin ${0.6 + (i % 4) * 0.2}s ease-in-out infinite alternate` : "none",
-          }} />
-        ))}
-      </div>
-      <style>{`@keyframes bounce-admin { from { transform: scaleY(0.4); } to { transform: scaleY(1); } }`}</style>
 
       <div className="w-full max-w-xl flex flex-col gap-2">
         <div ref={progressRef} onClick={handleSeek} className="w-full h-2 rounded-full cursor-pointer relative" style={{ backgroundColor: "rgba(11,30,61,0.12)" }}>

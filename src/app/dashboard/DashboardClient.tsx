@@ -129,34 +129,10 @@ function DashAudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fi
 
   return (
     <div className="p-8 flex flex-col items-center gap-5 w-full">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal-bright)" }}>
-        <Mic size={32} />
-      </div>
+      {/* Website logo */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo.png" alt="MRCPI OBGYN Unlocked" className="w-32 h-auto object-contain" />
       <p className="font-semibold text-center text-lg" style={{ color: "var(--navy)" }}>{title}</p>
-
-      {/* Animated waveform visualizer */}
-      <div className="w-full max-w-xl h-20 rounded-xl flex items-end justify-center gap-0.5 px-4 overflow-hidden"
-        style={{ backgroundColor: "rgba(11,30,61,0.04)" }}>
-        {BAR_HEIGHTS.map((h, i) => (
-          <div key={i} className="flex-1 rounded-t-sm"
-            style={{
-              height: playing ? `${h}%` : "20%",
-              backgroundColor: "var(--teal-bright)",
-              opacity: playing ? 0.7 + (i % 3) * 0.1 : 0.25,
-              transition: playing ? `height ${0.3 + (i % 5) * 0.1}s ease-in-out` : "height 0.4s ease",
-              animationDelay: `${i * 0.05}s`,
-              animation: playing ? `bounce-bar ${0.6 + (i % 4) * 0.2}s ease-in-out infinite alternate` : "none",
-            }}
-          />
-        ))}
-      </div>
-
-      <style>{`
-        @keyframes bounce-bar {
-          from { transform: scaleY(0.4); }
-          to { transform: scaleY(1); }
-        }
-      `}</style>
 
       {/* Progress bar */}
       <div className="w-full max-w-xl flex flex-col gap-2">
@@ -276,10 +252,15 @@ function FileViewer({
         <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center" style={{ minHeight: 0 }}>
           {isVimeo ? (
             embedUrl ? (
-              <div className="w-full h-full" style={{ minHeight: "50vh" }}>
+              <div className="w-full h-full flex flex-col" style={{ minHeight: "50vh" }}>
+                {/* Logo banner above Vimeo player */}
+                <div className="flex items-center gap-3 px-4 py-2.5 flex-shrink-0" style={{ backgroundColor: "var(--navy)", borderBottom: "1px solid rgba(21,176,151,0.3)" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src="/logo.png" alt="MRCPI OBGYN Unlocked" className="h-8 w-auto object-contain" />
+                </div>
                 <iframe
                   src={embedUrl}
-                  className="w-full h-full"
+                  className="w-full flex-1"
                   title={item.title}
                   allow="autoplay; fullscreen; picture-in-picture"
                   allowFullScreen
@@ -990,7 +971,10 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
           fileType={
             activeSection === "flashcards" ? "image" :
             activeSection === "videos" ? "video" :
-            activeSection === "recorded-sessions" ? "video" :
+            activeSection === "recorded-sessions" ? (
+              viewItem?.file_name === "vimeo" || viewItem?.storage_path?.startsWith("http") ? "video" :
+              /\.(mp3|m4a|wav|ogg|aac|mpeg)$/i.test(viewItem?.file_name ?? "") ? "audio" : "video"
+            ) :
             "pdf"
           }
           onClose={() => setViewItem(null)}
