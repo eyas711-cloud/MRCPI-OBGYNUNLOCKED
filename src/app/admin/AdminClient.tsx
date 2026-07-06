@@ -142,9 +142,25 @@ function AudioPlayer({ signedUrl, fileName, title }: { signedUrl: string; fileNa
 
   return (
     <div className="p-8 flex flex-col items-center gap-5 w-full">
-      {/* Website logo */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo.png" alt="MRCPI OBGYN Unlocked" className="w-32 h-auto object-contain" />
+      {/* Modern audio visualizer */}
+      <div className="relative flex items-center justify-center" style={{ width: 120, height: 120 }}>
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="absolute rounded-full" style={{
+            width: 40 + i * 26, height: 40 + i * 26,
+            border: `${i === 1 ? 2 : 1}px solid rgba(21,176,151,${playing ? 0.5 - i * 0.12 : 0.15})`,
+            transition: "all 0.4s ease",
+            animation: playing ? `admin-pulse-${i} ${1.2 + i * 0.4}s ease-in-out infinite` : "none",
+          }} />
+        ))}
+        <div className="relative z-10 w-12 h-12 rounded-full flex items-center justify-center shadow-md" style={{ backgroundColor: playing ? "var(--teal-bright)" : "rgba(21,176,151,0.15)", transition: "background-color 0.3s ease" }}>
+          <Mic size={20} style={{ color: playing ? "white" : "var(--teal-bright)", transition: "color 0.3s ease" }} />
+        </div>
+      </div>
+      <style>{`
+        @keyframes admin-pulse-1 { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.08);opacity:0.7} }
+        @keyframes admin-pulse-2 { 0%,100%{transform:scale(1);opacity:0.8} 50%{transform:scale(1.1);opacity:0.5} }
+        @keyframes admin-pulse-3 { 0%,100%{transform:scale(1);opacity:0.5} 50%{transform:scale(1.12);opacity:0.3} }
+      `}</style>
       <p className="font-semibold text-center text-lg" style={{ color: "var(--navy)" }}>{title}</p>
 
       <div className="w-full max-w-xl flex flex-col gap-2">
