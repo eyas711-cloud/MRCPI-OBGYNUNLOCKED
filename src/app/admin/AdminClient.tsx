@@ -1458,12 +1458,24 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                               </div>
                               <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{f.title}</p>
                             </div>
-                            <button
-                              onClick={() => { setEditingFeedbackId(f.id); setEditFeedbackForm({ type: f.feedback_type, title: f.title, content: f.content }); }}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border flex-shrink-0 hover:opacity-80 transition-opacity"
-                              style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }}>
-                              <Pencil size={11} /> Edit
-                            </button>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <button
+                                onClick={() => { setEditingFeedbackId(f.id); setEditFeedbackForm({ type: f.feedback_type, title: f.title, content: f.content }); }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border hover:opacity-80 transition-opacity"
+                                style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }}>
+                                <Pencil size={11} /> Edit
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (!confirm(`Delete this feedback for ${f.student_name}?`)) return;
+                                  await supabase.from("student_feedback").delete().eq("id", f.id);
+                                  fetchAllFeedback();
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border hover:opacity-80 transition-opacity"
+                                style={{ borderColor: "rgba(200,50,50,0.25)", color: "rgba(180,40,40,0.8)" }}>
+                                <Trash2 size={11} /> Delete
+                              </button>
+                            </div>
                           </div>
                           <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "rgba(26,26,26,0.7)" }}>{f.content}</p>
                         </div>
