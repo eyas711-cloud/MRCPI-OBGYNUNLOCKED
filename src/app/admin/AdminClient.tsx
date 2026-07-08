@@ -843,13 +843,17 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   }, [user.id]);
 
   const fetchAllFeedback = useCallback(async () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await supabase.from("student_feedback").select("id, student_id, feedback_type, title, content, created_at, updated_at, profiles!student_id(full_name, email)").order("created_at", { ascending: false });
-    const entries: FeedbackEntry[] = (data ?? []).map((row: any) => ({
+    const { data: fbData } = await supabase.from("student_feedback").select("id, student_id, feedback_type, title, content, created_at, updated_at").order("created_at", { ascending: false });
+    if (!fbData || fbData.length === 0) { setAllFeedback([]); return; }
+    const studentIds = [...new Set(fbData.map((r) => r.student_id))];
+    const { data: profileData } = await supabase.from("profiles").select("id, full_name, email").in("id", studentIds);
+    const profileMap: Record<string, { full_name: string | null; email: string }> = {};
+    (profileData ?? []).forEach((p) => { profileMap[p.id] = { full_name: p.full_name, email: p.email }; });
+    const entries: FeedbackEntry[] = fbData.map((row) => ({
       id: row.id, student_id: row.student_id, feedback_type: row.feedback_type,
       title: row.title, content: row.content, created_at: row.created_at, updated_at: row.updated_at,
-      student_name: row.profiles?.full_name || row.profiles?.email || "Unknown",
-      student_email: row.profiles?.email || "",
+      student_name: profileMap[row.student_id]?.full_name || profileMap[row.student_id]?.email || "Unknown",
+      student_email: profileMap[row.student_id]?.email || "",
     }));
     setAllFeedback(entries);
   }, []);
