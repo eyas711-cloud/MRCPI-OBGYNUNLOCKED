@@ -28,6 +28,12 @@ type ContentItem = {
 
 type AuditRow = { id: string; user_email: string; action: string; resource: string | null; created_at: string };
 
+type FeedbackEntry = {
+  id: string; student_id: string; feedback_type: "general" | "progress";
+  title: string; content: string; created_at: string; updated_at: string | null;
+  student_name: string; student_email: string;
+};
+
 type BatchRow = { id: string; name: string; notes: string | null; created_at: string };
 type BatchStudent = {
   id: string; batch_id: string; sort_order: number;
@@ -75,6 +81,7 @@ const buildStats = (studentCount: number, mtd: number, total: number) => [
 const navItems = [
   { icon: <BarChart3 size={16} />,     label: "Overview"        },
   { icon: <Users size={16} />,         label: "Students"        },
+  { icon: <Pencil size={16} />,        label: "Feedback"        },
   { icon: <BookOpen size={16} />,      label: "Courses"         },
   { icon: <Upload size={16} />,        label: "Content"         },
   { icon: <MessageSquare size={16} />, label: "Success Stories" },
@@ -773,6 +780,14 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [feedbackForm, setFeedbackForm] = useState({ type: "general" as "general" | "progress", title: "", content: "" });
   const [feedbackSaving, setFeedbackSaving] = useState(false);
   const [feedbackDone, setFeedbackDone] = useState(false);
+
+  // Feedback section (dedicated nav)
+  const [allFeedback, setAllFeedback] = useState<FeedbackEntry[]>([]);
+  const [feedbackSectionFilter, setFeedbackSectionFilter] = useState("all");
+  const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
+  const [editFeedbackForm, setEditFeedbackForm] = useState({ type: "general" as "general" | "progress", title: "", content: "" });
+  const [editFeedbackSaving, setEditFeedbackSaving] = useState(false);
+
   const [sessionFeedbackModal, setSessionFeedbackModal] = useState<{ bookingId: string; studentId: string; studentName: string; sessionDate: string } | null>(null);
   const [sessionFeedbackForm, setSessionFeedbackForm] = useState({
     overall_score: "",
@@ -826,6 +841,18 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setPendingCount(rows.filter((s) => s.status === "pending").length);
     setLoadingStudents(false);
   }, [user.id]);
+
+  const fetchAllFeedback = useCallback(async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await supabase.from("student_feedback").select("id, student_id, feedback_type, title, content, created_at, updated_at, profiles!student_id(full_name, email)").order("created_at", { ascending: false });
+    const entries: FeedbackEntry[] = (data ?? []).map((row: any) => ({
+      id: row.id, student_id: row.student_id, feedback_type: row.feedback_type,
+      title: row.title, content: row.content, created_at: row.created_at, updated_at: row.updated_at,
+      student_name: row.profiles?.full_name || row.profiles?.email || "Unknown",
+      student_email: row.profiles?.email || "",
+    }));
+    setAllFeedback(entries);
+  }, []);
 
   const fetchAuditLogs = useCallback(async () => {
     const { data } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at").order("created_at", { ascending: false }).limit(20);
@@ -930,13 +957,14 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Security") fetchAuditLogs();
     if (activeNav === "Overview") { fetchAuditLogs(); fetchStudents(); fetchRecentItems(); fetchPayments(); }
     if (activeNav === "Students") fetchStudents();
+    if (activeNav === "Feedback") { fetchAllFeedback(); fetchStudents(); }
     if (activeNav === "Success Stories") fetchTestimonials();
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
     if (activeNav === "Payments") { fetchPayments(); fetchBatches(); fetchReminderStudents(); }
     if (activeNav === "Settings") { fetchSettings(); }
     if (activeNav === "Courses") fetchSettings();
-  }, [activeNav, fetchAuditLogs, fetchStudents, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents]);
+  }, [activeNav, fetchAuditLogs, fetchStudents, fetchAllFeedback, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents]);
 
   useEffect(() => {
     fetchStudents();
@@ -1287,13 +1315,6 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                             <span className="text-xs px-2 py-1 rounded-full capitalize flex-shrink-0" style={{ backgroundColor: "rgba(15,76,92,0.08)", color: "var(--navy)" }}>{s.role}</span>
                             <span className="text-xs px-2.5 py-1 rounded-full font-semibold capitalize flex-shrink-0" style={{ backgroundColor: badgeBg, color: badgeColor }}>{s.status}</span>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              {s.status === "active" && (
-                                <button onClick={() => { setFeedbackForm({ type: "general", title: "", content: "" }); setFeedbackDone(false); setFeedbackModal({ studentId: s.id, studentName: s.full_name || s.email }); }}
-                                  className="px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all hover:opacity-90"
-                                  style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--navy)" }}>
-                                  Write Feedback
-                                </button>
-                              )}
                               {s.status === "pending" && (
                                 <>
                                   <button onClick={() => handleStudentAction(s.id, "approve")} disabled={actionLoading === s.id + "approve"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>{actionLoading === s.id + "approve" ? "…" : "Approve"}</button>
@@ -1326,6 +1347,133 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   );
                 })()}
               </div>
+            </div>
+          )}
+
+          {/* ── FEEDBACK ── */}
+          {activeNav === "Feedback" && (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <div>
+                  <h2 className="font-serif font-semibold text-lg" style={{ color: "var(--navy)" }}>Student Feedback</h2>
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.5)" }}>Write, edit, and track all feedback sent to students</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <select
+                    className="px-3 py-2.5 rounded-xl border text-sm focus:outline-none"
+                    style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", minWidth: 180 }}
+                    defaultValue=""
+                    onChange={e => {
+                      const student = students.find(s => s.id === e.target.value);
+                      if (student) { setFeedbackForm({ type: "general", title: "", content: "" }); setFeedbackDone(false); setFeedbackModal({ studentId: student.id, studentName: student.full_name || student.email }); e.target.value = ""; }
+                    }}>
+                    <option value="" disabled>Select student…</option>
+                    {students.filter(s => s.status === "active").map(s => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Student filter chips */}
+              {allFeedback.length > 0 && (() => {
+                const uniqueStudents = Array.from(new Map(allFeedback.map(f => [f.student_id, { id: f.student_id, name: f.student_name }])).values());
+                return (
+                  <div className="flex gap-2 flex-wrap">
+                    <button onClick={() => setFeedbackSectionFilter("all")} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={{ backgroundColor: feedbackSectionFilter === "all" ? "var(--navy)" : "white", color: feedbackSectionFilter === "all" ? "white" : "rgba(26,26,26,0.6)", border: "1px solid rgba(15,76,92,0.15)" }}>All Students</button>
+                    {uniqueStudents.map(s => (
+                      <button key={s.id} onClick={() => setFeedbackSectionFilter(s.id)} className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors" style={{ backgroundColor: feedbackSectionFilter === s.id ? "var(--navy)" : "white", color: feedbackSectionFilter === s.id ? "white" : "rgba(26,26,26,0.6)", border: "1px solid rgba(15,76,92,0.15)" }}>{s.name}</button>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Feedback list */}
+              {allFeedback.length === 0 ? (
+                <div className="rounded-xl border bg-white p-12 text-center" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                  <Pencil size={28} className="mx-auto mb-3" style={{ color: "rgba(26,26,26,0.2)" }} />
+                  <p className="text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No feedback written yet. Use the button above to write feedback for a student.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {allFeedback.filter(f => feedbackSectionFilter === "all" || f.student_id === feedbackSectionFilter).map(f => (
+                    <div key={f.id} className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                      {editingFeedbackId === f.id ? (
+                        /* ── Edit form ── */
+                        <div className="p-5 space-y-4">
+                          <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--teal)" }}>Editing Feedback — {f.student_name}</p>
+                          <div className="flex gap-4">
+                            {(["general", "progress"] as const).map(t => (
+                              <label key={t} className="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" checked={editFeedbackForm.type === t} onChange={() => setEditFeedbackForm(prev => ({ ...prev, type: t }))} />
+                                <span className="text-sm" style={{ color: "var(--navy)" }}>{t === "general" ? "General Comment" : "Progress Note"}</span>
+                              </label>
+                            ))}
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Title *</label>
+                            <input value={editFeedbackForm.title} onChange={e => setEditFeedbackForm(prev => ({ ...prev, title: e.target.value }))}
+                              className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Feedback *</label>
+                            <textarea rows={5} value={editFeedbackForm.content} onChange={e => setEditFeedbackForm(prev => ({ ...prev, content: e.target.value }))}
+                              className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none resize-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                          </div>
+                          <div className="flex gap-3">
+                            <button onClick={() => setEditingFeedbackId(null)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border" style={{ borderColor: "rgba(15,76,92,0.2)", color: "rgba(26,26,26,0.5)" }}>Cancel</button>
+                            <button disabled={editFeedbackSaving || !editFeedbackForm.title || !editFeedbackForm.content}
+                              onClick={async () => {
+                                setEditFeedbackSaving(true);
+                                await supabase.from("student_feedback").update({
+                                  feedback_type: editFeedbackForm.type,
+                                  title: editFeedbackForm.title.trim(),
+                                  content: editFeedbackForm.content.trim(),
+                                  updated_at: new Date().toISOString(),
+                                }).eq("id", f.id);
+                                await fetch("/api/admin/send-feedback", {
+                                  method: "POST", headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ studentEmail: f.student_email, studentName: f.student_name, title: editFeedbackForm.title.trim(), content: editFeedbackForm.content.trim(), feedbackType: editFeedbackForm.type, isUpdate: true }),
+                                });
+                                setEditFeedbackSaving(false);
+                                setEditingFeedbackId(null);
+                                fetchAllFeedback();
+                              }}
+                              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                              style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                              {editFeedbackSaving ? "Saving…" : "Update & Notify Student"}
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        /* ── View mode ── */
+                        <div className="p-5">
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(11,30,61,0.07)", color: "var(--navy)" }}>{f.student_name}</span>
+                                <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: f.feedback_type === "progress" ? "rgba(21,176,151,0.12)" : "rgba(201,162,39,0.12)", color: f.feedback_type === "progress" ? "var(--teal)" : "var(--gold)" }}>
+                                  {f.feedback_type === "progress" ? "Progress Note" : "General Comment"}
+                                </span>
+                                <span className="text-xs" style={{ color: "rgba(26,26,26,0.35)" }}>
+                                  {f.updated_at ? `Updated ${new Date(f.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : new Date(f.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                                </span>
+                              </div>
+                              <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>{f.title}</p>
+                            </div>
+                            <button
+                              onClick={() => { setEditingFeedbackId(f.id); setEditFeedbackForm({ type: f.feedback_type, title: f.title, content: f.content }); }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border flex-shrink-0 hover:opacity-80 transition-opacity"
+                              style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }}>
+                              <Pencil size={11} /> Edit
+                            </button>
+                          </div>
+                          <p className="text-sm leading-relaxed whitespace-pre-line" style={{ color: "rgba(26,26,26,0.7)" }}>{f.content}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -2959,9 +3107,16 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     title: feedbackForm.title.trim(),
                     content: feedbackForm.content.trim(),
                   }]);
+                  const student = students.find(s => s.id === feedbackModal.studentId);
+                  if (student) {
+                    await fetch("/api/admin/send-feedback", {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ studentEmail: student.email, studentName: student.full_name || student.email, title: feedbackForm.title.trim(), content: feedbackForm.content.trim(), feedbackType: feedbackForm.type, isUpdate: false }),
+                    });
+                  }
                   setFeedbackSaving(false);
                   setFeedbackDone(true);
-                  setTimeout(() => setFeedbackModal(null), 1200);
+                  setTimeout(() => { setFeedbackModal(null); fetchAllFeedback(); }, 1200);
                 }}
                 className="flex-1 py-3 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
                 style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
