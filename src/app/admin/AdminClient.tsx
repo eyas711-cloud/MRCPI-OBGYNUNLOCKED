@@ -1424,15 +1424,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                             <button disabled={editFeedbackSaving || !editFeedbackForm.title || !editFeedbackForm.content}
                               onClick={async () => {
                                 setEditFeedbackSaving(true);
-                                await supabase.from("student_feedback").update({
-                                  feedback_type: editFeedbackForm.type,
-                                  title: editFeedbackForm.title.trim(),
-                                  content: editFeedbackForm.content.trim(),
-                                  updated_at: new Date().toISOString(),
-                                }).eq("id", f.id);
-                                await fetch("/api/admin/send-feedback", {
+                                await fetch("/api/admin/save-feedback", {
                                   method: "POST", headers: { "Content-Type": "application/json" },
-                                  body: JSON.stringify({ studentEmail: f.student_email, studentName: f.student_name, title: editFeedbackForm.title.trim(), content: editFeedbackForm.content.trim(), feedbackType: editFeedbackForm.type, isUpdate: true }),
+                                  body: JSON.stringify({ feedbackId: f.id, studentEmail: f.student_email, studentName: f.student_name, title: editFeedbackForm.title.trim(), content: editFeedbackForm.content.trim(), feedbackType: editFeedbackForm.type, isUpdate: true }),
                                 });
                                 setEditFeedbackSaving(false);
                                 setEditingFeedbackId(null);
@@ -3100,20 +3094,11 @@ export default function AdminClient({ user }: { user: AdminUser }) {
               <button disabled={feedbackSaving || feedbackDone || !feedbackForm.title || !feedbackForm.content}
                 onClick={async () => {
                   setFeedbackSaving(true);
-                  await supabase.from("student_feedback").insert([{
-                    student_id: feedbackModal.studentId,
-                    written_by: user.id,
-                    feedback_type: feedbackForm.type,
-                    title: feedbackForm.title.trim(),
-                    content: feedbackForm.content.trim(),
-                  }]);
                   const student = students.find(s => s.id === feedbackModal.studentId);
-                  if (student) {
-                    await fetch("/api/admin/send-feedback", {
-                      method: "POST", headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ studentEmail: student.email, studentName: student.full_name || student.email, title: feedbackForm.title.trim(), content: feedbackForm.content.trim(), feedbackType: feedbackForm.type, isUpdate: false }),
-                    });
-                  }
+                  await fetch("/api/admin/save-feedback", {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ studentId: feedbackModal.studentId, studentEmail: student?.email ?? "", studentName: student?.full_name || student?.email || feedbackModal.studentName, title: feedbackForm.title.trim(), content: feedbackForm.content.trim(), feedbackType: feedbackForm.type, isUpdate: false }),
+                  });
                   setFeedbackSaving(false);
                   setFeedbackDone(true);
                   setTimeout(() => { setFeedbackModal(null); fetchAllFeedback(); }, 1200);
