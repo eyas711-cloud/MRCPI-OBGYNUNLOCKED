@@ -73,11 +73,15 @@ export default function Footer() {
   const [social, setSocial] = useState<SocialLinks>({ instagram_url: "", facebook_url: "", tiktok_url: "", twitter_url: "" });
 
   useEffect(() => {
-    supabase.from("site_settings").select("key, value").in("key", ["instagram_url", "facebook_url", "tiktok_url", "twitter_url"]).then(({ data }) => {
-      const map: Record<string, string> = {};
-      (data ?? []).forEach((r: { key: string; value: string }) => { map[r.key] = r.value ?? ""; });
-      setSocial({ instagram_url: map.instagram_url ?? "", facebook_url: map.facebook_url ?? "", tiktok_url: map.tiktok_url ?? "", twitter_url: map.twitter_url ?? "" });
-    });
+    try {
+      supabase.from("site_settings").select("key, value").in("key", ["instagram_url", "facebook_url", "tiktok_url", "twitter_url"]).then(({ data }) => {
+        try {
+          const map: Record<string, string> = {};
+          (data ?? []).forEach((r: { key: string; value: string }) => { map[r.key] = r.value ?? ""; });
+          setSocial({ instagram_url: map.instagram_url ?? "", facebook_url: map.facebook_url ?? "", tiktok_url: map.tiktok_url ?? "", twitter_url: map.twitter_url ?? "" });
+        } catch { /* silently ignore */ }
+      });
+    } catch { /* silently ignore */ }
   }, []);
 
   const socialItems = [
