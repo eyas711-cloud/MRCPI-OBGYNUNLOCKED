@@ -805,6 +805,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   });
   const [broadcastLog, setBroadcastLog] = useState<{
     id: string; sent_at: string; target_all: boolean; recipient_count: number;
+    recipient_ids: string[];
     quote: string | null; todays_message: string | null; week_focus: string | null;
     todays_challenge: string | null; closing_encouragement: string | null;
     last_feedback_snippet: string | null; content_section: string | null;
@@ -812,7 +813,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [broadcastLogExpanded, setBroadcastLogExpanded] = useState<string | null>(null);
 
   const fetchBroadcastLog = useCallback(async () => {
-    const { data } = await supabase.from("broadcast_log").select("id, sent_at, target_all, recipient_count, quote, todays_message, week_focus, todays_challenge, closing_encouragement, last_feedback_snippet, content_section").order("sent_at", { ascending: false }).limit(50);
+    const { data } = await supabase.from("broadcast_log").select("id, sent_at, target_all, recipient_count, recipient_ids, quote, todays_message, week_focus, todays_challenge, closing_encouragement, last_feedback_snippet, content_section").order("sent_at", { ascending: false }).limit(50);
     setBroadcastLog(data ?? []);
   }, []);
 
@@ -1628,7 +1629,16 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                 <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.4)" }}>
                                   {new Date(b.sent_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                                   {" · "}
-                                  {b.target_all ? "All students" : `${b.recipient_count} student${b.recipient_count !== 1 ? "s" : ""}`}
+                                  {b.target_all
+                                    ? "All students"
+                                    : (() => {
+                                        const names = (b.recipient_ids ?? []).map(id => {
+                                          const s = students.find(s => s.id === id);
+                                          return s ? (s.full_name || s.email) : null;
+                                        }).filter(Boolean);
+                                        return names.length > 0 ? names.join(", ") : `${b.recipient_count} student${b.recipient_count !== 1 ? "s" : ""}`;
+                                      })()
+                                  }
                                 </p>
                               </div>
                             </div>
