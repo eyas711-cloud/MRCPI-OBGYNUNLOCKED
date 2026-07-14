@@ -178,5 +178,19 @@ export async function POST(req: Request) {
     if (ok) sent++;
   }
 
+  await serviceClient.from("broadcast_log").insert([{
+    sent_by: user.id,
+    target_all: targetAll,
+    recipient_ids: targetAll ? [] : (studentIds ?? []),
+    recipient_count: sent,
+    quote: quote || null,
+    todays_message: todaysMessage || null,
+    week_focus: weekFocus || null,
+    todays_challenge: todaysChallenge || null,
+    closing_encouragement: closingEncouragement || null,
+    last_feedback_snippet: lastFeedbackSnippet || null,
+    content_section: contentSection || null,
+  }]);
+
   return NextResponse.json({ ok: true, sent, total: recipients.length });
 }

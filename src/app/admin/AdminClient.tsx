@@ -803,6 +803,18 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     lastFeedbackSnippet: "",
     contentSection: "",
   });
+  const [broadcastLog, setBroadcastLog] = useState<{
+    id: string; sent_at: string; target_all: boolean; recipient_count: number;
+    quote: string | null; todays_message: string | null; week_focus: string | null;
+    todays_challenge: string | null; closing_encouragement: string | null;
+    last_feedback_snippet: string | null; content_section: string | null;
+  }[]>([]);
+  const [broadcastLogExpanded, setBroadcastLogExpanded] = useState<string | null>(null);
+
+  const fetchBroadcastLog = useCallback(async () => {
+    const { data } = await supabase.from("broadcast_log").select("id, sent_at, target_all, recipient_count, quote, todays_message, week_focus, todays_challenge, closing_encouragement, last_feedback_snippet, content_section").order("sent_at", { ascending: false }).limit(50);
+    setBroadcastLog(data ?? []);
+  }, []);
 
   const [sessionFeedbackModal, setSessionFeedbackModal] = useState<{ bookingId: string; studentId: string; studentName: string; sessionDate: string } | null>(null);
   const [sessionFeedbackForm, setSessionFeedbackForm] = useState({
@@ -977,14 +989,14 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Security") fetchAuditLogs();
     if (activeNav === "Overview") { fetchAuditLogs(); fetchStudents(); fetchRecentItems(); fetchPayments(); }
     if (activeNav === "Students") fetchStudents();
-    if (activeNav === "Feedback") { fetchAllFeedback(); fetchStudents(); }
+    if (activeNav === "Feedback") { fetchAllFeedback(); fetchStudents(); fetchBroadcastLog(); }
     if (activeNav === "Success Stories") fetchTestimonials();
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
     if (activeNav === "Payments") { fetchPayments(); fetchBatches(); fetchReminderStudents(); }
     if (activeNav === "Settings") { fetchSettings(); }
     if (activeNav === "Courses") fetchSettings();
-  }, [activeNav, fetchAuditLogs, fetchStudents, fetchAllFeedback, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents]);
+  }, [activeNav, fetchAuditLogs, fetchStudents, fetchAllFeedback, fetchBroadcastLog, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents]);
 
   useEffect(() => {
     fetchStudents();
@@ -1578,13 +1590,64 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                             }),
                           });
                           setBroadcastSending(false);
-                          if (res.ok) setBroadcastDone(true);
+                          if (res.ok) { setBroadcastDone(true); fetchBroadcastLog(); }
                         }}
                         className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity disabled:opacity-40"
                         style={{ backgroundColor: "var(--teal-bright)", color: "white" }}>
                         {broadcastSending ? <><Loader size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send Broadcast Email</>}
                       </button>
                     </>
+                  )}
+                </div>
+              )}
+
+              {/* Broadcast history */}
+              {feedbackTab === "broadcast" && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(26,26,26,0.4)" }}>Sent Broadcasts</p>
+                    <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(15,76,92,0.08)", color: "var(--navy)" }}>{broadcastLog.length}</span>
+                  </div>
+                  {broadcastLog.length === 0 ? (
+                    <div className="rounded-xl border bg-white p-8 text-center" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                      <p className="text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No broadcasts sent yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {broadcastLog.map(b => (
+                        <div key={b.id} className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                          <button
+                            onClick={() => setBroadcastLogExpanded(broadcastLogExpanded === b.id ? null : b.id)}
+                            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-3">
+                              <Send size={13} style={{ color: "var(--teal)" }} />
+                              <div>
+                                <p className="text-sm font-semibold" style={{ color: "var(--navy)" }}>
+                                  {b.todays_message ? b.todays_message.slice(0, 60) + (b.todays_message.length > 60 ? "…" : "") : "Broadcast"}
+                                </p>
+                                <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.4)" }}>
+                                  {new Date(b.sent_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                  {" · "}
+                                  {b.target_all ? "All students" : `${b.recipient_count} student${b.recipient_count !== 1 ? "s" : ""}`}
+                                </p>
+                              </div>
+                            </div>
+                            <Eye size={14} style={{ color: "rgba(26,26,26,0.3)", flexShrink: 0 }} />
+                          </button>
+                          {broadcastLogExpanded === b.id && (
+                            <div className="px-4 pb-4 pt-1 border-t space-y-2.5" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                              {b.quote && <div><p className="text-xs font-semibold mb-0.5" style={{ color: "var(--teal)" }}>Quote</p><p className="text-sm italic" style={{ color: "rgba(26,26,26,0.7)" }}>{b.quote}</p></div>}
+                              {b.todays_message && <div><p className="text-xs font-semibold mb-0.5" style={{ color: "var(--teal)" }}>Today&apos;s Message</p><p className="text-sm whitespace-pre-line" style={{ color: "rgba(26,26,26,0.7)" }}>{b.todays_message}</p></div>}
+                              {b.week_focus && <div><p className="text-xs font-semibold mb-0.5" style={{ color: "var(--teal)" }}>This Week&apos;s Focus</p><p className="text-sm" style={{ color: "rgba(26,26,26,0.7)" }}>{b.week_focus}</p></div>}
+                              {b.todays_challenge && <div><p className="text-xs font-semibold mb-0.5" style={{ color: "var(--teal)" }}>Today&apos;s Challenge</p><p className="text-sm" style={{ color: "rgba(26,26,26,0.7)" }}>{b.todays_challenge}</p></div>}
+                              {b.closing_encouragement && <div><p className="text-xs font-semibold mb-0.5" style={{ color: "var(--teal)" }}>Closing</p><p className="text-sm whitespace-pre-line" style={{ color: "rgba(26,26,26,0.7)" }}>{b.closing_encouragement}</p></div>}
+                              {b.last_feedback_snippet && <div><p className="text-xs font-semibold mb-0.5" style={{ color: "rgba(26,26,26,0.4)" }}>Last Feedback Snippet</p><p className="text-sm italic" style={{ color: "rgba(26,26,26,0.6)" }}>{b.last_feedback_snippet}</p></div>}
+                              {b.content_section && <div><p className="text-xs font-semibold mb-0.5" style={{ color: "rgba(26,26,26,0.4)" }}>Content Section</p><p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>{b.content_section}</p></div>}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
               )}
