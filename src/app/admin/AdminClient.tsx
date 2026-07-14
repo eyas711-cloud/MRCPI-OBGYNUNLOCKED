@@ -791,7 +791,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   // Broadcast state
   const [feedbackTab, setFeedbackTab] = useState<"feedback" | "broadcast">("feedback");
   const [broadcastTargetAll, setBroadcastTargetAll] = useState(true);
-  const [broadcastStudentId, setBroadcastStudentId] = useState("");
+  const [broadcastStudentIds, setBroadcastStudentIds] = useState<string[]>([]);
   const [broadcastSending, setBroadcastSending] = useState(false);
   const [broadcastDone, setBroadcastDone] = useState(false);
   const [broadcastForm, setBroadcastForm] = useState({
@@ -1434,7 +1434,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       <CheckCircle size={40} style={{ color: "var(--teal-bright)" }} />
                       <p className="font-semibold text-base" style={{ color: "var(--navy)" }}>Broadcast Sent!</p>
                       <p className="text-sm" style={{ color: "rgba(26,26,26,0.5)" }}>Your motivational message was delivered successfully.</p>
-                      <button onClick={() => { setBroadcastDone(false); setBroadcastForm({ quote: "", todaysMessage: "", weekFocus: "", todaysChallenge: "", closingEncouragement: "", lastFeedbackSnippet: "", contentSection: "" }); }}
+                      <button onClick={() => { setBroadcastDone(false); setBroadcastStudentIds([]); setBroadcastForm({ quote: "", todaysMessage: "", weekFocus: "", todaysChallenge: "", closingEncouragement: "", lastFeedbackSnippet: "", contentSection: "" }); }}
                         className="mt-2 px-5 py-2 rounded-xl text-sm font-semibold" style={{ backgroundColor: "var(--navy)", color: "white" }}>
                         Compose Another
                       </button>
@@ -1444,24 +1444,42 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       {/* Recipient */}
                       <div>
                         <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--navy)" }}>Recipient</p>
-                        <div className="flex items-center gap-3 flex-wrap">
+                        <div className="flex items-center gap-3 flex-wrap mb-3">
                           <label className="flex items-center gap-2 cursor-pointer">
                             <input type="radio" checked={broadcastTargetAll} onChange={() => setBroadcastTargetAll(true)} className="accent-teal-600" />
                             <span className="text-sm" style={{ color: "var(--navy)" }}>All active students</span>
                           </label>
                           <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" checked={!broadcastTargetAll} onChange={() => setBroadcastTargetAll(false)} className="accent-teal-600" />
-                            <span className="text-sm" style={{ color: "var(--navy)" }}>Specific student</span>
+                            <input type="radio" checked={!broadcastTargetAll} onChange={() => { setBroadcastTargetAll(false); }} className="accent-teal-600" />
+                            <span className="text-sm" style={{ color: "var(--navy)" }}>Select specific students</span>
                           </label>
-                          {!broadcastTargetAll && (
-                            <select value={broadcastStudentId} onChange={e => setBroadcastStudentId(e.target.value)}
-                              className="px-3 py-2 rounded-xl border text-sm focus:outline-none"
-                              style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", minWidth: 200 }}>
-                              <option value="">Select student…</option>
-                              {students.filter(s => s.status === "active").map(s => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
-                            </select>
-                          )}
                         </div>
+                        {!broadcastTargetAll && (
+                          <div className="rounded-xl border p-3 flex flex-col gap-1.5" style={{ borderColor: "rgba(15,76,92,0.15)", maxHeight: 220, overflowY: "auto" }}>
+                            {students.filter(s => s.status === "active").length === 0 && (
+                              <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>No active students found.</p>
+                            )}
+                            {students.filter(s => s.status === "active").map(s => (
+                              <label key={s.id} className="flex items-center gap-2.5 cursor-pointer px-2 py-1.5 rounded-lg hover:bg-gray-50">
+                                <input
+                                  type="checkbox"
+                                  checked={broadcastStudentIds.includes(s.id)}
+                                  onChange={e => setBroadcastStudentIds(prev =>
+                                    e.target.checked ? [...prev, s.id] : prev.filter(id => id !== s.id)
+                                  )}
+                                  className="accent-teal-600 w-4 h-4 flex-shrink-0"
+                                />
+                                <span className="text-sm" style={{ color: "var(--navy)" }}>{s.full_name || s.email}</span>
+                                <span className="text-xs ml-auto" style={{ color: "rgba(26,26,26,0.35)" }}>{s.email}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                        {!broadcastTargetAll && broadcastStudentIds.length > 0 && (
+                          <p className="text-xs mt-1.5" style={{ color: "var(--teal)" }}>
+                            {broadcastStudentIds.length} student{broadcastStudentIds.length > 1 ? "s" : ""} selected
+                          </p>
+                        )}
                       </div>
 
                       <hr style={{ borderColor: "rgba(15,76,92,0.1)" }} />
@@ -1547,7 +1565,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       </div>
 
                       <button
-                        disabled={broadcastSending || !broadcastForm.todaysMessage || !broadcastForm.closingEncouragement || (!broadcastTargetAll && !broadcastStudentId)}
+                        disabled={broadcastSending || !broadcastForm.todaysMessage || !broadcastForm.closingEncouragement || (!broadcastTargetAll && broadcastStudentIds.length === 0)}
                         onClick={async () => {
                           setBroadcastSending(true);
                           const res = await fetch("/api/admin/send-broadcast", {
@@ -1555,7 +1573,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
                               targetAll: broadcastTargetAll,
-                              studentId: broadcastStudentId,
+                              studentIds: broadcastStudentIds,
                               ...broadcastForm,
                             }),
                           });

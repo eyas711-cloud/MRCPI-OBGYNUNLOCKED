@@ -149,7 +149,7 @@ export async function POST(req: Request) {
   }
 
   const body = await req.json();
-  const { targetAll, studentId, quote, todaysMessage, weekFocus, todaysChallenge, closingEncouragement, lastFeedbackSnippet, contentSection } = body;
+  const { targetAll, studentIds, quote, todaysMessage, weekFocus, todaysChallenge, closingEncouragement, lastFeedbackSnippet, contentSection } = body;
 
   const serviceClient = createServiceClient();
 
@@ -159,8 +159,8 @@ export async function POST(req: Request) {
     const { data } = await serviceClient.from("profiles").select("id, email, full_name").eq("role", "student").eq("status", "active");
     recipients = data ?? [];
   } else {
-    const { data } = await serviceClient.from("profiles").select("id, email, full_name").eq("id", studentId).single();
-    if (data) recipients = [data];
+    const { data } = await serviceClient.from("profiles").select("id, email, full_name").in("id", studentIds ?? []);
+    recipients = data ?? [];
   }
 
   if (recipients.length === 0) return NextResponse.json({ error: "No recipients found" }, { status: 400 });
