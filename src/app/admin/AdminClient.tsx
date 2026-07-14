@@ -1565,7 +1565,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       </div>
 
                       <button
-                        disabled={broadcastSending || !broadcastForm.todaysMessage || !broadcastForm.closingEncouragement || (!broadcastTargetAll && broadcastStudentIds.length === 0)}
+                        disabled={broadcastSending || (!broadcastTargetAll && broadcastStudentIds.length === 0)}
                         onClick={async () => {
                           setBroadcastSending(true);
                           const res = await fetch("/api/admin/send-broadcast", {
