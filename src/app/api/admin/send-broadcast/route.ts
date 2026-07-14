@@ -42,23 +42,22 @@ function buildBroadcastHtml(fields: {
     todaysChallenge, closingEncouragement, lastFeedbackSnippet, contentSection,
   } = fields;
 
-  const block = (label: string, body: string) => `
-    <div style="margin-bottom:24px;">
-      <p style="margin:0 0 6px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#15B097;font-family:Georgia,serif;">${label}</p>
-      <p style="margin:0;font-size:15px;color:#0B1E3D;line-height:1.75;font-family:Georgia,serif;white-space:pre-line;">${body}</p>
+  const card = (icon: string, label: string, body: string, italic = false) => `
+    <div style="background:#f0faf8;border-radius:12px;padding:18px 20px;margin-bottom:14px;">
+      <p style="margin:0 0 6px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#15B097;font-family:Georgia,serif;">${icon ? icon + " " : ""}${label}</p>
+      <p style="margin:0;font-size:15px;color:#0B1E3D;line-height:1.75;font-family:Georgia,serif;white-space:pre-line;${italic ? "font-style:italic;" : ""}">${body}</p>
     </div>`;
 
-  const optionalFooterRows = [
-    lastFeedbackSnippet ? `
-      <div style="background:#f0faf8;border-left:3px solid #15B097;border-radius:4px;padding:14px 18px;margin-bottom:16px;">
-        <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#15B097;font-family:Georgia,serif;">Where We Left Off</p>
-        <p style="margin:0;font-size:14px;color:#0B1E3D;line-height:1.65;font-style:italic;font-family:Georgia,serif;">"${lastFeedbackSnippet}"</p>
-      </div>` : "",
-    contentSection ? `
-      <div style="background:#f8f7f4;border:1px solid rgba(15,76,92,0.12);border-radius:8px;padding:14px 18px;margin-bottom:16px;">
-        <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(26,26,26,0.45);font-family:Georgia,serif;">Content to Focus On</p>
-        <p style="margin:0;font-size:14px;color:#0B1E3D;font-weight:600;font-family:Georgia,serif;">${contentSection}</p>
-      </div>` : "",
+  const sections = [
+    todaysMessage     ? card("✉", "Today&rsquo;s Message",    todaysMessage)     : "",
+    weekFocus         ? card("🎯", "This Week&rsquo;s Focus",  weekFocus)         : "",
+    todaysChallenge   ? card("⚡", "Today&rsquo;s Challenge",  todaysChallenge)   : "",
+    closingEncouragement ? card("💬", "Closing Encouragement", closingEncouragement, true) : "",
+  ].filter(Boolean).join("");
+
+  const footerRows = [
+    lastFeedbackSnippet ? card("📌", "Where We Left Off", `"${lastFeedbackSnippet}"`, true) : "",
+    contentSection      ? card("📚", "Content to Focus On", contentSection)                  : "",
   ].filter(Boolean).join("");
 
   return `
@@ -73,57 +72,34 @@ function buildBroadcastHtml(fields: {
 
   <!-- Body -->
   <div style="background:#ffffff;padding:36px 36px 28px 36px;border-radius:0 0 16px 16px;border:1px solid rgba(15,76,92,0.12);border-top:none;">
-    <p style="color:#0B1E3D;font-size:17px;margin:0 0 28px 0;">Dear ${studentName},</p>
+    <p style="color:#0B1E3D;font-size:17px;margin:0 0 24px 0;">Dear ${studentName},</p>
 
     ${quote ? `
-    <!-- Quote -->
-    <div style="background:#0B1E3D;border-radius:12px;padding:20px 24px;margin-bottom:28px;text-align:center;">
+    <div style="background:#0B1E3D;border-radius:12px;padding:20px 24px;margin-bottom:20px;text-align:center;">
       <p style="margin:0;font-size:16px;font-style:italic;color:#ffffff;line-height:1.7;font-family:Georgia,serif;">${quote}</p>
     </div>` : ""}
 
-    ${todaysMessage ? block("Today&rsquo;s Message", todaysMessage) : ""}
+    ${sections}
 
-    ${weekFocus ? `
-    <div style="background:#f0faf8;border-radius:10px;padding:18px 22px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;">
-      <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:#15B097;display:flex;align-items:center;justify-content:center;font-size:16px;">🎯</div>
-      <div>
-        <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#15B097;font-family:Georgia,serif;">This Week&rsquo;s Focus</p>
-        <p style="margin:0;font-size:15px;color:#0B1E3D;line-height:1.65;font-family:Georgia,serif;">${weekFocus}</p>
-      </div>
-    </div>` : ""}
-
-    ${todaysChallenge ? `
-    <div style="background:#fff8ee;border:1px solid rgba(201,162,39,0.25);border-radius:10px;padding:18px 22px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;">
-      <div style="flex-shrink:0;font-size:20px;">⚡</div>
-      <div>
-        <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;font-family:Georgia,serif;">Today&rsquo;s Challenge</p>
-        <p style="margin:0;font-size:15px;color:#0B1E3D;line-height:1.65;font-family:Georgia,serif;">${todaysChallenge}</p>
-      </div>
-    </div>` : ""}
-
-    <!-- Closing -->
-    ${closingEncouragement ? `<div style="border-top:1px solid rgba(15,76,92,0.08);padding-top:22px;margin-top:8px;">
-      <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(26,26,26,0.4);font-family:Georgia,serif;">Closing Encouragement</p>
-      <p style="margin:0 0 20px 0;font-size:15px;color:#0B1E3D;line-height:1.75;font-style:italic;font-family:Georgia,serif;">${closingEncouragement}</p>
+    ${closingEncouragement ? `
+    <div style="margin-top:8px;padding-top:20px;border-top:1px solid rgba(15,76,92,0.08);">
       <p style="margin:0;font-size:14px;color:rgba(26,26,26,0.55);font-family:Georgia,serif;">With care,</p>
       <p style="margin:4px 0 0 0;font-size:16px;font-weight:700;color:#0B1E3D;font-family:Georgia,serif;">Dr. Einas Diab</p>
       <p style="margin:2px 0 0 0;font-size:12px;color:#15B097;font-family:Georgia,serif;">MRCPI OBGYN Unlocked</p>
     </div>` : ""}
   </div>
 
-  ${optionalFooterRows || (lastFeedbackSnippet || contentSection) ? `
-  <!-- Keep Your Momentum Alive footer -->
-  <div style="background:#0B1E3D;border-radius:16px;padding:28px 36px;margin-top:16px;">
-    <p style="margin:0 0 18px 0;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#15B097;text-align:center;font-family:Georgia,serif;">Keep Your Momentum Alive</p>
-    ${optionalFooterRows}
-    <div style="text-align:center;margin-top:20px;">
+  ${footerRows ? `
+  <div style="background:#0B1E3D;border-radius:16px;padding:28px 28px 20px 28px;margin-top:16px;">
+    <p style="margin:0 0 16px 0;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#15B097;text-align:center;font-family:Georgia,serif;">Keep Your Momentum Alive</p>
+    ${footerRows}
+    <div style="text-align:center;margin-top:16px;">
       <a href="https://mrcpiobgynunlocked.com/dashboard"
          style="background:#15B097;color:#0B1E3D;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;font-family:Georgia,serif;letter-spacing:0.02em;">
         Resume Learning →
       </a>
     </div>
   </div>` : `
-  <!-- Resume button standalone -->
   <div style="text-align:center;margin-top:20px;">
     <a href="https://mrcpiobgynunlocked.com/dashboard"
        style="background:#0B1E3D;color:#15B097;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;font-family:Georgia,serif;">
