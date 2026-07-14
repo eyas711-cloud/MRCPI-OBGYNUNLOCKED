@@ -42,9 +42,9 @@ function buildBroadcastHtml(fields: {
     todaysChallenge, closingEncouragement, lastFeedbackSnippet, contentSection,
   } = fields;
 
-  const block = (num: string, label: string, body: string) => `
+  const block = (label: string, body: string) => `
     <div style="margin-bottom:24px;">
-      <p style="margin:0 0 6px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#15B097;font-family:Georgia,serif;">${num} · ${label}</p>
+      <p style="margin:0 0 6px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#15B097;font-family:Georgia,serif;">${label}</p>
       <p style="margin:0;font-size:15px;color:#0B1E3D;line-height:1.75;font-family:Georgia,serif;white-space:pre-line;">${body}</p>
     </div>`;
 
@@ -81,13 +81,13 @@ function buildBroadcastHtml(fields: {
       <p style="margin:0;font-size:16px;font-style:italic;color:#ffffff;line-height:1.7;font-family:Georgia,serif;">${quote}</p>
     </div>` : ""}
 
-    ${block("2", "Today&rsquo;s Message", todaysMessage)}
+    ${todaysMessage ? block("Today&rsquo;s Message", todaysMessage) : ""}
 
     ${weekFocus ? `
     <div style="background:#f0faf8;border-radius:10px;padding:18px 22px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;">
       <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;background:#15B097;display:flex;align-items:center;justify-content:center;font-size:16px;">🎯</div>
       <div>
-        <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#15B097;font-family:Georgia,serif;">3 · This Week&rsquo;s Focus</p>
+        <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#15B097;font-family:Georgia,serif;">This Week&rsquo;s Focus</p>
         <p style="margin:0;font-size:15px;color:#0B1E3D;line-height:1.65;font-family:Georgia,serif;">${weekFocus}</p>
       </div>
     </div>` : ""}
@@ -96,19 +96,19 @@ function buildBroadcastHtml(fields: {
     <div style="background:#fff8ee;border:1px solid rgba(201,162,39,0.25);border-radius:10px;padding:18px 22px;margin-bottom:24px;display:flex;gap:14px;align-items:flex-start;">
       <div style="flex-shrink:0;font-size:20px;">⚡</div>
       <div>
-        <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;font-family:Georgia,serif;">4 · Today&rsquo;s Challenge</p>
+        <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:#C9A84C;font-family:Georgia,serif;">Today&rsquo;s Challenge</p>
         <p style="margin:0;font-size:15px;color:#0B1E3D;line-height:1.65;font-family:Georgia,serif;">${todaysChallenge}</p>
       </div>
     </div>` : ""}
 
     <!-- Closing -->
-    <div style="border-top:1px solid rgba(15,76,92,0.08);padding-top:22px;margin-top:8px;">
-      <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(26,26,26,0.4);font-family:Georgia,serif;">5 · Closing Encouragement</p>
+    ${closingEncouragement ? `<div style="border-top:1px solid rgba(15,76,92,0.08);padding-top:22px;margin-top:8px;">
+      <p style="margin:0 0 4px 0;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(26,26,26,0.4);font-family:Georgia,serif;">Closing Encouragement</p>
       <p style="margin:0 0 20px 0;font-size:15px;color:#0B1E3D;line-height:1.75;font-style:italic;font-family:Georgia,serif;">${closingEncouragement}</p>
       <p style="margin:0;font-size:14px;color:rgba(26,26,26,0.55);font-family:Georgia,serif;">With care,</p>
       <p style="margin:4px 0 0 0;font-size:16px;font-weight:700;color:#0B1E3D;font-family:Georgia,serif;">Dr. Einas Diab</p>
       <p style="margin:2px 0 0 0;font-size:12px;color:#15B097;font-family:Georgia,serif;">MRCPI OBGYN Unlocked</p>
-    </div>
+    </div>` : ""}
   </div>
 
   ${optionalFooterRows || (lastFeedbackSnippet || contentSection) ? `
