@@ -88,14 +88,14 @@ function buildBroadcastHtml(fields: {
     <p style="margin:0 0 16px 0;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#15B097;text-align:center;font-family:Georgia,serif;">Keep Your Momentum Alive</p>
     ${footerRows}
     <div style="text-align:center;margin-top:16px;">
-      <a href="https://mrcpiobgynunlocked.com/dashboard"
+      <a href="https://mrcpi-obgynunlocked.com/dashboard"
          style="background:#15B097;color:#0B1E3D;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;font-family:Georgia,serif;letter-spacing:0.02em;">
         Resume Learning →
       </a>
     </div>
   </div>` : `
   <div style="text-align:center;margin-top:20px;">
-    <a href="https://mrcpiobgynunlocked.com/dashboard"
+    <a href="https://mrcpi-obgynunlocked.com/dashboard"
        style="background:#0B1E3D;color:#15B097;padding:14px 36px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;font-family:Georgia,serif;">
       Resume Learning →
     </a>
@@ -109,7 +109,7 @@ function buildBroadcastHtml(fields: {
 
   <p style="text-align:center;font-size:11px;color:rgba(26,26,26,0.3);margin-top:16px;font-family:Georgia,serif;">
     © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
-    <a href="https://mrcpiobgynunlocked.com" style="color:rgba(26,26,26,0.3);text-decoration:none;">mrcpiobgynunlocked.com</a>
+    <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.3);text-decoration:none;">mrcpi-obgynunlocked.com</a>
   </p>
 </div>`;
 }
