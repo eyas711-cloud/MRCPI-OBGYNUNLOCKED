@@ -1632,7 +1632,21 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                 </p>
                               </div>
                             </div>
-                            <Eye size={14} style={{ color: "rgba(26,26,26,0.3)", flexShrink: 0 }} />
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Eye size={14} style={{ color: "rgba(26,26,26,0.3)" }} />
+                              <button
+                                onClick={async e => {
+                                  e.stopPropagation();
+                                  if (!confirm("Delete this broadcast from your history?")) return;
+                                  await supabase.from("broadcast_log").delete().eq("id", b.id);
+                                  if (broadcastLogExpanded === b.id) setBroadcastLogExpanded(null);
+                                  fetchBroadcastLog();
+                                }}
+                                className="p-1 rounded hover:bg-red-50 transition-colors"
+                                title="Delete broadcast">
+                                <Trash2 size={13} style={{ color: "rgba(180,40,40,0.6)" }} />
+                              </button>
+                            </div>
                           </button>
                           {broadcastLogExpanded === b.id && (
                             <div className="px-4 pb-4 pt-1 border-t space-y-2.5" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
