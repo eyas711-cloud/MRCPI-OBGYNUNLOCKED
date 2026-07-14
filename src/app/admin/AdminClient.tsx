@@ -788,6 +788,22 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [editFeedbackForm, setEditFeedbackForm] = useState({ type: "general" as "general" | "progress", title: "", content: "" });
   const [editFeedbackSaving, setEditFeedbackSaving] = useState(false);
 
+  // Broadcast state
+  const [feedbackTab, setFeedbackTab] = useState<"feedback" | "broadcast">("feedback");
+  const [broadcastTargetAll, setBroadcastTargetAll] = useState(true);
+  const [broadcastStudentId, setBroadcastStudentId] = useState("");
+  const [broadcastSending, setBroadcastSending] = useState(false);
+  const [broadcastDone, setBroadcastDone] = useState(false);
+  const [broadcastForm, setBroadcastForm] = useState({
+    quote: "",
+    todaysMessage: "",
+    weekFocus: "",
+    todaysChallenge: "",
+    closingEncouragement: "",
+    lastFeedbackSnippet: "",
+    contentSection: "",
+  });
+
   const [sessionFeedbackModal, setSessionFeedbackModal] = useState<{ bookingId: string; studentId: string; studentName: string; sessionDate: string } | null>(null);
   const [sessionFeedbackForm, setSessionFeedbackForm] = useState({
     overall_score: "",
@@ -1373,29 +1389,190 @@ export default function AdminClient({ user }: { user: AdminUser }) {
           {/* ── FEEDBACK ── */}
           {activeNav === "Feedback" && (
             <div className="space-y-6">
-              {/* Header */}
+              {/* Header + tab switcher */}
               <div className="flex items-center justify-between gap-4 flex-wrap">
                 <div>
-                  <h2 className="font-serif font-semibold text-lg" style={{ color: "var(--navy)" }}>Student Feedback</h2>
-                  <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.5)" }}>Write, edit, and track all feedback sent to students</p>
+                  <h2 className="font-serif font-semibold text-lg" style={{ color: "var(--navy)" }}>
+                    {feedbackTab === "feedback" ? "Student Feedback" : "Broadcast Message"}
+                  </h2>
+                  <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.5)" }}>
+                    {feedbackTab === "feedback" ? "Write, edit, and track all feedback sent to students" : "Send a motivational message to one or all students"}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <select
-                    className="px-3 py-2.5 rounded-xl border text-sm focus:outline-none"
-                    style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", minWidth: 180 }}
-                    defaultValue=""
-                    onChange={e => {
-                      const student = students.find(s => s.id === e.target.value);
-                      if (student) { setFeedbackForm({ type: "general", title: "", content: "" }); setFeedbackDone(false); setFeedbackModal({ studentId: student.id, studentName: student.full_name || student.email }); e.target.value = ""; }
-                    }}>
-                    <option value="" disabled>Select student…</option>
-                    {students.filter(s => s.status === "active").map(s => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
-                  </select>
+                  {feedbackTab === "feedback" && (
+                    <select
+                      className="px-3 py-2.5 rounded-xl border text-sm focus:outline-none"
+                      style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", minWidth: 180 }}
+                      defaultValue=""
+                      onChange={e => {
+                        const student = students.find(s => s.id === e.target.value);
+                        if (student) { setFeedbackForm({ type: "general", title: "", content: "" }); setFeedbackDone(false); setFeedbackModal({ studentId: student.id, studentName: student.full_name || student.email }); e.target.value = ""; }
+                      }}>
+                      <option value="" disabled>Select student…</option>
+                      {students.filter(s => s.status === "active").map(s => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
+                    </select>
+                  )}
+                  <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: "rgba(15,76,92,0.2)" }}>
+                    <button onClick={() => setFeedbackTab("feedback")} className="px-4 py-2 text-xs font-semibold transition-colors"
+                      style={{ backgroundColor: feedbackTab === "feedback" ? "var(--navy)" : "white", color: feedbackTab === "feedback" ? "white" : "rgba(26,26,26,0.6)" }}>
+                      Feedback Log
+                    </button>
+                    <button onClick={() => { setFeedbackTab("broadcast"); setBroadcastDone(false); }} className="px-4 py-2 text-xs font-semibold transition-colors flex items-center gap-1.5"
+                      style={{ backgroundColor: feedbackTab === "broadcast" ? "var(--teal-bright)" : "white", color: feedbackTab === "broadcast" ? "white" : "rgba(26,26,26,0.6)" }}>
+                      <Send size={11} /> Broadcast
+                    </button>
+                  </div>
                 </div>
               </div>
 
+              {/* ── BROADCAST COMPOSE ── */}
+              {feedbackTab === "broadcast" && (
+                <div className="rounded-2xl border p-6 space-y-5" style={{ borderColor: "rgba(15,76,92,0.15)", backgroundColor: "white" }}>
+                  {broadcastDone ? (
+                    <div className="flex flex-col items-center gap-3 py-10">
+                      <CheckCircle size={40} style={{ color: "var(--teal-bright)" }} />
+                      <p className="font-semibold text-base" style={{ color: "var(--navy)" }}>Broadcast Sent!</p>
+                      <p className="text-sm" style={{ color: "rgba(26,26,26,0.5)" }}>Your motivational message was delivered successfully.</p>
+                      <button onClick={() => { setBroadcastDone(false); setBroadcastForm({ quote: "", todaysMessage: "", weekFocus: "", todaysChallenge: "", closingEncouragement: "", lastFeedbackSnippet: "", contentSection: "" }); }}
+                        className="mt-2 px-5 py-2 rounded-xl text-sm font-semibold" style={{ backgroundColor: "var(--navy)", color: "white" }}>
+                        Compose Another
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Recipient */}
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "var(--navy)" }}>Recipient</p>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" checked={broadcastTargetAll} onChange={() => setBroadcastTargetAll(true)} className="accent-teal-600" />
+                            <span className="text-sm" style={{ color: "var(--navy)" }}>All active students</span>
+                          </label>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" checked={!broadcastTargetAll} onChange={() => setBroadcastTargetAll(false)} className="accent-teal-600" />
+                            <span className="text-sm" style={{ color: "var(--navy)" }}>Specific student</span>
+                          </label>
+                          {!broadcastTargetAll && (
+                            <select value={broadcastStudentId} onChange={e => setBroadcastStudentId(e.target.value)}
+                              className="px-3 py-2 rounded-xl border text-sm focus:outline-none"
+                              style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", minWidth: 200 }}>
+                              <option value="">Select student…</option>
+                              {students.filter(s => s.status === "active").map(s => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
+                            </select>
+                          )}
+                        </div>
+                      </div>
+
+                      <hr style={{ borderColor: "rgba(15,76,92,0.1)" }} />
+
+                      {/* 1 — Inspirational Quote */}
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: "var(--teal)" }}>
+                          1 · Inspirational Quote
+                        </label>
+                        <input value={broadcastForm.quote} onChange={e => setBroadcastForm(p => ({ ...p, quote: e.target.value }))}
+                          placeholder="e.g. "The secret of getting ahead is getting started." — Mark Twain"
+                          className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
+                      </div>
+
+                      {/* 2 — Today's Message */}
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: "var(--teal)" }}>
+                          2 · Today&apos;s Message *
+                        </label>
+                        <textarea rows={4} value={broadcastForm.todaysMessage} onChange={e => setBroadcastForm(p => ({ ...p, todaysMessage: e.target.value }))}
+                          placeholder="Write your personal message to the student(s)…"
+                          className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none resize-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
+                      </div>
+
+                      {/* 3 — This Week's Focus */}
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: "var(--teal)" }}>
+                          3 · This Week&apos;s Focus
+                        </label>
+                        <input value={broadcastForm.weekFocus} onChange={e => setBroadcastForm(p => ({ ...p, weekFocus: e.target.value }))}
+                          placeholder="One practical takeaway to focus on this week…"
+                          className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
+                      </div>
+
+                      {/* 4 — Today's Challenge */}
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: "var(--teal)" }}>
+                          4 · Today&apos;s Challenge
+                        </label>
+                        <input value={broadcastForm.todaysChallenge} onChange={e => setBroadcastForm(p => ({ ...p, todaysChallenge: e.target.value }))}
+                          placeholder="A small, actionable task for today…"
+                          className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
+                      </div>
+
+                      {/* 5 — Closing Encouragement */}
+                      <div>
+                        <label className="block text-xs font-semibold uppercase tracking-widest mb-1.5" style={{ color: "var(--teal)" }}>
+                          5 · Closing Encouragement *
+                        </label>
+                        <textarea rows={3} value={broadcastForm.closingEncouragement} onChange={e => setBroadcastForm(p => ({ ...p, closingEncouragement: e.target.value }))}
+                          placeholder="Closing words of encouragement from Dr. Einas…"
+                          className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none resize-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
+                      </div>
+
+                      <hr style={{ borderColor: "rgba(15,76,92,0.1)" }} />
+                      <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(26,26,26,0.4)" }}>Footer — Keep Your Momentum Alive (optional)</p>
+
+                      {/* Last Feedback Snippet */}
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>
+                          Where we left off (last feedback snippet)
+                        </label>
+                        <textarea rows={2} value={broadcastForm.lastFeedbackSnippet} onChange={e => setBroadcastForm(p => ({ ...p, lastFeedbackSnippet: e.target.value }))}
+                          placeholder="Optional — paste a short snippet from previous feedback…"
+                          className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none resize-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
+                      </div>
+
+                      {/* Content Section */}
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>
+                          Content to focus on (course/module name)
+                        </label>
+                        <input value={broadcastForm.contentSection} onChange={e => setBroadcastForm(p => ({ ...p, contentSection: e.target.value }))}
+                          placeholder="Optional — e.g. Station 4: Obstetric History, Week 3 Mock OSCE…"
+                          className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
+                      </div>
+
+                      <button
+                        disabled={broadcastSending || !broadcastForm.todaysMessage || !broadcastForm.closingEncouragement || (!broadcastTargetAll && !broadcastStudentId)}
+                        onClick={async () => {
+                          setBroadcastSending(true);
+                          const res = await fetch("/api/admin/send-broadcast", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              targetAll: broadcastTargetAll,
+                              studentId: broadcastStudentId,
+                              ...broadcastForm,
+                            }),
+                          });
+                          setBroadcastSending(false);
+                          if (res.ok) setBroadcastDone(true);
+                        }}
+                        className="w-full py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-opacity disabled:opacity-40"
+                        style={{ backgroundColor: "var(--teal-bright)", color: "white" }}>
+                        {broadcastSending ? <><Loader size={14} className="animate-spin" /> Sending…</> : <><Send size={14} /> Send Broadcast Email</>}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Student filter chips */}
-              {allFeedback.length > 0 && (() => {
+              {feedbackTab === "feedback" && allFeedback.length > 0 && (() => {
                 const uniqueStudents = Array.from(new Map(allFeedback.map(f => [f.student_id, { id: f.student_id, name: f.student_name }])).values());
                 return (
                   <div className="flex gap-2 flex-wrap">
@@ -1408,7 +1585,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
               })()}
 
               {/* Feedback list */}
-              {allFeedback.length === 0 ? (
+              {feedbackTab === "feedback" && (allFeedback.length === 0 ? (
                 <div className="rounded-xl border bg-white p-12 text-center" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                   <Pencil size={28} className="mx-auto mb-3" style={{ color: "rgba(26,26,26,0.2)" }} />
                   <p className="text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No feedback written yet. Use the button above to write feedback for a student.</p>
@@ -1499,7 +1676,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     </div>
                   ))}
                 </div>
-              )}
+              ))}
             </div>
           )}
 
