@@ -81,12 +81,6 @@ function buildBroadcastHtml(fields: {
 
     ${sections}
 
-    ${closingEncouragement ? `
-    <div style="margin-top:8px;padding-top:20px;border-top:1px solid rgba(15,76,92,0.08);">
-      <p style="margin:0;font-size:14px;color:rgba(26,26,26,0.55);font-family:Georgia,serif;">With care,</p>
-      <p style="margin:4px 0 0 0;font-size:16px;font-weight:700;color:#0B1E3D;font-family:Georgia,serif;">Dr. Einas Diab</p>
-      <p style="margin:2px 0 0 0;font-size:12px;color:#15B097;font-family:Georgia,serif;">MRCPI OBGYN Unlocked</p>
-    </div>` : ""}
   </div>
 
   ${footerRows ? `
@@ -107,7 +101,13 @@ function buildBroadcastHtml(fields: {
     </a>
   </div>`}
 
-  <p style="text-align:center;font-size:11px;color:rgba(26,26,26,0.3);margin-top:20px;font-family:Georgia,serif;">
+  <div style="text-align:center;margin-top:24px;">
+    <p style="margin:0;font-size:14px;color:rgba(26,26,26,0.55);font-family:Georgia,serif;">With care,</p>
+    <p style="margin:4px 0 0 0;font-size:16px;font-weight:700;color:#0B1E3D;font-family:Georgia,serif;">Dr. Einas Diab</p>
+    <p style="margin:2px 0 8px 0;font-size:12px;color:#15B097;font-family:Georgia,serif;">MRCPI OBGYN Unlocked</p>
+  </div>
+
+  <p style="text-align:center;font-size:11px;color:rgba(26,26,26,0.3);margin-top:16px;font-family:Georgia,serif;">
     © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
     <a href="https://mrcpiobgynunlocked.com" style="color:rgba(26,26,26,0.3);text-decoration:none;">mrcpiobgynunlocked.com</a>
   </p>
