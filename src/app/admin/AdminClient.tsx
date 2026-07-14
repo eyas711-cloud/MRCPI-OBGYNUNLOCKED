@@ -1472,7 +1472,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                           1 · Inspirational Quote
                         </label>
                         <input value={broadcastForm.quote} onChange={e => setBroadcastForm(p => ({ ...p, quote: e.target.value }))}
-                          placeholder="e.g. "The secret of getting ahead is getting started." — Mark Twain"
+                          placeholder={'e.g. “The secret of getting ahead is getting started.” — Mark Twain'}
                           className="w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none"
                           style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }} />
                       </div>
