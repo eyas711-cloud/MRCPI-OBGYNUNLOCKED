@@ -663,7 +663,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
                 <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{previewItem.item.file_name} · {fmtSize(previewItem.item.file_size)}</p>
               </div>
               <div className="flex items-center gap-2 ml-4">
-                {section.fileLabel === "PDF" && (
+                {(section.fileLabel === "PDF" || section.id === "flashcards") && (
                   <button onClick={isAdminPdfFullscreen ? exitAdminPdfFullscreen : openAdminPdfFullscreen} aria-label={isAdminPdfFullscreen ? "Exit Fullscreen" : "Fullscreen"} title={isAdminPdfFullscreen ? "Exit Fullscreen" : "Fullscreen"} className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100" style={{ border: "1.5px solid rgba(15,76,92,0.18)" }}>
                     {isAdminPdfFullscreen ? <Minimize2 size={16} style={{ color: "var(--navy)" }} /> : <Maximize2 size={16} style={{ color: "var(--navy)" }} />}
                   </button>
@@ -683,7 +683,10 @@ function ContentPanel({ user }: { user: AdminUser }) {
             </div>
             <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center min-h-[400px]">
               {section.id === "flashcards" ? (
-                <img src={previewItem.url} alt={previewItem.item.title} className="max-w-full max-h-[65vh] object-contain p-4" />
+                <div ref={adminPdfWrapperRef} className="w-full h-full flex items-center justify-center" style={{ minHeight: "65vh", backgroundColor: isAdminPdfFullscreen ? "#111" : undefined }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={previewItem.url} alt={previewItem.item.title} style={{ maxWidth: "100%", maxHeight: isAdminPdfFullscreen ? "100vh" : "80vh", objectFit: "contain", padding: "12px" }} />
+                </div>
               ) : section.id === "videos" ? (
                 (() => {
                   try {

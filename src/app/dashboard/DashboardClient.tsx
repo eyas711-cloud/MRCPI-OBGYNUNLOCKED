@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   FileText, Image, Video, Mic, ChevronRight, ChevronLeft,
   Play, Bell, LogOut, Award, Search, X, Loader,
-  BookOpen, Star, MessageSquare, CheckCircle, Clock,
+  BookOpen, Star, MessageSquare, CheckCircle, Clock, Maximize2, Minimize2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import PdfViewer from "@/components/PdfViewer";
@@ -232,6 +232,7 @@ function FileViewer({
   onClose: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
+  const [imgFullscreen, setImgFullscreen] = useState(false);
   const pdfIframeRef = useRef<HTMLIFrameElement>(null);
   const isVimeo = item.file_name === "vimeo" || item.storage_path?.startsWith("http");
   const embedUrl = isVimeo ? getVimeoEmbedUrl(item.storage_path) : null;
@@ -262,9 +263,16 @@ function FileViewer({
             <p className="font-semibold text-sm truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
             {!isVimeo && <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{item.file_name} · {formatSize(item.file_size)}</p>}
           </div>
-          <button onClick={onClose} aria-label="Close" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100 ml-2">
-            <X size={16} style={{ color: "var(--navy)" }} />
-          </button>
+          <div className="flex items-center gap-2 ml-2">
+            {fileType === "image" && (
+              <button onClick={() => setImgFullscreen(f => !f)} aria-label={imgFullscreen ? "Exit fullscreen" : "Fullscreen"} className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100" style={{ border: "1.5px solid rgba(15,76,92,0.18)" }}>
+                {imgFullscreen ? <Minimize2 size={16} style={{ color: "var(--navy)" }} /> : <Maximize2 size={16} style={{ color: "var(--navy)" }} />}
+              </button>
+            )}
+            <button onClick={onClose} aria-label="Close" className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-100">
+              <X size={16} style={{ color: "var(--navy)" }} />
+            </button>
+          </div>
         </div>
         {/* Content */}
         <div className="flex-1 overflow-auto bg-gray-50 flex items-center justify-center" style={{ minHeight: 0 }}>
@@ -292,13 +300,36 @@ function FileViewer({
           ) : fileType === "pdf" ? (
             <PdfViewer url={url} title={item.title} />
           ) : fileType === "image" ? (
-            <img
-              src={url} alt={item.title}
-              className="max-w-full max-h-[60vh] object-contain p-4"
-              onContextMenu={(e) => e.preventDefault()}
-              draggable={false}
-              style={{ userSelect: "none", WebkitUserSelect: "none" }}
-            />
+            <>
+              {imgFullscreen && (
+                <div
+                  className="fixed inset-0 z-[60] flex items-center justify-center"
+                  style={{ backgroundColor: "rgba(0,0,0,0.95)" }}
+                  onClick={() => setImgFullscreen(false)}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url!} alt={item.title}
+                    style={{ maxWidth: "100vw", maxHeight: "100vh", objectFit: "contain", userSelect: "none", WebkitUserSelect: "none" }}
+                    onContextMenu={(e) => e.preventDefault()}
+                    draggable={false}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <button onClick={() => setImgFullscreen(false)} className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
+                    <Minimize2 size={18} color="white" />
+                  </button>
+                </div>
+              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url} alt={item.title}
+                className="w-full h-full object-contain cursor-zoom-in"
+                style={{ padding: "12px", userSelect: "none", WebkitUserSelect: "none" }}
+                onContextMenu={(e) => e.preventDefault()}
+                draggable={false}
+                onClick={() => setImgFullscreen(true)}
+              />
+            </>
           ) : fileType === "audio" ? (
             <DashAudioPlayer signedUrl={url} fileName={item.file_name} title={item.title} />
           ) : null}
