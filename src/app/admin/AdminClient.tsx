@@ -860,6 +860,55 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [sendingConfirm, setSendingConfirm] = useState(false);
   const [confirmSent, setConfirmSent] = useState<string | null>(null);
 
+  // Notification bell state
+  type NotifItem = { id: string; type: "registration" | "payment" | "booking" | "review"; title: string; body: string; ts: string; nav: string };
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifs, setNotifs] = useState<NotifItem[]>([]);
+  const [notifSeenAt, setNotifSeenAt] = useState<string>(() => {
+    if (typeof window !== "undefined") return localStorage.getItem("admin_notif_seen") ?? new Date(0).toISOString();
+    return new Date(0).toISOString();
+  });
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  const fetchNotifications = useCallback(async () => {
+    const items: NotifItem[] = [];
+    const [studRes, payRes, bookRes, revRes] = await Promise.all([
+      supabase.from("profiles").select("id, full_name, email, created_at").eq("role", "student").eq("status", "pending").order("created_at", { ascending: false }).limit(20),
+      supabase.from("payments").select("id, student_name, amount, currency, created_at").order("created_at", { ascending: false }).limit(20),
+      supabase.from("osce_bookings").select("id, name, date, time_slot, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(20),
+      supabase.from("student_reviews").select("id, student_name, rating, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(20),
+    ]);
+    for (const s of studRes.data ?? []) items.push({ id: `reg-${s.id}`, type: "registration", title: "New Registration", body: `${s.full_name || s.email} is waiting for approval`, ts: s.created_at, nav: "Students" });
+    for (const p of payRes.data ?? []) items.push({ id: `pay-${p.id}`, type: "payment", title: "Payment Recorded", body: `${p.student_name} — ${p.currency} ${Number(p.amount).toLocaleString()}`, ts: p.created_at, nav: "Payments" });
+    for (const b of bookRes.data ?? []) items.push({ id: `bk-${b.id}`, type: "booking", title: "Mock OSCE Booking", body: `${b.name} booked ${b.date} at ${b.time_slot}`, ts: b.created_at, nav: "Mock OSCEs" });
+    for (const r of revRes.data ?? []) items.push({ id: `rv-${r.id}`, type: "review", title: "New Review", body: `${r.student_name} left a ${r.rating}-star review`, ts: r.created_at, nav: "Reviews" });
+    items.sort((a, b) => b.ts.localeCompare(a.ts));
+    setNotifs(items);
+  }, []);
+
+  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const handler = (e: MouseEvent) => { if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [notifOpen]);
+
+  const unreadCount = notifs.filter(n => n.ts > notifSeenAt).length;
+
+  const handleOpenNotif = () => {
+    setNotifOpen(v => {
+      if (!v) {
+        const now = new Date().toISOString();
+        setNotifSeenAt(now);
+        if (typeof window !== "undefined") localStorage.setItem("admin_notif_seen", now);
+        fetchNotifications();
+      }
+      return !v;
+    });
+  };
+
   // Reviews state
   const [reviews, setReviews] = useState<ReviewRow[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
@@ -1194,10 +1243,52 @@ export default function AdminClient({ user }: { user: AdminUser }) {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button aria-label="Notifications" className="relative w-11 h-11 rounded-lg border flex items-center justify-center" style={{ borderColor: "rgba(15,76,92,0.2)" }}>
-              <Bell size={16} aria-hidden="true" style={{ color: "var(--navy)" }} />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full" style={{ backgroundColor: "var(--teal-bright)" }} />
-            </button>
+            <div ref={notifRef} className="relative">
+              <button onClick={handleOpenNotif} aria-label="Notifications" className="relative w-11 h-11 rounded-lg border flex items-center justify-center" style={{ borderColor: "rgba(15,76,92,0.2)" }}>
+                <Bell size={16} aria-hidden="true" style={{ color: "var(--navy)" }} />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ backgroundColor: "#e53e3e" }}>
+                    {unreadCount > 9 ? "9+" : unreadCount}
+                  </span>
+                )}
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-14 w-80 rounded-xl shadow-2xl border bg-white overflow-hidden z-50" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                  <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+                    <span className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Notifications</span>
+                    <button onClick={() => { fetchNotifications(); }} className="text-xs" style={{ color: "var(--teal-bright)" }}>Refresh</button>
+                  </div>
+                  <div className="overflow-y-auto" style={{ maxHeight: "400px" }}>
+                    {notifs.length === 0 ? (
+                      <div className="px-4 py-8 text-center text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No notifications</div>
+                    ) : notifs.map(n => {
+                      const isNew = n.ts > notifSeenAt;
+                      const iconMap: Record<string, string> = { registration: "👤", payment: "💳", booking: "📅", review: "⭐" };
+                      const relTime = (() => {
+                        const diff = Date.now() - new Date(n.ts).getTime();
+                        const m = Math.floor(diff / 60000);
+                        if (m < 1) return "just now";
+                        if (m < 60) return `${m}m ago`;
+                        const h = Math.floor(m / 60);
+                        if (h < 24) return `${h}h ago`;
+                        return `${Math.floor(h / 24)}d ago`;
+                      })();
+                      return (
+                        <button key={n.id} onClick={() => { setActiveNav(n.nav); setNotifOpen(false); }} className="w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 border-b transition-colors" style={{ borderColor: "rgba(15,76,92,0.06)", backgroundColor: isNew ? "rgba(21,176,151,0.06)" : undefined }}>
+                          <span className="text-lg flex-shrink-0 mt-0.5">{iconMap[n.type]}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--navy)" }}>{n.title}</p>
+                            <p className="text-xs truncate" style={{ color: "rgba(26,26,26,0.6)" }}>{n.body}</p>
+                            <p className="text-[10px] mt-1" style={{ color: "rgba(26,26,26,0.35)" }}>{relTime}</p>
+                          </div>
+                          {isNew && <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: "var(--teal-bright)" }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
             <button onClick={() => setActiveNav("Content")} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all hover:opacity-90" style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
               <Plus size={14} aria-hidden="true" /> Add Content
             </button>
