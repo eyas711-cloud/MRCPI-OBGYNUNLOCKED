@@ -973,6 +973,16 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setRecentItems(data ?? []);
   }, []);
 
+  const handleDeleteRecentItem = async (item: ContentItem) => {
+    const sec = CONTENT_SECTIONS.find((cs) => cs.id === item.section_id);
+    if (sec && item.file_name !== "vimeo" && !item.storage_path?.startsWith("http")) {
+      await supabase.storage.from(sec.bucket).remove([item.storage_path]);
+    }
+    await supabase.from("content_items").delete().eq("id", item.id);
+    await logAudit(user.id, user.email, user.role, `delete_${item.section_id}`, item.title);
+    fetchRecentItems();
+  };
+
   const fetchSettings = useCallback(async () => {
     const { data } = await supabase.from("site_settings").select("key, value");
     const map: Record<string, string> = {};
@@ -1393,6 +1403,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                               <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>{s?.fileLabel} · {fmtSize(item.file_size)} · {new Date(item.created_at).toLocaleDateString("en-GB")}</p>
                             </div>
                             <span className="text-xs px-2 py-1 rounded-full flex-shrink-0" style={{ backgroundColor: "rgba(21,176,151,0.08)", color: "var(--teal)" }}>Live</span>
+                            <button onClick={() => handleDeleteRecentItem(item)} aria-label={`Delete ${item.title}`} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-50 flex-shrink-0 transition-colors" style={{ color: "rgba(200,50,50,0.5)" }}>
+                              <Trash2 size={13} />
+                            </button>
                           </div>
                         );
                       })}
