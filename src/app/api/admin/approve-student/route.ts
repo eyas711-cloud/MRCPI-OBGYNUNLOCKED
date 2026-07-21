@@ -60,6 +60,41 @@ export async function POST(req: Request) {
   if (action === "terminate") {
     const serviceClient = createServiceClient();
     const { data: student } = await serviceClient.from("profiles").select("email, full_name").eq("id", studentId).single();
+
+    if (student?.email) {
+      const firstName = student.full_name?.split(" ")[0] || "Doctor";
+      await sendEmail(
+        student.email,
+        "A message from MRCPI OBGYN Unlocked",
+        `
+        <div style="font-family:Georgia,serif;max-width:600px;margin:0 auto;padding:32px 24px;background:#f8f7f4;">
+          <div style="background:#0B1E3D;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
+            <p style="color:rgba(255,255,255,0.45);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;margin:0 0 6px 0;">MRCPI OBGYN Unlocked</p>
+            <h1 style="color:#15B097;font-size:20px;margin:0;letter-spacing:0.05em;">A Message for You</h1>
+          </div>
+          <div style="background:#ffffff;padding:36px 32px;border-radius:0 0 12px 12px;border:1px solid rgba(15,76,92,0.15);border-top:none;">
+            <p style="color:#0B1E3D;font-size:16px;margin-top:0;">Dear ${firstName},</p>
+            <p style="color:#1a1a1a;font-size:15px;line-height:1.8;margin-bottom:20px;">
+              If you get this email, this means our journey has come to an end, however; you will always remain a part of <strong style="color:#0B1E3D;">MRCPI-OBGYNUNLOCKED</strong> family. We wish you all the best.
+            </p>
+            <p style="color:#1a1a1a;font-size:15px;line-height:1.8;margin-bottom:28px;">
+              Thank you for letting us be a part of your Academic journey.
+            </p>
+            <hr style="border:none;border-top:1px solid rgba(15,76,92,0.1);margin:24px 0;" />
+            <p style="color:#1a1a1a;font-size:14px;margin:0;">
+              With warmth and gratitude,<br/>
+              <strong style="color:#0B1E3D;">Dr. Einas Diab &amp; the MRCPI OBGYN Unlocked Team</strong>
+            </p>
+          </div>
+          <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
+            © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
+            <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
+          </p>
+        </div>
+        `
+      );
+    }
+
     await serviceClient.from("profiles").delete().eq("id", studentId);
     await serviceClient.auth.admin.deleteUser(studentId);
     await supabase.from("audit_logs").insert([{
