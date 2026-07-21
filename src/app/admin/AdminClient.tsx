@@ -868,7 +868,23 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (typeof window !== "undefined") return localStorage.getItem("admin_notif_seen") ?? new Date(0).toISOString();
     return new Date(0).toISOString();
   });
+  const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(() => {
+    if (typeof window !== "undefined") {
+      try { return new Set(JSON.parse(localStorage.getItem("admin_notif_dismissed") ?? "[]")); } catch { return new Set(); }
+    }
+    return new Set();
+  });
   const notifRef = useRef<HTMLDivElement>(null);
+
+  const dismissNotif = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDismissedNotifs(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      if (typeof window !== "undefined") localStorage.setItem("admin_notif_dismissed", JSON.stringify([...next]));
+      return next;
+    });
+  };
 
   const fetchNotifications = useCallback(async () => {
     const items: NotifItem[] = [];
@@ -895,7 +911,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [notifOpen]);
 
-  const unreadCount = notifs.filter(n => n.ts > notifSeenAt).length;
+  const visibleNotifs = notifs.filter(n => !dismissedNotifs.has(n.id));
+  const unreadCount = visibleNotifs.filter(n => n.ts > notifSeenAt).length;
 
   const handleOpenNotif = () => {
     setNotifOpen(v => {
@@ -1259,9 +1276,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     <button onClick={() => { fetchNotifications(); }} className="text-xs" style={{ color: "var(--teal-bright)" }}>Refresh</button>
                   </div>
                   <div className="overflow-y-auto" style={{ maxHeight: "400px" }}>
-                    {notifs.length === 0 ? (
+                    {visibleNotifs.length === 0 ? (
                       <div className="px-4 py-8 text-center text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No notifications</div>
-                    ) : notifs.map(n => {
+                    ) : visibleNotifs.map(n => {
                       const isNew = n.ts > notifSeenAt;
                       const iconMap: Record<string, string> = { registration: "👤", payment: "💳", booking: "📅", review: "⭐" };
                       const relTime = (() => {
@@ -1274,15 +1291,20 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                         return `${Math.floor(h / 24)}d ago`;
                       })();
                       return (
-                        <button key={n.id} onClick={() => { setActiveNav(n.nav); setNotifOpen(false); }} className="w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 border-b transition-colors" style={{ borderColor: "rgba(15,76,92,0.06)", backgroundColor: isNew ? "rgba(21,176,151,0.06)" : undefined }}>
-                          <span className="text-lg flex-shrink-0 mt-0.5">{iconMap[n.type]}</span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--navy)" }}>{n.title}</p>
-                            <p className="text-xs truncate" style={{ color: "rgba(26,26,26,0.6)" }}>{n.body}</p>
-                            <p className="text-[10px] mt-1" style={{ color: "rgba(26,26,26,0.35)" }}>{relTime}</p>
-                          </div>
-                          {isNew && <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: "var(--teal-bright)" }} />}
-                        </button>
+                        <div key={n.id} className="flex items-start border-b" style={{ borderColor: "rgba(15,76,92,0.06)", backgroundColor: isNew ? "rgba(21,176,151,0.06)" : undefined }}>
+                          <button onClick={() => { setActiveNav(n.nav); setNotifOpen(false); }} className="flex-1 text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors min-w-0">
+                            <span className="text-lg flex-shrink-0 mt-0.5">{iconMap[n.type]}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--navy)" }}>{n.title}</p>
+                              <p className="text-xs truncate" style={{ color: "rgba(26,26,26,0.6)" }}>{n.body}</p>
+                              <p className="text-[10px] mt-1" style={{ color: "rgba(26,26,26,0.35)" }}>{relTime}</p>
+                            </div>
+                            {isNew && <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: "var(--teal-bright)" }} />}
+                          </button>
+                          <button onClick={(e) => dismissNotif(n.id, e)} aria-label="Dismiss" className="flex-shrink-0 w-8 h-8 mt-2 mr-2 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors">
+                            <X size={13} style={{ color: "rgba(26,26,26,0.35)" }} />
+                          </button>
+                        </div>
                       );
                     })}
                   </div>
