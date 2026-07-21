@@ -112,5 +112,12 @@ export async function POST(req: Request) {
     }
   }
 
+  await service.from("announcement_log").insert([{
+    sent_by: user.id,
+    subject: subject.trim(),
+    body: body.trim(),
+    recipient_count: sent,
+  }]);
+
   return NextResponse.json({ ok: true, count: sent });
 }

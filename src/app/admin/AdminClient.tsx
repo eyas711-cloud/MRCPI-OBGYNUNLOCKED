@@ -777,6 +777,13 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [announcementTesting, setAnnouncementTesting] = useState(false);
   const [announcementResult, setAnnouncementResult] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [announcementPreview, setAnnouncementPreview] = useState(false);
+  const [announcementLog, setAnnouncementLog] = useState<{ id: string; subject: string; body: string; recipient_count: number; sent_at: string }[]>([]);
+  const [announcementLogExpanded, setAnnouncementLogExpanded] = useState<string | null>(null);
+
+  const fetchAnnouncementLog = useCallback(async () => {
+    const { data } = await supabase.from("announcement_log").select("id, subject, body, recipient_count, sent_at").order("sent_at", { ascending: false }).limit(50);
+    setAnnouncementLog(data ?? []);
+  }, []);
 
   // Feedback state
   const [feedbackModal, setFeedbackModal] = useState<{ studentId: string; studentName: string } | null>(null);
@@ -998,9 +1005,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
     if (activeNav === "Payments") { fetchPayments(); fetchBatches(); fetchReminderStudents(); }
-    if (activeNav === "Settings") { fetchSettings(); }
+    if (activeNav === "Settings") { fetchSettings(); fetchAnnouncementLog(); }
     if (activeNav === "Courses") fetchSettings();
-  }, [activeNav, fetchAuditLogs, fetchStudents, fetchAllFeedback, fetchBroadcastLog, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents]);
+  }, [activeNav, fetchAuditLogs, fetchStudents, fetchAllFeedback, fetchBroadcastLog, fetchAnnouncementLog, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents]);
 
   useEffect(() => {
     fetchStudents();
@@ -3195,6 +3202,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     if (res.ok) {
                       setAnnouncementResult({ type: "ok", text: `Sent to ${data.count} active student${data.count !== 1 ? "s" : ""}.` });
                       setAnnouncementBody("");
+                      fetchAnnouncementLog();
                     } else {
                       setAnnouncementResult({ type: "err", text: data.error ?? "Failed to send." });
                     }
@@ -3276,6 +3284,63 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     </button>
                   </div>
                 </form>
+              </div>
+
+              {/* 5. Announcement Email Log */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center justify-between gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                  <div className="flex items-center gap-2">
+                    <Bell size={15} style={{ color: "var(--teal-bright)" }} />
+                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Sent Announcements</h2>
+                  </div>
+                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(15,76,92,0.08)", color: "var(--navy)" }}>{announcementLog.length}</span>
+                </div>
+                <div className="p-5">
+                  {announcementLog.length === 0 ? (
+                    <p className="text-sm text-center py-6" style={{ color: "rgba(26,26,26,0.4)" }}>No announcements sent yet.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {announcementLog.map(a => (
+                        <div key={a.id} className="rounded-xl border overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                          <button
+                            onClick={() => setAnnouncementLogExpanded(announcementLogExpanded === a.id ? null : a.id)}
+                            className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <Send size={13} style={{ color: "var(--teal)", flexShrink: 0 }} />
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold truncate" style={{ color: "var(--navy)" }}>{a.subject}</p>
+                                <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.4)" }}>
+                                  {new Date(a.sent_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                  {" · "}{a.recipient_count} student{a.recipient_count !== 1 ? "s" : ""}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                              <Eye size={14} style={{ color: "rgba(26,26,26,0.3)" }} />
+                              <button
+                                onClick={async e => {
+                                  e.stopPropagation();
+                                  if (!confirm("Delete this announcement from the log?")) return;
+                                  await supabase.from("announcement_log").delete().eq("id", a.id);
+                                  if (announcementLogExpanded === a.id) setAnnouncementLogExpanded(null);
+                                  fetchAnnouncementLog();
+                                }}
+                                className="p-1 rounded hover:bg-red-50 transition-colors" title="Delete">
+                                <Trash2 size={13} style={{ color: "rgba(180,40,40,0.6)" }} />
+                              </button>
+                            </div>
+                          </button>
+                          {announcementLogExpanded === a.id && (
+                            <div className="px-4 pb-4 pt-2 border-t space-y-2" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                              <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--teal)" }}>Message</p>
+                              <p className="text-sm whitespace-pre-line leading-relaxed" style={{ color: "rgba(26,26,26,0.75)" }}>{a.body}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* 7. Change Password */}
