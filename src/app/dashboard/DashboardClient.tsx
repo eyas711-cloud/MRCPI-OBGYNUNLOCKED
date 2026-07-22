@@ -458,6 +458,101 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     window.location.href = "/";
   };
 
+  // ── Student notifications ─────────────────────────────────────────────────
+  type StudentNotif = { id: string; type: "content" | "feedback" | "payment" | "booking"; title: string; body: string; ts: string; action?: () => void };
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [studentNotifs, setStudentNotifs] = useState<StudentNotif[]>([]);
+  const [seenNotifIds, setSeenNotifIds] = useState<Set<string>>(new Set());
+  const [dismissedNotifIds, setDismissedNotifIds] = useState<Set<string>>(new Set());
+  const notifRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem("student_notif_seen_ids");
+      if (s) setSeenNotifIds(new Set(JSON.parse(s)));
+    } catch {}
+    try {
+      const d = localStorage.getItem("student_notif_dismissed_ids");
+      if (d) setDismissedNotifIds(new Set(JSON.parse(d)));
+    } catch {}
+  }, []);
+
+  const fetchStudentNotifs = useCallback(async () => {
+    const items: StudentNotif[] = [];
+    const [contentRes, feedbackRes, sessionRes, bookingRes, batchRes] = await Promise.all([
+      supabase.from("content_items").select("id, section_id, title, created_at").order("created_at", { ascending: false }).limit(30),
+      supabase.from("student_feedback").select("id, feedback_type, title, created_at, updated_at").eq("student_id", user.id).order("updated_at", { ascending: false }).limit(20),
+      supabase.from("session_feedback").select("id, session_date, created_at").eq("student_id", user.id).order("created_at", { ascending: false }).limit(10),
+      supabase.from("osce_bookings").select("id, date, time_slot, status, meet_link, created_at").eq("email", user.email).order("created_at", { ascending: false }).limit(10),
+      supabase.from("batch_students").select("id, pending, last_reminded_at").eq("email", user.email).gt("pending", 0).limit(5),
+    ]);
+    const sectionLabel: Record<string, string> = {
+      "exam-templates": "Exam Templates", "recalls": "Recalls",
+      "flashcards": "Flashcards", "videos": "Videos", "recorded-sessions": "Recorded Sessions",
+    };
+    for (const c of contentRes.data ?? []) {
+      items.push({ id: `content-${c.id}`, type: "content", title: "New Material Uploaded", body: `${c.title} — ${sectionLabel[c.section_id] ?? c.section_id}`, ts: c.created_at });
+    }
+    for (const f of feedbackRes.data ?? []) {
+      const ts = f.updated_at || f.created_at;
+      const isUpdate = f.updated_at && f.updated_at !== f.created_at;
+      items.push({ id: `fb-${f.id}-${ts}`, type: "feedback", title: isUpdate ? "Feedback Updated" : "New Feedback", body: f.title, ts });
+    }
+    for (const sf of sessionRes.data ?? []) {
+      items.push({ id: `sfb-${sf.id}`, type: "feedback", title: "Session Feedback Available", body: `Mock OSCE on ${new Date(sf.session_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`, ts: sf.created_at });
+    }
+    for (const b of bookingRes.data ?? []) {
+      if (b.status === "confirmed" && b.meet_link) {
+        items.push({ id: `bk-${b.id}`, type: "booking", title: "Mock OSCE Confirmed!", body: `${b.date} at ${b.time_slot} — meeting link ready`, ts: b.created_at });
+      }
+    }
+    for (const bs of batchRes.data ?? []) {
+      const ts = bs.last_reminded_at || new Date().toISOString();
+      items.push({ id: `pay-${bs.id}`, type: "payment", title: "Payment Due", body: `SAR ${Number(bs.pending).toLocaleString()} outstanding balance`, ts });
+    }
+    items.sort((a, b) => b.ts.localeCompare(a.ts));
+    return items;
+  }, [user.id, user.email]);
+
+  useEffect(() => { fetchStudentNotifs().then(setStudentNotifs); }, [fetchStudentNotifs]);
+
+  // Mark as seen when panel closes
+  useEffect(() => {
+    if (notifOpen) return;
+    if (studentNotifs.length === 0) return;
+    setSeenNotifIds(prev => {
+      const next = new Set(prev);
+      studentNotifs.forEach(n => next.add(n.id));
+      localStorage.setItem("student_notif_seen_ids", JSON.stringify([...next]));
+      return next;
+    });
+  }, [notifOpen, studentNotifs]);
+
+  useEffect(() => {
+    if (!notifOpen) return;
+    const handler = (e: MouseEvent) => { if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [notifOpen]);
+
+  const visibleStudentNotifs = studentNotifs.filter(n => !dismissedNotifIds.has(n.id));
+  const studentUnreadCount = visibleStudentNotifs.filter(n => !seenNotifIds.has(n.id)).length;
+
+  const handleOpenStudentNotif = () => {
+    if (!notifOpen) fetchStudentNotifs().then(setStudentNotifs);
+    setNotifOpen(v => !v);
+  };
+
+  const dismissStudentNotif = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDismissedNotifIds(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      localStorage.setItem("student_notif_dismissed_ids", JSON.stringify([...next]));
+      return next;
+    });
+  };
+
   const hasSubs = activeSection ? ["exam-templates", "recalls", "recorded-sessions"].includes(activeSection) : false;
 
   return (
@@ -497,9 +592,62 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
         </div>
 
         <div className="flex items-center gap-3">
-          <button aria-label="Notifications" className="relative w-11 h-11 rounded-lg border flex items-center justify-center" style={{ borderColor: "rgba(15,76,92,0.2)" }}>
-            <Bell size={15} aria-hidden="true" style={{ color: "var(--navy)" }} />
-          </button>
+          <div ref={notifRef} className="relative">
+            <button onClick={handleOpenStudentNotif} aria-label="Notifications" className="relative w-11 h-11 rounded-lg border flex items-center justify-center" style={{ borderColor: "rgba(15,76,92,0.2)" }}>
+              <Bell size={15} aria-hidden="true" style={{ color: "var(--navy)" }} />
+              {studentUnreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ backgroundColor: "#e53e3e" }}>
+                  {studentUnreadCount > 9 ? "9+" : studentUnreadCount}
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div className="absolute right-0 top-14 w-80 rounded-xl shadow-2xl border bg-white overflow-hidden z-50" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+                  <span className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Notifications</span>
+                  <button onClick={() => fetchStudentNotifs().then(setStudentNotifs)} className="text-xs" style={{ color: "var(--teal-bright)" }}>Refresh</button>
+                </div>
+                <div className="overflow-y-auto" style={{ maxHeight: "420px" }}>
+                  {visibleStudentNotifs.length === 0 ? (
+                    <div className="px-4 py-8 text-center text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No notifications</div>
+                  ) : visibleStudentNotifs.map(n => {
+                    const isNew = !seenNotifIds.has(n.id);
+                    const iconMap: Record<string, string> = { content: "📚", feedback: "💬", payment: "💳", booking: "📅" };
+                    const relTime = (() => {
+                      const diff = Date.now() - new Date(n.ts).getTime();
+                      const m = Math.floor(diff / 60000);
+                      if (m < 1) return "just now";
+                      if (m < 60) return `${m}m ago`;
+                      const h = Math.floor(m / 60);
+                      if (h < 24) return `${h}h ago`;
+                      return `${Math.floor(h / 24)}d ago`;
+                    })();
+                    const handleClick = () => {
+                      if (n.type === "content") setActiveSection(null);
+                      if (n.type === "feedback") setFeedbackView("feedback");
+                      setNotifOpen(false);
+                    };
+                    return (
+                      <div key={n.id} className="flex items-start border-b" style={{ borderColor: "rgba(15,76,92,0.06)", backgroundColor: isNew ? "rgba(21,176,151,0.06)" : undefined }}>
+                        <button onClick={handleClick} className="flex-1 text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors min-w-0">
+                          <span className="text-lg flex-shrink-0 mt-0.5">{iconMap[n.type]}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--navy)" }}>{n.title}</p>
+                            <p className="text-xs" style={{ color: "rgba(26,26,26,0.6)", whiteSpace: "normal" }}>{n.body}</p>
+                            <p className="text-[10px] mt-1" style={{ color: "rgba(26,26,26,0.35)" }}>{relTime}</p>
+                          </div>
+                          {isNew && <span className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: "var(--teal-bright)" }} />}
+                        </button>
+                        <button onClick={(e) => dismissStudentNotif(n.id, e)} aria-label="Dismiss" className="flex-shrink-0 w-8 h-8 mt-2 mr-2 rounded-lg flex items-center justify-center hover:bg-red-50 transition-colors">
+                          <X size={13} style={{ color: "rgba(26,26,26,0.35)" }} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
           <div className="relative group">
             <button
               className="w-11 h-11 rounded-lg flex items-center justify-center text-xs font-bold text-white"
