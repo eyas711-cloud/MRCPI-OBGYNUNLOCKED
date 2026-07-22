@@ -923,15 +923,13 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const unreadCount = visibleNotifs.filter(n => n.ts > notifSeenAt).length;
 
   const handleOpenNotif = () => {
-    setNotifOpen(v => {
-      if (!v) {
-        const now = new Date().toISOString();
-        setNotifSeenAt(now);
-        if (typeof window !== "undefined") localStorage.setItem("admin_notif_seen", now);
-        fetchNotifications();
-      }
-      return !v;
-    });
+    if (!notifOpen) {
+      const now = new Date().toISOString();
+      setNotifSeenAt(now);
+      localStorage.setItem("admin_notif_seen", now);
+      fetchNotifications();
+    }
+    setNotifOpen(v => !v);
   };
 
   // Reviews state
