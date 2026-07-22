@@ -735,6 +735,10 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [studentFilter, setStudentFilter] = useState<"all" | "pending" | "active" | "blocked" | "rejected">("pending");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
+  const [bulkTerminating, setBulkTerminating] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
   const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
   const [recentItems, setRecentItems] = useState<ContentItem[]>([]);
 
@@ -1105,6 +1109,23 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (res.ok) fetchStudents();
   };
 
+  const handleBulkTerminate = async () => {
+    const ids = [...bulkSelected];
+    setBulkTerminating(true);
+    setBulkProgress({ done: 0, total: ids.length });
+    for (let i = 0; i < ids.length; i++) {
+      await fetch("/api/admin/approve-student", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentId: ids[i], action: "terminate" }),
+      });
+      setBulkProgress({ done: i + 1, total: ids.length });
+    }
+    setBulkTerminating(false);
+    setBulkConfirmOpen(false);
+    setBulkSelected(new Set());
+    fetchStudents();
+  };
+
   const handleAddTestimonial = async (e: React.FormEvent) => {
     e.preventDefault();
     setTsSaving(true);
@@ -1466,23 +1487,47 @@ export default function AdminClient({ user }: { user: AdminUser }) {
               </div>
 
               <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
-                <div className="p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
+                <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
                   <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: "var(--teal)" }}>{studentFilter === "all" ? "All Users" : `${studentFilter.charAt(0).toUpperCase() + studentFilter.slice(1)} Registrations`}</p>
+                  {bulkSelected.size > 0 && (
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>{bulkSelected.size} selected</span>
+                      <button onClick={() => setBulkSelected(new Set())} className="text-xs px-2 py-1 rounded" style={{ color: "rgba(26,26,26,0.4)" }}>Clear</button>
+                      <button onClick={() => setBulkConfirmOpen(true)} className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg" style={{ backgroundColor: "rgba(200,50,50,0.1)", color: "rgba(180,40,40,0.9)", border: "1px solid rgba(200,50,50,0.25)" }}>
+                        <Trash2 size={12} /> Terminate Selected ({bulkSelected.size})
+                      </button>
+                    </div>
+                  )}
                 </div>
                 {loadingStudents ? (
                   <div className="p-8 text-center"><Loader size={18} className="animate-spin mx-auto" style={{ color: "var(--teal)" }} /></div>
                 ) : (() => {
                   const filtered = studentFilter === "all" ? students : students.filter((s) => s.status === studentFilter);
                   if (filtered.length === 0) return <div className="p-8 text-center text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No {studentFilter === "all" ? "" : studentFilter} registrations.</div>;
+                  const allChecked = filtered.length > 0 && filtered.every(s => bulkSelected.has(s.id));
+                  const someChecked = filtered.some(s => bulkSelected.has(s.id));
+                  const toggleAll = () => {
+                    if (allChecked) {
+                      setBulkSelected(prev => { const n = new Set(prev); filtered.forEach(s => n.delete(s.id)); return n; });
+                    } else {
+                      setBulkSelected(prev => { const n = new Set(prev); filtered.forEach(s => n.add(s.id)); return n; });
+                    }
+                  };
                   return (
                     <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.06)" }}>
+                      {/* Select All row */}
+                      <div className="flex items-center gap-3 px-5 py-2.5" style={{ backgroundColor: "rgba(15,76,92,0.03)" }}>
+                        <input type="checkbox" checked={allChecked} ref={el => { if (el) el.indeterminate = someChecked && !allChecked; }} onChange={toggleAll} className="w-4 h-4 rounded cursor-pointer" style={{ accentColor: "var(--teal)" }} />
+                        <span className="text-xs font-medium" style={{ color: "rgba(26,26,26,0.5)" }}>Select all {filtered.length} {studentFilter === "all" ? "students" : studentFilter}</span>
+                      </div>
                       {filtered.map((s) => {
                         const ini = (s.full_name ?? s.email).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
                         const avatarColor = s.status === "pending" ? "var(--gold)" : s.status === "active" ? "var(--teal)" : s.status === "blocked" ? "#6b21a8" : "rgba(200,50,50,0.6)";
                         const badgeBg = s.status === "active" ? "rgba(21,176,151,0.1)" : s.status === "pending" ? "rgba(201,162,39,0.12)" : s.status === "blocked" ? "rgba(107,33,168,0.1)" : "rgba(200,50,50,0.08)";
                         const badgeColor = s.status === "active" ? "var(--teal)" : s.status === "pending" ? "var(--gold)" : s.status === "blocked" ? "#6b21a8" : "rgba(180,40,40,0.8)";
                         return (
-                          <div key={s.id} className="flex items-center gap-4 px-5 py-4">
+                          <div key={s.id} className="flex items-center gap-4 px-5 py-4" style={{ backgroundColor: bulkSelected.has(s.id) ? "rgba(200,50,50,0.03)" : undefined }}>
+                            <input type="checkbox" checked={bulkSelected.has(s.id)} onChange={() => setBulkSelected(prev => { const n = new Set(prev); n.has(s.id) ? n.delete(s.id) : n.add(s.id); return n; })} className="w-4 h-4 rounded cursor-pointer flex-shrink-0" style={{ accentColor: "var(--teal)" }} />
                             <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: avatarColor }}>{ini}</div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
@@ -1532,6 +1577,50 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   );
                 })()}
               </div>
+
+              {/* Bulk terminate confirmation modal */}
+              {bulkConfirmOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "rgba(200,50,50,0.1)" }}>
+                        <Trash2 size={18} style={{ color: "rgba(180,40,40,0.9)" }} />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Terminate {bulkSelected.size} student{bulkSelected.size > 1 ? "s" : ""}?</p>
+                        <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.5)" }}>This permanently deletes their accounts and cannot be undone.</p>
+                      </div>
+                    </div>
+                    <div className="rounded-lg border divide-y mb-5 max-h-48 overflow-y-auto" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                      {students.filter(s => bulkSelected.has(s.id)).map(s => (
+                        <div key={s.id} className="flex items-center justify-between px-3 py-2">
+                          <div>
+                            <p className="text-xs font-medium" style={{ color: "var(--navy)" }}>{s.full_name || "(No name)"}</p>
+                            <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>{s.email}</p>
+                          </div>
+                          <button onClick={() => setBulkSelected(prev => { const n = new Set(prev); n.delete(s.id); return n; })} className="text-xs px-2 py-0.5 rounded" style={{ color: "rgba(26,26,26,0.4)" }}>Remove</button>
+                        </div>
+                      ))}
+                    </div>
+                    {bulkTerminating && (
+                      <div className="mb-4">
+                        <div className="flex justify-between text-xs mb-1" style={{ color: "rgba(26,26,26,0.5)" }}>
+                          <span>Terminating…</span><span>{bulkProgress.done} / {bulkProgress.total}</span>
+                        </div>
+                        <div className="h-1.5 rounded-full" style={{ backgroundColor: "rgba(15,76,92,0.1)" }}>
+                          <div className="h-full rounded-full transition-all" style={{ width: `${(bulkProgress.done / bulkProgress.total) * 100}%`, backgroundColor: "rgba(180,40,40,0.7)" }} />
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex gap-3 justify-end">
+                      <button onClick={() => { if (!bulkTerminating) setBulkConfirmOpen(false); }} disabled={bulkTerminating} className="px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50" style={{ color: "rgba(26,26,26,0.5)" }}>Cancel</button>
+                      <button onClick={handleBulkTerminate} disabled={bulkTerminating || bulkSelected.size === 0} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold disabled:opacity-50" style={{ backgroundColor: "rgba(180,40,40,0.9)", color: "white" }}>
+                        {bulkTerminating ? <><Loader size={13} className="animate-spin" /> Terminating…</> : `Confirm Terminate (${bulkSelected.size})`}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
