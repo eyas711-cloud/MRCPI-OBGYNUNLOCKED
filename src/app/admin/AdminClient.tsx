@@ -1509,6 +1509,25 @@ export default function AdminClient({ user }: { user: AdminUser }) {
               <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                 <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
                   <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: "var(--teal)" }}>{studentFilter === "all" ? "All Users" : `${studentFilter.charAt(0).toUpperCase() + studentFilter.slice(1)} Registrations`}</p>
+                  {studentFilter === "rejected" && students.filter(s => s.status === "rejected").length > 0 && bulkSelected.size === 0 && (
+                    <button
+                      onClick={async () => {
+                        const rejected = students.filter(s => s.status === "rejected");
+                        if (!confirm(`Clear all ${rejected.length} rejected registration${rejected.length > 1 ? "s" : ""}? They will be permanently deleted with no notification sent.`)) return;
+                        for (const s of rejected) {
+                          await fetch("/api/admin/approve-student", {
+                            method: "POST", headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ studentId: s.id, action: "clear" }),
+                          });
+                        }
+                        fetchStudents();
+                      }}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ backgroundColor: "rgba(200,50,50,0.08)", color: "rgba(180,40,40,0.8)", border: "1px solid rgba(200,50,50,0.2)" }}
+                    >
+                      <Trash2 size={12} /> Clear All Rejected
+                    </button>
+                  )}
                   {bulkSelected.size > 0 && (
                     <div className="flex items-center gap-3">
                       <span className="text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>{bulkSelected.size} selected</span>

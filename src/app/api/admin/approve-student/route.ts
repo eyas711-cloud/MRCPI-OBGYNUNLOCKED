@@ -55,7 +55,21 @@ export async function POST(req: Request) {
   };
 
   const newStatus = statusMap[action];
-  if (!newStatus) return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+  if (!newStatus && action !== "clear") return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+
+  // Clear rejected — delete silently, no email
+  if (action === "clear") {
+    const serviceClient = createServiceClient();
+    const { data: student } = await serviceClient.from("profiles").select("email, full_name").eq("id", studentId).single();
+    await serviceClient.from("profiles").delete().eq("id", studentId);
+    await serviceClient.auth.admin.deleteUser(studentId);
+    await supabase.from("audit_logs").insert([{
+      user_id: user.id, user_email: user.email, user_role: profile.role,
+      action: "student_clear_rejected", resource: studentId,
+      metadata: { deleted_email: student?.email },
+    }]);
+    return NextResponse.json({ ok: true });
+  }
 
   if (action === "terminate") {
     const serviceClient = createServiceClient();
