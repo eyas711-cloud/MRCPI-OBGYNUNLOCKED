@@ -868,25 +868,28 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   type NotifItem = { id: string; type: "registration" | "payment" | "booking" | "review"; title: string; body: string; ts: string; nav: string };
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState<NotifItem[]>([]);
-  const [notifSeenAt, setNotifSeenAt] = useState<string>(new Date(0).toISOString());
-  useEffect(() => {
-    const stored = localStorage.getItem("admin_notif_seen");
-    if (stored) setNotifSeenAt(stored);
-  }, []);
-  const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(() => {
-    if (typeof window !== "undefined") {
-      try { return new Set(JSON.parse(localStorage.getItem("admin_notif_dismissed") ?? "[]")); } catch { return new Set(); }
-    }
-    return new Set();
-  });
+  const [seenNotifIds, setSeenNotifIds] = useState<Set<string>>(new Set());
+  const [dismissedNotifIds, setDismissedNotifIds] = useState<Set<string>>(new Set());
   const notifRef = useRef<HTMLDivElement>(null);
+
+  // Load seen + dismissed from localStorage after mount (avoids SSR mismatch)
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem("admin_notif_seen_ids");
+      if (s) setSeenNotifIds(new Set(JSON.parse(s)));
+    } catch {}
+    try {
+      const d = localStorage.getItem("admin_notif_dismissed_ids");
+      if (d) setDismissedNotifIds(new Set(JSON.parse(d)));
+    } catch {}
+  }, []);
 
   const dismissNotif = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setDismissedNotifs(prev => {
+    setDismissedNotifIds(prev => {
       const next = new Set(prev);
       next.add(id);
-      if (typeof window !== "undefined") localStorage.setItem("admin_notif_dismissed", JSON.stringify([...next]));
+      localStorage.setItem("admin_notif_dismissed_ids", JSON.stringify([...next]));
       return next;
     });
   };
@@ -907,10 +910,10 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     for (const b of bookRes.data ?? []) items.push({ id: `bk-${b.id}`, type: "booking", title: "Mock OSCE Booking", body: `${b.name} booked ${b.date} at ${b.time_slot}`, ts: b.created_at, nav: "Mock OSCEs" });
     for (const r of revRes.data ?? []) items.push({ id: `rv-${r.id}`, type: "review", title: "New Review", body: `${r.student_name} left a ${r.rating}-star review`, ts: r.created_at, nav: "Reviews" });
     items.sort((a, b) => b.ts.localeCompare(a.ts));
-    setNotifs(items);
+    return items;
   }, []);
 
-  useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
+  useEffect(() => { fetchNotifications().then(setNotifs); }, [fetchNotifications]);
 
   useEffect(() => {
     if (!notifOpen) return;
@@ -919,15 +922,21 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [notifOpen]);
 
-  const visibleNotifs = notifs.filter(n => !dismissedNotifs.has(n.id));
-  const unreadCount = visibleNotifs.filter(n => n.ts > notifSeenAt).length;
+  const visibleNotifs = notifs.filter(n => !dismissedNotifIds.has(n.id));
+  const unreadCount = visibleNotifs.filter(n => !seenNotifIds.has(n.id)).length;
 
   const handleOpenNotif = () => {
     if (!notifOpen) {
-      const now = new Date().toISOString();
-      setNotifSeenAt(now);
-      localStorage.setItem("admin_notif_seen", now);
-      fetchNotifications();
+      fetchNotifications().then(items => {
+        setNotifs(items);
+        // Mark every currently fetched notification as seen
+        setSeenNotifIds(prev => {
+          const next = new Set(prev);
+          items.forEach(n => next.add(n.id));
+          localStorage.setItem("admin_notif_seen_ids", JSON.stringify([...next]));
+          return next;
+        });
+      });
     }
     setNotifOpen(v => !v);
   };
