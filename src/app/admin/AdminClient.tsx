@@ -868,10 +868,11 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   type NotifItem = { id: string; type: "registration" | "payment" | "booking" | "review"; title: string; body: string; ts: string; nav: string };
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState<NotifItem[]>([]);
-  const [notifSeenAt, setNotifSeenAt] = useState<string>(() => {
-    if (typeof window !== "undefined") return localStorage.getItem("admin_notif_seen") ?? new Date(0).toISOString();
-    return new Date(0).toISOString();
-  });
+  const [notifSeenAt, setNotifSeenAt] = useState<string>(new Date(0).toISOString());
+  useEffect(() => {
+    const stored = localStorage.getItem("admin_notif_seen");
+    if (stored) setNotifSeenAt(stored);
+  }, []);
   const [dismissedNotifs, setDismissedNotifs] = useState<Set<string>>(() => {
     if (typeof window !== "undefined") {
       try { return new Set(JSON.parse(localStorage.getItem("admin_notif_dismissed") ?? "[]")); } catch { return new Set(); }
