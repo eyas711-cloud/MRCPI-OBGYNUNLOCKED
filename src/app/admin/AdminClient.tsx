@@ -893,12 +893,15 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const fetchNotifications = useCallback(async () => {
     const items: NotifItem[] = [];
     const [studRes, payRes, bookRes, revRes] = await Promise.all([
-      supabase.from("profiles").select("id, full_name, email, created_at").eq("role", "student").eq("status", "pending").order("created_at", { ascending: false }).limit(20),
+      supabase.from("profiles").select("id, full_name, email, status, created_at").eq("role", "student").order("created_at", { ascending: false }).limit(20),
       supabase.from("payments").select("id, student_name, amount, currency, created_at").order("created_at", { ascending: false }).limit(20),
-      supabase.from("osce_bookings").select("id, name, date, time_slot, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(20),
-      supabase.from("student_reviews").select("id, student_name, rating, created_at").eq("status", "pending").order("created_at", { ascending: false }).limit(20),
+      supabase.from("osce_bookings").select("id, name, date, time_slot, status, created_at").order("created_at", { ascending: false }).limit(20),
+      supabase.from("student_reviews").select("id, student_name, rating, status, created_at").order("created_at", { ascending: false }).limit(20),
     ]);
-    for (const s of studRes.data ?? []) items.push({ id: `reg-${s.id}`, type: "registration", title: "New Registration", body: `${s.full_name || s.email} is waiting for approval`, ts: s.created_at, nav: "Students" });
+    for (const s of studRes.data ?? []) {
+      const label = s.status === "pending" ? "awaiting approval" : s.status === "active" ? "approved" : s.status === "rejected" ? "rejected" : s.status;
+      items.push({ id: `reg-${s.id}`, type: "registration", title: "New Registration", body: `${s.full_name || s.email} — ${label}`, ts: s.created_at, nav: "Students" });
+    }
     for (const p of payRes.data ?? []) items.push({ id: `pay-${p.id}`, type: "payment", title: "Payment Recorded", body: `${p.student_name} — ${p.currency} ${Number(p.amount).toLocaleString()}`, ts: p.created_at, nav: "Payments" });
     for (const b of bookRes.data ?? []) items.push({ id: `bk-${b.id}`, type: "booking", title: "Mock OSCE Booking", body: `${b.name} booked ${b.date} at ${b.time_slot}`, ts: b.created_at, nav: "Mock OSCEs" });
     for (const r of revRes.data ?? []) items.push({ id: `rv-${r.id}`, type: "review", title: "New Review", body: `${r.student_name} left a ${r.rating}-star review`, ts: r.created_at, nav: "Reviews" });
