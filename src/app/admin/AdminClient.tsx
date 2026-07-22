@@ -915,6 +915,18 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
   useEffect(() => { fetchNotifications().then(setNotifs); }, [fetchNotifications]);
 
+  // Mark all visible notifs as seen when the panel closes
+  useEffect(() => {
+    if (notifOpen) return;
+    if (notifs.length === 0) return;
+    setSeenNotifIds(prev => {
+      const next = new Set(prev);
+      notifs.forEach(n => next.add(n.id));
+      localStorage.setItem("admin_notif_seen_ids", JSON.stringify([...next]));
+      return next;
+    });
+  }, [notifOpen, notifs]);
+
   useEffect(() => {
     if (!notifOpen) return;
     const handler = (e: MouseEvent) => { if (notifRef.current && !notifRef.current.contains(e.target as Node)) setNotifOpen(false); };
@@ -926,18 +938,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const unreadCount = visibleNotifs.filter(n => !seenNotifIds.has(n.id)).length;
 
   const handleOpenNotif = () => {
-    if (!notifOpen) {
-      fetchNotifications().then(items => {
-        setNotifs(items);
-        // Mark every currently fetched notification as seen
-        setSeenNotifIds(prev => {
-          const next = new Set(prev);
-          items.forEach(n => next.add(n.id));
-          localStorage.setItem("admin_notif_seen_ids", JSON.stringify([...next]));
-          return next;
-        });
-      });
-    }
+    if (!notifOpen) fetchNotifications().then(setNotifs);
     setNotifOpen(v => !v);
   };
 
