@@ -1321,7 +1321,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     {visibleNotifs.length === 0 ? (
                       <div className="px-4 py-8 text-center text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No notifications</div>
                     ) : visibleNotifs.map(n => {
-                      const isNew = n.ts > notifSeenAt;
+                      const isNew = !seenNotifIds.has(n.id);
                       const iconMap: Record<string, string> = { registration: "👤", payment: "💳", booking: "📅", review: "⭐" };
                       const relTime = (() => {
                         const diff = Date.now() - new Date(n.ts).getTime();
