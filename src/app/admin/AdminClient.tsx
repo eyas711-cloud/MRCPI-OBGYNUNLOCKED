@@ -915,17 +915,25 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
   useEffect(() => { fetchNotifications().then(setNotifs); }, [fetchNotifications]);
 
-  // Mark all visible notifs as seen when the panel closes
+  // Track latest notifs in a ref so the close-handler never has a stale closure
+  const notifsRef = useRef(notifs);
+  useEffect(() => { notifsRef.current = notifs; }, [notifs]);
+
+  // Mark as seen only when transitioning open → closed (not on mount)
+  const notifWasOpen = useRef(false);
   useEffect(() => {
-    if (notifOpen) return;
-    if (notifs.length === 0) return;
-    setSeenNotifIds(prev => {
-      const next = new Set(prev);
-      notifs.forEach(n => next.add(n.id));
-      localStorage.setItem("admin_notif_seen_ids", JSON.stringify([...next]));
-      return next;
-    });
-  }, [notifOpen, notifs]);
+    const wasOpen = notifWasOpen.current;
+    notifWasOpen.current = notifOpen;
+    if (wasOpen && !notifOpen) {
+      const items = notifsRef.current;
+      setSeenNotifIds(prev => {
+        const next = new Set(prev);
+        items.forEach(n => next.add(n.id));
+        localStorage.setItem("admin_notif_seen_ids", JSON.stringify([...next]));
+        return next;
+      });
+    }
+  }, [notifOpen]);
 
   useEffect(() => {
     if (!notifOpen) return;

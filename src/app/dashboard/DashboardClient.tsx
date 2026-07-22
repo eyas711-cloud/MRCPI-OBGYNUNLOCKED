@@ -516,17 +516,25 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
 
   useEffect(() => { fetchStudentNotifs().then(setStudentNotifs); }, [fetchStudentNotifs]);
 
-  // Mark as seen when panel closes
+  // Track latest notifs in a ref so the close-handler never has a stale closure
+  const studentNotifsRef = useRef(studentNotifs);
+  useEffect(() => { studentNotifsRef.current = studentNotifs; }, [studentNotifs]);
+
+  // Mark as seen only when transitioning open → closed (not on mount)
+  const notifWasOpen = useRef(false);
   useEffect(() => {
-    if (notifOpen) return;
-    if (studentNotifs.length === 0) return;
-    setSeenNotifIds(prev => {
-      const next = new Set(prev);
-      studentNotifs.forEach(n => next.add(n.id));
-      localStorage.setItem("student_notif_seen_ids", JSON.stringify([...next]));
-      return next;
-    });
-  }, [notifOpen, studentNotifs]);
+    const wasOpen = notifWasOpen.current;
+    notifWasOpen.current = notifOpen;
+    if (wasOpen && !notifOpen) {
+      const items = studentNotifsRef.current;
+      setSeenNotifIds(prev => {
+        const next = new Set(prev);
+        items.forEach(n => next.add(n.id));
+        localStorage.setItem("student_notif_seen_ids", JSON.stringify([...next]));
+        return next;
+      });
+    }
+  }, [notifOpen]);
 
   useEffect(() => {
     if (!notifOpen) return;
