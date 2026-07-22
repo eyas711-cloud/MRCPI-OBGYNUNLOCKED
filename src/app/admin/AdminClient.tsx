@@ -1315,7 +1315,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 <div className="absolute right-0 top-14 w-80 rounded-xl shadow-2xl border bg-white overflow-hidden z-50" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                   <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
                     <span className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Notifications</span>
-                    <button onClick={() => { fetchNotifications(); }} className="text-xs" style={{ color: "var(--teal-bright)" }}>Refresh</button>
+                    <button onClick={() => { fetchNotifications().then(setNotifs); }} className="text-xs" style={{ color: "var(--teal-bright)" }}>Refresh</button>
                   </div>
                   <div className="overflow-y-auto" style={{ maxHeight: "400px" }}>
                     {visibleNotifs.length === 0 ? (
