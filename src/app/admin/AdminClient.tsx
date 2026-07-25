@@ -1133,7 +1133,13 @@ export default function AdminClient({ user }: { user: AdminUser }) {
       body: JSON.stringify({ studentId, action }),
     });
     setActionLoading(null);
-    if (res.ok) fetchStudents();
+    if (res.ok) {
+      fetchStudents();
+      if (action === "block") fetchAuditLogs();
+    } else {
+      const body = await res.json().catch(() => ({}));
+      alert(`Action failed (${res.status}): ${body?.error || "Unknown error"}`);
+    }
   };
 
   const handleBulkTerminate = async () => {

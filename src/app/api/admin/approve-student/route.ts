@@ -124,12 +124,14 @@ export async function POST(req: Request) {
 
   // Block: send email, log it, then delete the profile so they can't log in and can re-register
   if (action === "block") {
+    console.log("[block] Starting block for studentId:", studentId);
     const serviceClient = createServiceClient();
-    const { data: student } = await serviceClient
+    const { data: student, error: studentErr } = await serviceClient
       .from("profiles")
       .select("email, full_name")
       .eq("id", studentId)
       .single();
+    console.log("[block] Profile fetch:", student?.email, "error:", studentErr?.message);
 
     if (student?.email) {
       const firstName = student.full_name?.split(" ")[0] || "Doctor";
@@ -173,7 +175,7 @@ export async function POST(req: Request) {
     }
 
     // Log to audit before deleting
-    await supabase.from("audit_logs").insert([{
+    const { error: auditErr } = await supabase.from("audit_logs").insert([{
       user_id: user.id,
       user_email: user.email,
       user_role: profile.role,
@@ -181,10 +183,13 @@ export async function POST(req: Request) {
       resource: studentId,
       details: { blocked_email: student?.email, blocked_name: student?.full_name },
     }]);
+    console.log("[block] Audit log error:", auditErr?.message ?? "none");
 
     // Delete profile and auth account so student can re-register
-    await serviceClient.from("profiles").delete().eq("id", studentId);
-    await serviceClient.auth.admin.deleteUser(studentId);
+    const { error: profileDelErr } = await serviceClient.from("profiles").delete().eq("id", studentId);
+    console.log("[block] Profile delete error:", profileDelErr?.message ?? "none");
+    const { error: authDelErr } = await serviceClient.auth.admin.deleteUser(studentId);
+    console.log("[block] Auth delete error:", authDelErr?.message ?? "none");
 
     return NextResponse.json({ ok: true });
   }
