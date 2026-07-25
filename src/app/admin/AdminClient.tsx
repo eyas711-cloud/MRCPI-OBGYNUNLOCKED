@@ -1596,6 +1596,16 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                           </div>
                           <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "rgba(107,33,168,0.08)", color: "#6b21a8" }}>Blocked</span>
                           <p className="text-xs flex-shrink-0" style={{ color: "rgba(26,26,26,0.35)" }}>{new Date(l.created_at).toLocaleDateString()}</p>
+                          <button
+                            onClick={async () => {
+                              if (!confirm(`Reinstate ${l.details?.blocked_name || l.details?.blocked_email}? A new account will be created and they will receive a reinstate email.`)) return;
+                              const res = await fetch("/api/admin/reinstate-student", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: l.details?.blocked_email, name: l.details?.blocked_name, logId: l.id }) });
+                              if (res.ok) { setBlockedLogs(prev => prev.filter(b => b.id !== l.id)); fetchStudents(); }
+                              else { const j = await res.json().catch(() => ({})); alert(`Reinstate failed: ${j.error || "Unknown error"}`); }
+                            }}
+                            className="text-xs px-2.5 py-1 rounded-lg border flex-shrink-0 transition-all hover:opacity-70"
+                            style={{ borderColor: "rgba(21,176,151,0.35)", color: "var(--teal)" }}
+                          >Reinstate</button>
                           <button onClick={() => clearBlockedLog(l.id)} className="text-xs px-2.5 py-1 rounded-lg border flex-shrink-0 transition-all hover:opacity-70" style={{ borderColor: "rgba(200,50,50,0.25)", color: "rgba(180,40,40,0.8)" }}>Clear</button>
                         </div>
                       ))}
