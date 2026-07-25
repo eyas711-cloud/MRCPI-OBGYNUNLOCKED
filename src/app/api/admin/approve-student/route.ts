@@ -66,7 +66,7 @@ export async function POST(req: Request) {
     await supabase.from("audit_logs").insert([{
       user_id: user.id, user_email: user.email, user_role: profile.role,
       action: "student_clear_rejected", resource: studentId,
-      metadata: { deleted_email: student?.email },
+      details: { deleted_email: student?.email },
     }]);
     return NextResponse.json({ ok: true });
   }
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
       user_role: profile.role,
       action: "student_terminate",
       resource: studentId,
-      metadata: { deleted_email: student?.email },
+      details: { deleted_email: student?.email },
     }]);
     return NextResponse.json({ ok: true });
   }
@@ -179,7 +179,7 @@ export async function POST(req: Request) {
       user_role: profile.role,
       action: "student_block",
       resource: studentId,
-      metadata: { blocked_email: student?.email, blocked_name: student?.full_name },
+      details: { blocked_email: student?.email, blocked_name: student?.full_name },
     }]);
 
     // Delete profile and auth account so student can re-register
@@ -197,7 +197,7 @@ export async function POST(req: Request) {
     user_role: profile.role,
     action: `student_${action}`,
     resource: studentId,
-    metadata: { new_status: newStatus },
+    details: { new_status: newStatus },
   }]);
 
   if (action === "approve" || action === "reject" || action === "reinstate") {

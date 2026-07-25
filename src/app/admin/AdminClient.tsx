@@ -26,7 +26,7 @@ type ContentItem = {
   file_size: number | null; storage_path: string; created_at: string;
 };
 
-type AuditRow = { id: string; user_email: string; action: string; resource: string | null; created_at: string; metadata?: Record<string, string> };
+type AuditRow = { id: string; user_email: string; action: string; resource: string | null; created_at: string; details?: Record<string, string> };
 
 type FeedbackEntry = {
   id: string; student_id: string; feedback_type: "general" | "progress";
@@ -989,7 +989,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   }, []);
 
   const fetchAuditLogs = useCallback(async () => {
-    const { data } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at, metadata").order("created_at", { ascending: false }).limit(20);
+    const { data } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at, details").order("created_at", { ascending: false }).limit(20);
     setAuditLogs(data ?? []);
     setBlockedLogs((data ?? []).filter((l: AuditRow) => l.action === "student_block"));
   }, []);
@@ -3673,8 +3673,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   <div key={l.id} className="flex items-center gap-4 px-5 py-3.5">
                     <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#6b21a8" }} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium" style={{ color: "rgba(26,26,26,0.8)" }}>{l.metadata?.blocked_name || "Unknown"}</p>
-                      <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>{l.metadata?.blocked_email || l.resource}</p>
+                      <p className="text-xs font-medium" style={{ color: "rgba(26,26,26,0.8)" }}>{l.details?.blocked_name || "Unknown"}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>{l.details?.blocked_email || l.resource}</p>
                     </div>
                     <p className="text-xs flex-shrink-0 mr-3" style={{ color: "rgba(26,26,26,0.35)" }}>{new Date(l.created_at).toLocaleString()}</p>
                     <button
