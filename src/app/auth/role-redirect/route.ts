@@ -13,6 +13,11 @@ export async function GET() {
     .eq("id", user.id)
     .single();
 
+  // Blocked → blocked page
+  if (profile?.status === "blocked") {
+    redirect("/access-blocked");
+  }
+
   // Pending or rejected → hold page
   if (!profile || profile.status === "pending" || profile.status === "rejected") {
     redirect("/pending-approval");
