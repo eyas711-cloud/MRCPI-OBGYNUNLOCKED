@@ -8,12 +8,14 @@ function createServiceClient() {
   );
 }
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const action = searchParams.get("action") ?? "student_block";
   const serviceClient = createServiceClient();
   const { data, error } = await serviceClient
     .from("audit_logs")
     .select("id, user_email, action, resource, created_at, details")
-    .eq("action", "student_block")
+    .eq("action", action)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -24,11 +26,11 @@ export async function GET() {
 }
 
 export async function DELETE(req: Request) {
-  const { id } = await req.json();
+  const { id, action } = await req.json();
   const serviceClient = createServiceClient();
 
   if (id === "all") {
-    await serviceClient.from("audit_logs").delete().eq("action", "student_block");
+    await serviceClient.from("audit_logs").delete().eq("action", action ?? "student_block");
   } else {
     await serviceClient.from("audit_logs").delete().eq("id", id);
   }

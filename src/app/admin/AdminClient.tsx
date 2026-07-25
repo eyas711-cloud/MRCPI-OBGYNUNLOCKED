@@ -732,7 +732,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const [studentFilter, setStudentFilter] = useState<"all" | "pending" | "active" | "blocked" | "rejected">("pending");
+  const [studentFilter, setStudentFilter] = useState<"all" | "pending" | "active" | "blocked" | "rejected" | "terminated">("pending");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
@@ -741,6 +741,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
   const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
   const [blockedLogs, setBlockedLogs] = useState<AuditRow[]>([]);
+  const [terminatedLogs, setTerminatedLogs] = useState<AuditRow[]>([]);
   const [recentItems, setRecentItems] = useState<ContentItem[]>([]);
 
   // Settings state
@@ -991,16 +992,22 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const fetchAuditLogs = useCallback(async () => {
     const { data } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at, details").order("created_at", { ascending: false }).limit(50);
     setAuditLogs(data ?? []);
-    const res = await fetch("/api/admin/blocked-logs");
-    if (res.ok) {
-      const json = await res.json();
-      setBlockedLogs(json.logs ?? []);
-    }
+    const [blockedRes, terminatedRes] = await Promise.all([
+      fetch("/api/admin/blocked-logs?action=student_block"),
+      fetch("/api/admin/blocked-logs?action=student_terminate"),
+    ]);
+    if (blockedRes.ok) setBlockedLogs((await blockedRes.json()).logs ?? []);
+    if (terminatedRes.ok) setTerminatedLogs((await terminatedRes.json()).logs ?? []);
   }, []);
 
   const clearBlockedLog = useCallback(async (id: string) => {
-    await fetch("/api/admin/blocked-logs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
+    await fetch("/api/admin/blocked-logs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "student_block" }) });
     setBlockedLogs(prev => prev.filter(l => l.id !== id));
+  }, []);
+
+  const clearTerminatedLog = useCallback(async (id: string) => {
+    await fetch("/api/admin/blocked-logs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, action: "student_terminate" }) });
+    setTerminatedLogs(prev => prev.filter(l => l.id !== id));
   }, []);
 
   const fetchRecentItems = useCallback(async () => {
@@ -1139,7 +1146,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setActionLoading(null);
     if (res.ok) {
       fetchStudents();
-      if (action === "block") fetchAuditLogs();
+      if (action === "block" || action === "terminate") fetchAuditLogs();
     } else {
       const body = await res.json().catch(() => ({}));
       alert(`Action failed (${res.status}): ${body?.error || "Unknown error"}`);
@@ -1512,8 +1519,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
               )}
 
               <div className="flex gap-2 flex-wrap">
-                {(["pending", "active", "blocked", "rejected", "all"] as const).map((f) => {
-                  const count = f === "blocked" ? blockedLogs.length : f === "all" ? students.length : students.filter((s) => s.status === f).length;
+                {(["pending", "active", "blocked", "terminated", "rejected", "all"] as const).map((f) => {
+                  const count = f === "blocked" ? blockedLogs.length : f === "terminated" ? terminatedLogs.length : f === "all" ? students.length : students.filter((s) => s.status === f).length;
                   return (
                     <button key={f} onClick={() => setStudentFilter(f)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors" style={{ backgroundColor: studentFilter === f ? "var(--navy)" : "white", color: studentFilter === f ? "white" : "rgba(26,26,26,0.6)", border: "1px solid rgba(15,76,92,0.15)" }}>
                       {f} <span className="ml-1 text-xs opacity-60">({count})</span>
@@ -1525,12 +1532,21 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
               <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                 <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
-                  <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: "var(--teal)" }}>{studentFilter === "all" ? "All Users" : studentFilter === "blocked" ? "Blocked Access Log" : `${studentFilter.charAt(0).toUpperCase() + studentFilter.slice(1)} Registrations`}</p>
+                  <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: "var(--teal)" }}>{studentFilter === "all" ? "All Users" : studentFilter === "blocked" ? "Blocked Access Log" : studentFilter === "terminated" ? "Terminated Students Log" : `${studentFilter.charAt(0).toUpperCase() + studentFilter.slice(1)} Registrations`}</p>
                   {studentFilter === "blocked" && blockedLogs.length > 0 && (
                     <button
-                      onClick={async () => { if (confirm("Clear all blocked access log entries?")) { await fetch("/api/admin/blocked-logs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "all" }) }); setBlockedLogs([]); } }}
+                      onClick={async () => { if (confirm("Clear all blocked access log entries?")) { await fetch("/api/admin/blocked-logs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "all", action: "student_block" }) }); setBlockedLogs([]); } }}
                       className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
                       style={{ backgroundColor: "rgba(107,33,168,0.08)", color: "#6b21a8", border: "1px solid rgba(107,33,168,0.2)" }}
+                    >
+                      <Trash2 size={12} /> Clear All
+                    </button>
+                  )}
+                  {studentFilter === "terminated" && terminatedLogs.length > 0 && (
+                    <button
+                      onClick={async () => { if (confirm("Clear all terminated students log entries?")) { await fetch("/api/admin/blocked-logs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "all", action: "student_terminate" }) }); setTerminatedLogs([]); } }}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ backgroundColor: "rgba(200,50,50,0.07)", color: "rgba(180,40,40,0.85)", border: "1px solid rgba(200,50,50,0.2)" }}
                     >
                       <Trash2 size={12} /> Clear All
                     </button>
@@ -1581,6 +1597,26 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                           <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "rgba(107,33,168,0.08)", color: "#6b21a8" }}>Blocked</span>
                           <p className="text-xs flex-shrink-0" style={{ color: "rgba(26,26,26,0.35)" }}>{new Date(l.created_at).toLocaleDateString()}</p>
                           <button onClick={() => clearBlockedLog(l.id)} className="text-xs px-2.5 py-1 rounded-lg border flex-shrink-0 transition-all hover:opacity-70" style={{ borderColor: "rgba(200,50,50,0.25)", color: "rgba(180,40,40,0.8)" }}>Clear</button>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : studentFilter === "terminated" ? (
+                  terminatedLogs.length === 0 ? (
+                    <div className="p-8 text-center text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No terminated student records.</div>
+                  ) : (
+                    <div className="divide-y" style={{ borderColor: "rgba(200,50,50,0.06)" }}>
+                      {terminatedLogs.map((l) => (
+                        <div key={l.id} className="flex items-center gap-4 px-5 py-4">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: "rgba(180,40,40,0.75)" }}>
+                            {(l.details?.deleted_email || "?").split("@")[0].slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{l.details?.deleted_email || l.resource}</p>
+                          </div>
+                          <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "rgba(200,50,50,0.08)", color: "rgba(180,40,40,0.85)" }}>Course Ended</span>
+                          <p className="text-xs flex-shrink-0" style={{ color: "rgba(26,26,26,0.35)" }}>{new Date(l.created_at).toLocaleDateString()}</p>
+                          <button onClick={() => clearTerminatedLog(l.id)} className="text-xs px-2.5 py-1 rounded-lg border flex-shrink-0 transition-all hover:opacity-70" style={{ borderColor: "rgba(200,50,50,0.25)", color: "rgba(180,40,40,0.8)" }}>Clear</button>
                         </div>
                       ))}
                     </div>
@@ -1640,7 +1676,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                               {s.status === "active" && (
                                 <>
                                   <button onClick={() => { if (confirm(`Block access for ${s.full_name || s.email}? They will immediately lose access to the platform.`)) handleStudentAction(s.id, "block"); }} disabled={actionLoading === s.id + "block"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(107,33,168,0.35)", color: "#6b21a8" }}>{actionLoading === s.id + "block" ? "…" : "Block Access"}</button>
-                                  <button onClick={() => { if (confirm(`TERMINATE account for ${s.full_name || s.email}? This permanently deletes their account and cannot be undone.`)) handleStudentAction(s.id, "terminate"); }} disabled={actionLoading === s.id + "terminate"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(200,50,50,0.35)", color: "rgba(180,40,40,0.9)" }}>{actionLoading === s.id + "terminate" ? "…" : "Terminate"}</button>
+                                  <button onClick={() => { if (confirm(`End course for ${s.full_name || s.email}? This permanently deletes their account and cannot be undone.`)) handleStudentAction(s.id, "terminate"); }} disabled={actionLoading === s.id + "terminate"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(200,50,50,0.35)", color: "rgba(180,40,40,0.9)" }}>{actionLoading === s.id + "terminate" ? "…" : "Course Ended"}</button>
                                 </>
                               )}
                               {s.status === "blocked" && (
