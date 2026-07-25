@@ -991,12 +991,15 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const fetchAuditLogs = useCallback(async () => {
     const { data } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at, details").order("created_at", { ascending: false }).limit(50);
     setAuditLogs(data ?? []);
-    const { data: blocked } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at, details").eq("action", "student_block").order("created_at", { ascending: false });
-    setBlockedLogs(blocked ?? []);
+    const res = await fetch("/api/admin/blocked-logs");
+    if (res.ok) {
+      const json = await res.json();
+      setBlockedLogs(json.logs ?? []);
+    }
   }, []);
 
   const clearBlockedLog = useCallback(async (id: string) => {
-    await supabase.from("audit_logs").delete().eq("id", id);
+    await fetch("/api/admin/blocked-logs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) });
     setBlockedLogs(prev => prev.filter(l => l.id !== id));
   }, []);
 
@@ -3665,7 +3668,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 </div>
                 {blockedLogs.length > 0 && (
                   <button
-                    onClick={async () => { if (confirm("Clear all blocked access log entries?")) { await Promise.all(blockedLogs.map(l => supabase.from("audit_logs").delete().eq("id", l.id))); setBlockedLogs([]); } }}
+                    onClick={async () => { if (confirm("Clear all blocked access log entries?")) { await fetch("/api/admin/blocked-logs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "all" }) }); setBlockedLogs([]); } }}
                     className="text-xs px-3 py-1.5 rounded-lg border transition-all hover:opacity-80"
                     style={{ borderColor: "rgba(107,33,168,0.25)", color: "#6b21a8" }}
                   >
