@@ -989,9 +989,10 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   }, []);
 
   const fetchAuditLogs = useCallback(async () => {
-    const { data } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at, details").order("created_at", { ascending: false }).limit(20);
+    const { data } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at, details").order("created_at", { ascending: false }).limit(50);
     setAuditLogs(data ?? []);
-    setBlockedLogs((data ?? []).filter((l: AuditRow) => l.action === "student_block"));
+    const { data: blocked } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at, details").eq("action", "student_block").order("created_at", { ascending: false });
+    setBlockedLogs(blocked ?? []);
   }, []);
 
   const clearBlockedLog = useCallback(async (id: string) => {
