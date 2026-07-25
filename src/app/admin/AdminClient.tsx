@@ -3649,7 +3649,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
           {/* ── SECURITY ── */}
           {activeNav === "Security" && (
-            {/* Blocked Access Log */}
+            <>
             <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(107,33,168,0.18)" }}>
               <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(107,33,168,0.1)" }}>
                 <div className="flex items-center gap-2">
@@ -3709,6 +3709,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 ))}
               </div>
             </div>
+            </>
           )}
 
         </div>
