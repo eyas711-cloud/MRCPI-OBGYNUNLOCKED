@@ -122,6 +122,73 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true });
   }
 
+  // Block: send email, log it, then delete the profile so they can't log in and can re-register
+  if (action === "block") {
+    const serviceClient = createServiceClient();
+    const { data: student } = await serviceClient
+      .from("profiles")
+      .select("email, full_name")
+      .eq("id", studentId)
+      .single();
+
+    if (student?.email) {
+      const firstName = student.full_name?.split(" ")[0] || "Doctor";
+      await sendEmail(
+        student.email,
+        "Important Notice Regarding Your Account — MRCPI OBGYN Unlocked",
+        `
+        <div style="font-family:Georgia,serif;max-width:600px;margin:0 auto;padding:32px 24px;background:#f8f7f4;">
+          <div style="background:#0B1E3D;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
+            <h1 style="color:#15B097;font-size:20px;margin:0;letter-spacing:0.05em;">MRCPI OBGYN Unlocked</h1>
+          </div>
+          <div style="background:#ffffff;padding:36px 32px;border-radius:0 0 12px 12px;border:1px solid rgba(15,76,92,0.15);border-top:none;">
+            <p style="color:#0B1E3D;font-size:16px;margin-top:0;">Dear Dr. ${firstName},</p>
+            <p style="color:#1a1a1a;font-size:15px;line-height:1.8;margin-bottom:20px;">
+              We are writing to inform you that your access to the <strong style="color:#0B1E3D;">MRCPI OBGYN Unlocked</strong> platform has been temporarily suspended, effective immediately.
+            </p>
+            <p style="color:#1a1a1a;font-size:15px;line-height:1.8;margin-bottom:20px;">
+              During this period, you will not be able to log in or access any course materials or resources on the platform.
+            </p>
+            <p style="color:#1a1a1a;font-size:15px;line-height:1.8;margin-bottom:28px;">
+              If you believe this has been done in error, or if you would like to discuss this matter further, please do not hesitate to reach out to us directly at
+              <a href="mailto:info@mrcpiobgynunlocked.com" style="color:#15B097;">info@mrcpiobgynunlocked.com</a>
+              or via WhatsApp at <a href="https://wa.me/201559912306" style="color:#15B097;">+20 155 991 2306</a>.
+            </p>
+            <p style="color:#1a1a1a;font-size:15px;line-height:1.8;margin-bottom:28px;">
+              We remain committed to supporting your academic journey and hope to resolve any outstanding matters promptly.
+            </p>
+            <hr style="border:none;border-top:1px solid rgba(15,76,92,0.1);margin:24px 0;" />
+            <p style="color:#1a1a1a;font-size:14px;margin:0;">
+              With respect,<br/>
+              <strong style="color:#0B1E3D;">Dr. Einas Diab &amp; the MRCPI OBGYN Unlocked Team</strong>
+            </p>
+          </div>
+          <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
+            © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
+            <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
+          </p>
+        </div>
+        `
+      );
+    }
+
+    // Log to audit before deleting
+    await supabase.from("audit_logs").insert([{
+      user_id: user.id,
+      user_email: user.email,
+      user_role: profile.role,
+      action: "student_block",
+      resource: studentId,
+      metadata: { blocked_email: student?.email, blocked_name: student?.full_name },
+    }]);
+
+    // Delete profile and auth account so student can re-register
+    await serviceClient.from("profiles").delete().eq("id", studentId);
+    await serviceClient.auth.admin.deleteUser(studentId);
+
+    return NextResponse.json({ ok: true });
+  }
+
   await supabase.from("profiles").update({ status: newStatus }).eq("id", studentId);
 
   await supabase.from("audit_logs").insert([{
@@ -133,7 +200,6 @@ export async function POST(req: Request) {
     metadata: { new_status: newStatus },
   }]);
 
-  // Send email notification for approve or reject
   if (action === "approve" || action === "reject" || action === "reinstate") {
     console.log("[approve-student] Sending email for action:", action, "studentId:", studentId);
     const serviceClient = createServiceClient();

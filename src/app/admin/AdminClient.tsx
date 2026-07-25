@@ -26,7 +26,7 @@ type ContentItem = {
   file_size: number | null; storage_path: string; created_at: string;
 };
 
-type AuditRow = { id: string; user_email: string; action: string; resource: string | null; created_at: string };
+type AuditRow = { id: string; user_email: string; action: string; resource: string | null; created_at: string; metadata?: Record<string, string> };
 
 type FeedbackEntry = {
   id: string; student_id: string; feedback_type: "general" | "progress";
@@ -740,6 +740,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [bulkTerminating, setBulkTerminating] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
   const [auditLogs, setAuditLogs] = useState<AuditRow[]>([]);
+  const [blockedLogs, setBlockedLogs] = useState<AuditRow[]>([]);
   const [recentItems, setRecentItems] = useState<ContentItem[]>([]);
 
   // Settings state
@@ -988,8 +989,14 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   }, []);
 
   const fetchAuditLogs = useCallback(async () => {
-    const { data } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at").order("created_at", { ascending: false }).limit(20);
+    const { data } = await supabase.from("audit_logs").select("id, user_email, action, resource, created_at, metadata").order("created_at", { ascending: false }).limit(20);
     setAuditLogs(data ?? []);
+    setBlockedLogs((data ?? []).filter((l: AuditRow) => l.action === "student_block"));
+  }, []);
+
+  const clearBlockedLog = useCallback(async (id: string) => {
+    await supabase.from("audit_logs").delete().eq("id", id);
+    setBlockedLogs(prev => prev.filter(l => l.id !== id));
   }, []);
 
   const fetchRecentItems = useCallback(async () => {
@@ -3642,6 +3649,46 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
           {/* ── SECURITY ── */}
           {activeNav === "Security" && (
+            {/* Blocked Access Log */}
+            <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(107,33,168,0.18)" }}>
+              <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(107,33,168,0.1)" }}>
+                <div className="flex items-center gap-2">
+                  <Shield size={15} style={{ color: "#6b21a8" }} />
+                  <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: "#6b21a8" }}>Blocked Access Log</p>
+                </div>
+                {blockedLogs.length > 0 && (
+                  <button
+                    onClick={async () => { if (confirm("Clear all blocked access log entries?")) { await Promise.all(blockedLogs.map(l => supabase.from("audit_logs").delete().eq("id", l.id))); setBlockedLogs([]); } }}
+                    className="text-xs px-3 py-1.5 rounded-lg border transition-all hover:opacity-80"
+                    style={{ borderColor: "rgba(107,33,168,0.25)", color: "#6b21a8" }}
+                  >
+                    Clear All
+                  </button>
+                )}
+              </div>
+              <div className="divide-y" style={{ borderColor: "rgba(107,33,168,0.06)" }}>
+                {blockedLogs.length === 0 ? (
+                  <div className="p-8 text-center text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No blocked access records.</div>
+                ) : blockedLogs.map((l) => (
+                  <div key={l.id} className="flex items-center gap-4 px-5 py-3.5">
+                    <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: "#6b21a8" }} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium" style={{ color: "rgba(26,26,26,0.8)" }}>{l.metadata?.blocked_name || "Unknown"}</p>
+                      <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>{l.metadata?.blocked_email || l.resource}</p>
+                    </div>
+                    <p className="text-xs flex-shrink-0 mr-3" style={{ color: "rgba(26,26,26,0.35)" }}>{new Date(l.created_at).toLocaleString()}</p>
+                    <button
+                      onClick={() => clearBlockedLog(l.id)}
+                      className="text-xs px-2.5 py-1 rounded-lg border transition-all hover:opacity-80 flex-shrink-0"
+                      style={{ borderColor: "rgba(200,50,50,0.25)", color: "rgba(180,40,40,0.8)" }}
+                    >
+                      Clear
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
               <div className="flex items-center gap-2 p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
                 <Shield size={15} style={{ color: "var(--teal)" }} />
