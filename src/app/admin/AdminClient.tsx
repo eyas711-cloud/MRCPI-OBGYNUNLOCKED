@@ -1110,7 +1110,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   useEffect(() => {
     if (activeNav === "Security") fetchAuditLogs();
     if (activeNav === "Overview") { fetchAuditLogs(); fetchStudents(); fetchRecentItems(); fetchPayments(); }
-    if (activeNav === "Students") fetchStudents();
+    if (activeNav === "Students") { fetchStudents(); fetchAuditLogs(); }
     if (activeNav === "Feedback") { fetchAllFeedback(); fetchStudents(); fetchBroadcastLog(); }
     if (activeNav === "Success Stories") fetchTestimonials();
     if (activeNav === "Reviews") fetchReviews();
@@ -1513,7 +1513,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
               <div className="flex gap-2 flex-wrap">
                 {(["pending", "active", "blocked", "rejected", "all"] as const).map((f) => {
-                  const count = f === "all" ? students.length : students.filter((s) => s.status === f).length;
+                  const count = f === "blocked" ? blockedLogs.length : f === "all" ? students.length : students.filter((s) => s.status === f).length;
                   return (
                     <button key={f} onClick={() => setStudentFilter(f)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors" style={{ backgroundColor: studentFilter === f ? "var(--navy)" : "white", color: studentFilter === f ? "white" : "rgba(26,26,26,0.6)", border: "1px solid rgba(15,76,92,0.15)" }}>
                       {f} <span className="ml-1 text-xs opacity-60">({count})</span>
@@ -1525,7 +1525,16 @@ export default function AdminClient({ user }: { user: AdminUser }) {
 
               <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                 <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
-                  <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: "var(--teal)" }}>{studentFilter === "all" ? "All Users" : `${studentFilter.charAt(0).toUpperCase() + studentFilter.slice(1)} Registrations`}</p>
+                  <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: "var(--teal)" }}>{studentFilter === "all" ? "All Users" : studentFilter === "blocked" ? "Blocked Access Log" : `${studentFilter.charAt(0).toUpperCase() + studentFilter.slice(1)} Registrations`}</p>
+                  {studentFilter === "blocked" && blockedLogs.length > 0 && (
+                    <button
+                      onClick={async () => { if (confirm("Clear all blocked access log entries?")) { await fetch("/api/admin/blocked-logs", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: "all" }) }); setBlockedLogs([]); } }}
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg"
+                      style={{ backgroundColor: "rgba(107,33,168,0.08)", color: "#6b21a8", border: "1px solid rgba(107,33,168,0.2)" }}
+                    >
+                      <Trash2 size={12} /> Clear All
+                    </button>
+                  )}
                   {studentFilter === "rejected" && students.filter(s => s.status === "rejected").length > 0 && bulkSelected.size === 0 && (
                     <button
                       onClick={async () => {
@@ -1555,7 +1564,28 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     </div>
                   )}
                 </div>
-                {loadingStudents ? (
+                {studentFilter === "blocked" ? (
+                  blockedLogs.length === 0 ? (
+                    <div className="p-8 text-center text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No blocked access records.</div>
+                  ) : (
+                    <div className="divide-y" style={{ borderColor: "rgba(107,33,168,0.06)" }}>
+                      {blockedLogs.map((l) => (
+                        <div key={l.id} className="flex items-center gap-4 px-5 py-4">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: "#6b21a8" }}>
+                            {(l.details?.blocked_name || "?").split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{l.details?.blocked_name || "Unknown"}</p>
+                            <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>{l.details?.blocked_email || l.resource}</p>
+                          </div>
+                          <span className="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "rgba(107,33,168,0.08)", color: "#6b21a8" }}>Blocked</span>
+                          <p className="text-xs flex-shrink-0" style={{ color: "rgba(26,26,26,0.35)" }}>{new Date(l.created_at).toLocaleDateString()}</p>
+                          <button onClick={() => clearBlockedLog(l.id)} className="text-xs px-2.5 py-1 rounded-lg border flex-shrink-0 transition-all hover:opacity-70" style={{ borderColor: "rgba(200,50,50,0.25)", color: "rgba(180,40,40,0.8)" }}>Clear</button>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : loadingStudents ? (
                   <div className="p-8 text-center"><Loader size={18} className="animate-spin mx-auto" style={{ color: "var(--teal)" }} /></div>
                 ) : (() => {
                   const filtered = studentFilter === "all" ? students : students.filter((s) => s.status === studentFilter);
