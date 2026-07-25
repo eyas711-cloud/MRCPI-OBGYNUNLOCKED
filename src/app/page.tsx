@@ -185,7 +185,13 @@ export default async function HomePage() {
                 Meet Dr. Einas Diab
               </h2>
               <p className="leading-relaxed mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
-                Dr. Einas Diab is a distinguished OBGYN clinician and medical educator with extensive clinical and academic experience. She brings a rigorous, structured, and empathetic approach to OSCE coaching — helping candidates not just pass the examination, but develop lasting clinical competence.
+                Dr. Einas Diab is a distinguished OBGYN clinician and medical educator with extensive clinical and academic experience.
+              </p>
+              <p className="leading-relaxed mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
+                She is the head of a CDI Committee in a private sector medical institution.
+              </p>
+              <p className="leading-relaxed mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
+                She brings a rigorous, structured, and empathetic approach to OSCE coaching — helping candidates not just pass the examination, but develop lasting clinical competence.
               </p>
               <p className="leading-relaxed mb-6" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
                 With a broad portfolio of postgraduate diplomas spanning women&apos;s health, aesthetic gynecology, mental health counselling, and hospital management, Dr. Diab offers a uniquely comprehensive perspective on clinical practice and examination excellence.
