@@ -174,8 +174,8 @@ export async function POST(req: Request) {
       );
     }
 
-    // Log to audit before deleting
-    const { error: auditErr } = await supabase.from("audit_logs").insert([{
+    // Log to audit before deleting (use serviceClient to bypass RLS)
+    const { error: auditErr } = await serviceClient.from("audit_logs").insert([{
       user_id: user.id,
       user_email: user.email,
       user_role: profile.role,
