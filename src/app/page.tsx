@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase-server";
 
 const credentials = [
   { title: "Membership of Obstetrics and Gynaecology of the Royal College of Physicians of Ireland", date: "", institution: "Royal College of Physicians of Ireland" },
+  { title: "CDI-OBGYN Specialty Trained", date: "July 2026", institution: "Certified by AHIMA" },
   { title: "Sexual Health Diploma", date: "Feb 2023", institution: "American University of Science and Technology" },
   { title: "Mini Masters of Family Counselling & Mental Health", date: "Jan 2023", institution: "American University of Science and Technology" },
   { title: "Infection Control Diploma", date: "Dec 2022", institution: "American University of Science and Technology" },
