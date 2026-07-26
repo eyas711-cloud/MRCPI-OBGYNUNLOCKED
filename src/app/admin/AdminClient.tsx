@@ -1122,7 +1122,10 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Success Stories") fetchTestimonials();
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
-    if (activeNav === "Payments") { fetchPayments(); fetchBatches(); fetchReminderStudents(); }
+    if (activeNav === "Payments") {
+      fetchPayments(); fetchBatches();
+      fetch("/api/admin/sync-batch-emails", { method: "POST" }).then(() => fetchReminderStudents());
+    }
     if (activeNav === "Settings") { fetchSettings(); fetchAnnouncementLog(); }
     if (activeNav === "Courses") fetchSettings();
   }, [activeNav, fetchAuditLogs, fetchStudents, fetchAllFeedback, fetchBroadcastLog, fetchAnnouncementLog, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents]);
