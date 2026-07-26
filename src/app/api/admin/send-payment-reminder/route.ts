@@ -110,9 +110,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Failed to send email." }, { status: 500 });
   }
 
-  // Update last_reminded_at (skip for test sends)
+  // Update last_reminded_at and write audit log (skip for test sends)
   if (!testOnly) {
     await service.from("batch_students").update({ last_reminded_at: new Date().toISOString() }).eq("id", studentId);
+    await service.from("audit_logs").insert([{
+      action: "payment_reminder_sent",
+      resource: studentId,
+      details: {
+        student_name: student.student_name,
+        email: student.email,
+        paid,
+        pending,
+        batch: batchName,
+      },
+    }]);
   }
 
   return NextResponse.json({ ok: true });
