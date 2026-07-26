@@ -765,6 +765,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [editingCell, setEditingCell] = useState<{ rowId: string; field: string } | null>(null);
   const [cellValue, setCellValue] = useState("");
   const [batchSavingRow, setBatchSavingRow] = useState<string | null>(null);
+  const [importingBatch, setImportingBatch] = useState(false);
 
   // Payment reminder state
   const [reminderInterval, setReminderInterval] = useState<14 | 30>(30);
@@ -2747,6 +2748,31 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       >
                         {batches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
+                    )}
+                    {activeBatchId && (
+                      <button
+                        disabled={importingBatch}
+                        onClick={async () => {
+                          if (!activeBatchId) return;
+                          if (!confirm("Import all active students into this batch? Existing entries won't be duplicated.")) return;
+                          setImportingBatch(true);
+                          const res = await fetch("/api/admin/import-batch-students", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ batchId: activeBatchId }),
+                          });
+                          const json = await res.json();
+                          setImportingBatch(false);
+                          fetchBatchStudents(activeBatchId);
+                          if (json.imported === 0) alert("No new students to import — all active students are already in this batch.");
+                          else alert(`${json.imported} student${json.imported === 1 ? "" : "s"} imported.`);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
+                        style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}
+                      >
+                        {importingBatch ? <Loader size={12} className="animate-spin" /> : <Users size={12} />}
+                        Import from Students
+                      </button>
                     )}
                     <button
                       onClick={() => setNewBatchModal(true)}
