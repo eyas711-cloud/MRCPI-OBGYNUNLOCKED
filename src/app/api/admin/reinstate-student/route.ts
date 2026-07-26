@@ -47,15 +47,13 @@ export async function POST(req: Request) {
 
   const newUserId = created.user.id;
 
-  // Upsert profile as active student — overrides the trigger-created pending row
-  const { error: profileErr } = await serviceClient.from("profiles").upsert({
-    id: newUserId,
-    email,
-    full_name: name || "",
-    role: "student",
-    status: "active",
-  }, { onConflict: "id" });
-  if (profileErr) console.error("[reinstate] Profile upsert error:", profileErr.message);
+  // Wait briefly for the DB trigger to create the pending profile row, then override it
+  await new Promise(r => setTimeout(r, 500));
+  const { error: profileErr } = await serviceClient
+    .from("profiles")
+    .update({ status: "active", role: "student", full_name: name || "", email })
+    .eq("id", newUserId);
+  if (profileErr) console.error("[reinstate] Profile update error:", profileErr.message);
 
   // Generate a password-reset link so they can set a new password and log in
   const { data: linkData, error: linkErr } = await serviceClient.auth.admin.generateLink({
