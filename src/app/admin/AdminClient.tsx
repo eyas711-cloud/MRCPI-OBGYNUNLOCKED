@@ -3312,69 +3312,69 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 </div>
               </div>
 
-              {/* Payments list */}
-              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
-                {/* ── Reminder Email Log ── */}
-                <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
-                  <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(15,76,92,0.08)", backgroundColor: "rgba(11,30,61,0.02)" }}>
-                    <div className="flex items-center gap-2">
-                      <Send size={15} style={{ color: "var(--teal)" }} />
-                      <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Reminder Email Log</h2>
-                      {reminderLog.length > 0 && (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}>
-                          {reminderLog.length}
-                        </span>
-                      )}
-                    </div>
+              {/* ── Reminder Email Log ── */}
+              <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(15,76,92,0.08)", backgroundColor: "rgba(11,30,61,0.02)" }}>
+                  <div className="flex items-center gap-2">
+                    <Send size={15} style={{ color: "var(--teal)" }} />
+                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Reminder Email Log</h2>
                     {reminderLog.length > 0 && (
-                      <button
-                        onClick={async () => {
-                          await fetch("/api/admin/blocked-logs", {
-                            method: "DELETE",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ id: "all", action: "payment_reminder_sent" }),
-                          });
-                          setReminderLog([]);
-                        }}
-                        className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
-                        style={{ color: "rgba(200,50,50,0.7)" }}>
-                        Clear All
-                      </button>
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}>
+                        {reminderLog.length}
+                      </span>
                     )}
                   </div>
-                  {reminderLog.length === 0 ? (
-                    <p className="text-sm text-center py-8" style={{ color: "rgba(26,26,26,0.35)" }}>No reminders sent yet.</p>
-                  ) : (
-                    <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.07)" }}>
-                      {reminderLog.map(log => (
-                        <div key={log.id} className="flex items-center gap-3 px-5 py-3">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{log.details?.student_name ?? "—"}</p>
-                            <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{log.details?.email ?? "—"} · {log.details?.batch ?? ""}</p>
-                          </div>
-                          <div className="text-right flex-shrink-0">
-                            <p className="text-xs font-semibold" style={{ color: "var(--gold)" }}>SAR {Number(log.details?.pending ?? 0).toLocaleString()} pending</p>
-                            <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>{new Date(log.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-                          </div>
-                          <button
-                            onClick={async () => {
-                              await fetch("/api/admin/blocked-logs", {
-                                method: "DELETE",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: log.id }),
-                              });
-                              setReminderLog(prev => prev.filter(r => r.id !== log.id));
-                            }}
-                            className="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50 flex-shrink-0"
-                            style={{ color: "rgba(200,50,50,0.45)" }}>
-                            <X size={13} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                  {reminderLog.length > 0 && (
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/admin/blocked-logs", {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: "all", action: "payment_reminder_sent" }),
+                        });
+                        setReminderLog([]);
+                      }}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                      style={{ color: "rgba(200,50,50,0.7)" }}>
+                      Clear All
+                    </button>
                   )}
                 </div>
+                {reminderLog.length === 0 ? (
+                  <p className="text-sm text-center py-8" style={{ color: "rgba(26,26,26,0.35)" }}>No reminders sent yet.</p>
+                ) : (
+                  <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.07)" }}>
+                    {reminderLog.map(log => (
+                      <div key={log.id} className="flex items-center gap-3 px-5 py-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{log.details?.student_name ?? "—"}</p>
+                          <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{log.details?.email ?? "—"} · {log.details?.batch ?? ""}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xs font-semibold" style={{ color: "var(--gold)" }}>SAR {Number(log.details?.pending ?? 0).toLocaleString()} pending</p>
+                          <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>{new Date(log.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            await fetch("/api/admin/blocked-logs", {
+                              method: "DELETE",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ id: log.id }),
+                            });
+                            setReminderLog(prev => prev.filter(r => r.id !== log.id));
+                          }}
+                          className="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50 flex-shrink-0"
+                          style={{ color: "rgba(200,50,50,0.45)" }}>
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
+              {/* Payments list */}
+              <div className="rounded-xl border bg-white" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                 <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
                   <div className="flex items-center gap-2">
                     <DollarSign size={16} style={{ color: "var(--teal)" }} />
