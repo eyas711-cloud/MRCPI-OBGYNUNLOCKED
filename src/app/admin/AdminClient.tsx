@@ -774,12 +774,13 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [reminderResults, setReminderResults] = useState<Record<string, { type: "ok" | "err"; text: string }>>({});
   const [reminderDraft, setReminderDraft] = useState<{
-    student: BatchStudent; paid: string; pending: string; message: string;
+    student: BatchStudent; paid: string; pending: string; message: string; type: "reminder" | "final_warning";
   } | null>(null);
   const [dueIds, setDueIds] = useState<string[]>([]);
   const [checkingDue, setCheckingDue] = useState(false);
   const [adminNotified, setAdminNotified] = useState(false);
   const [reminderLog, setReminderLog] = useState<AuditRow[]>([]);
+  const [finalWarningLog, setFinalWarningLog] = useState<AuditRow[]>([]);
 
   // Announcement email state
   const [announcementSubject, setAnnouncementSubject] = useState("Announcement from MRCPI OBGYN Unlocked");
@@ -1078,6 +1079,12 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setReminderLog(json.logs ?? []);
   }, []);
 
+  const fetchFinalWarningLog = useCallback(async () => {
+    const res = await fetch("/api/admin/blocked-logs?action=payment_final_warning_sent");
+    const json = await res.json();
+    setFinalWarningLog(json.logs ?? []);
+  }, []);
+
   const checkDueStudents = useCallback(async (interval: number, notify = false) => {
     setCheckingDue(true);
     const res = await fetch(`/api/admin/send-payment-reminder?interval=${interval}&notify=${notify ? 1 : 0}`);
@@ -1134,12 +1141,12 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
     if (activeNav === "Payments") {
-      fetchPayments(); fetchBatches(); fetchReminderLog();
+      fetchPayments(); fetchBatches(); fetchReminderLog(); fetchFinalWarningLog();
       fetch("/api/admin/sync-batch-emails", { method: "POST" }).then(() => fetchReminderStudents());
     }
     if (activeNav === "Settings") { fetchSettings(); fetchAnnouncementLog(); }
     if (activeNav === "Courses") fetchSettings();
-  }, [activeNav, fetchAuditLogs, fetchStudents, fetchAllFeedback, fetchBroadcastLog, fetchAnnouncementLog, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents, fetchReminderLog]);
+  }, [activeNav, fetchAuditLogs, fetchStudents, fetchAllFeedback, fetchBroadcastLog, fetchAnnouncementLog, fetchRecentItems, fetchTestimonials, fetchReviews, fetchSlots, fetchBookings, fetchPayments, fetchSettings, fetchBatches, fetchReminderStudents, fetchReminderLog, fetchFinalWarningLog]);
 
   useEffect(() => {
     fetchStudents();
@@ -3022,7 +3029,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                   <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
                     <div className="flex items-center justify-between mb-5">
                       <div>
-                        <h3 className="font-serif font-semibold text-lg" style={{ color: "var(--navy)" }}>Compose Reminder</h3>
+                        <h3 className="font-serif font-semibold text-lg" style={{ color: reminderDraft.type === "final_warning" ? "rgba(180,30,30,0.85)" : "var(--navy)" }}>
+                          {reminderDraft.type === "final_warning" ? "Final Warning Email" : "Compose Reminder"}
+                        </h3>
                         <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>
                           To: {reminderDraft.student.student_name} &nbsp;·&nbsp; {reminderDraft.student.email}
                         </p>
@@ -3085,6 +3094,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                 overridePaid: Number(reminderDraft.paid),
                                 overridePending: Number(reminderDraft.pending),
                                 customMessage: reminderDraft.message,
+                                logAction: reminderDraft.type === "final_warning" ? "payment_final_warning_sent" : "payment_reminder_sent",
                               }),
                             });
                             const data = await res.json();
@@ -3100,8 +3110,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                             setReminderResults(prev => ({ ...prev, [reminderDraft.student.id]: { type: "err", text: "Network error" } }));
                           }
                           setSendingReminder(null);
+                          if (reminderDraft.type === "final_warning") fetchFinalWarningLog();
+                          else fetchReminderLog();
                           setReminderDraft(null);
-                          fetchReminderLog();
                         }}
                         className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
                         style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
@@ -3272,10 +3283,24 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                         paid: String(Number(s.paid)),
                                         pending: String(Number(s.pending)),
                                         message: `We hope your MRCPI OBGYN OSCE preparation is going well. This is a friendly reminder regarding your outstanding course fee balance.`,
+                                        type: "reminder",
                                       })}
                                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-40"
                                       style={{ backgroundColor: isDue ? "var(--gold)" : "rgba(21,176,151,0.1)", color: isDue ? "var(--navy)" : "var(--teal)" }}>
                                       {isSending ? <><Loader size={11} className="animate-spin" /> Sending…</> : <><Send size={11} /> Send Reminder</>}
+                                    </button>
+                                    <button
+                                      disabled={isSending || !s.email}
+                                      onClick={() => setReminderDraft({
+                                        student: s,
+                                        paid: String(Number(s.paid)),
+                                        pending: String(Number(s.pending)),
+                                        message: `We hope your MRCPI OBGYN OSCE preparation is going well. We are writing to inform you that your course access is scheduled to be suspended within the next 24 to 48 hours due to an outstanding balance on your account.\n\nWe kindly urge you to arrange payment of the remaining amount at your earliest convenience to avoid any interruption to your access.`,
+                                        type: "final_warning",
+                                      })}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-40"
+                                      style={{ backgroundColor: "rgba(200,50,50,0.08)", color: "rgba(180,30,30,0.8)" }}>
+                                      <Send size={11} /> Final Warning
                                     </button>
                                     {s.email && (
                                       <button
@@ -3362,6 +3387,67 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                               body: JSON.stringify({ id: log.id }),
                             });
                             setReminderLog(prev => prev.filter(r => r.id !== log.id));
+                          }}
+                          className="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50 flex-shrink-0"
+                          style={{ color: "rgba(200,50,50,0.45)" }}>
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Final Warning Log ── */}
+              <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(200,50,50,0.2)" }}>
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(200,50,50,0.12)", backgroundColor: "rgba(200,50,50,0.03)" }}>
+                  <div className="flex items-center gap-2">
+                    <Send size={15} style={{ color: "rgba(180,30,30,0.8)" }} />
+                    <h2 className="font-semibold text-sm" style={{ color: "rgba(180,30,30,0.85)" }}>Final Warning Log</h2>
+                    {finalWarningLog.length > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "rgba(200,50,50,0.1)", color: "rgba(180,30,30,0.8)" }}>
+                        {finalWarningLog.length}
+                      </span>
+                    )}
+                  </div>
+                  {finalWarningLog.length > 0 && (
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/admin/blocked-logs", {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: "all", action: "payment_final_warning_sent" }),
+                        });
+                        setFinalWarningLog([]);
+                      }}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                      style={{ color: "rgba(200,50,50,0.7)" }}>
+                      Clear All
+                    </button>
+                  )}
+                </div>
+                {finalWarningLog.length === 0 ? (
+                  <p className="text-sm text-center py-8" style={{ color: "rgba(26,26,26,0.35)" }}>No final warnings sent yet.</p>
+                ) : (
+                  <div className="divide-y" style={{ borderColor: "rgba(200,50,50,0.08)" }}>
+                    {finalWarningLog.map(log => (
+                      <div key={log.id} className="flex items-center gap-3 px-5 py-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{log.details?.student_name ?? "—"}</p>
+                          <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{log.details?.email ?? "—"} · {log.details?.batch ?? ""}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xs font-semibold" style={{ color: "rgba(180,30,30,0.8)" }}>SAR {Number(log.details?.pending ?? 0).toLocaleString()} pending</p>
+                          <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>{new Date(log.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            await fetch("/api/admin/blocked-logs", {
+                              method: "DELETE",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ id: log.id }),
+                            });
+                            setFinalWarningLog(prev => prev.filter(r => r.id !== log.id));
                           }}
                           className="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50 flex-shrink-0"
                           style={{ color: "rgba(200,50,50,0.45)" }}>

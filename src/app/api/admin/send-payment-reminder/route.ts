@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { studentId, testOnly, overridePaid, overridePending, customMessage } = await req.json();
+  const { studentId, testOnly, overridePaid, overridePending, customMessage, logAction } = await req.json();
   const service = serviceClient();
 
   const { data: student } = await service
@@ -114,7 +114,7 @@ export async function POST(req: Request) {
   if (!testOnly) {
     await service.from("batch_students").update({ last_reminded_at: new Date().toISOString() }).eq("id", studentId);
     await service.from("audit_logs").insert([{
-      action: "payment_reminder_sent",
+      action: logAction ?? "payment_reminder_sent",
       resource: studentId,
       details: {
         student_name: student.student_name,
