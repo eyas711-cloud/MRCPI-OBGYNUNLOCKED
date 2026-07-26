@@ -773,6 +773,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [reminderLoading, setReminderLoading] = useState(false);
   const [sendingReminder, setSendingReminder] = useState<string | null>(null);
   const [reminderResults, setReminderResults] = useState<Record<string, { type: "ok" | "err"; text: string }>>({});
+  const [reminderDraft, setReminderDraft] = useState<{
+    student: BatchStudent; paid: string; pending: string; message: string;
+  } | null>(null);
   const [dueIds, setDueIds] = useState<string[]>([]);
   const [checkingDue, setCheckingDue] = useState(false);
   const [adminNotified, setAdminNotified] = useState(false);
@@ -3006,6 +3009,103 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 })()}
               </div>
 
+              {/* Reminder compose modal */}
+              {reminderDraft && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.6)" }} onClick={() => setReminderDraft(null)}>
+                  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-between mb-5">
+                      <div>
+                        <h3 className="font-serif font-semibold text-lg" style={{ color: "var(--navy)" }}>Compose Reminder</h3>
+                        <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.45)" }}>
+                          To: {reminderDraft.student.student_name} &nbsp;·&nbsp; {reminderDraft.student.email}
+                        </p>
+                      </div>
+                      <button onClick={() => setReminderDraft(null)} className="w-8 h-8 rounded flex items-center justify-center hover:bg-gray-100"><X size={16} /></button>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Amount Paid (SAR)</label>
+                          <input
+                            type="number" min="0"
+                            value={reminderDraft.paid}
+                            onChange={e => setReminderDraft(d => d ? { ...d, paid: e.target.value } : d)}
+                            className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                            style={{ borderColor: "rgba(15,76,92,0.2)" }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Remaining Balance (SAR)</label>
+                          <input
+                            type="number" min="0"
+                            value={reminderDraft.pending}
+                            onChange={e => setReminderDraft(d => d ? { ...d, pending: e.target.value } : d)}
+                            className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
+                            style={{ borderColor: "rgba(15,76,92,0.2)" }}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--navy)" }}>Message Body</label>
+                        <textarea
+                          rows={5}
+                          value={reminderDraft.message}
+                          onChange={e => setReminderDraft(d => d ? { ...d, message: e.target.value } : d)}
+                          className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none resize-none"
+                          style={{ borderColor: "rgba(15,76,92,0.2)", lineHeight: "1.7" }}
+                        />
+                        <p className="text-xs mt-1" style={{ color: "rgba(26,26,26,0.4)" }}>
+                          This appears above the payment summary in the email. The greeting and sign-off are added automatically.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-3 mt-6">
+                      <button onClick={() => setReminderDraft(null)} className="px-4 py-2 rounded-lg text-sm font-semibold" style={{ color: "rgba(26,26,26,0.5)" }}>Cancel</button>
+                      <button
+                        disabled={sendingReminder === reminderDraft.student.id}
+                        onClick={async () => {
+                          const s = reminderDraft.student;
+                          setSendingReminder(s.id);
+                          try {
+                            const res = await fetch("/api/admin/send-payment-reminder", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                studentId: s.id,
+                                overridePaid: Number(reminderDraft.paid),
+                                overridePending: Number(reminderDraft.pending),
+                                customMessage: reminderDraft.message,
+                              }),
+                            });
+                            const data = await res.json();
+                            setReminderResults(prev => ({
+                              ...prev,
+                              [s.id]: res.ok ? { type: "ok", text: "Sent ✓" } : { type: "err", text: data.error ?? "Failed" },
+                            }));
+                            if (res.ok) {
+                              setReminderStudents(prev => prev.map(r => r.id === s.id ? { ...r, last_reminded_at: new Date().toISOString() } : r));
+                              setDueIds(prev => prev.filter(id => id !== s.id));
+                            }
+                          } catch {
+                            setReminderResults(prev => ({ ...prev, [reminderDraft.student.id]: { type: "err", text: "Network error" } }));
+                          }
+                          setSendingReminder(null);
+                          setReminderDraft(null);
+                        }}
+                        className="inline-flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                        style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                        {sendingReminder === reminderDraft.student.id
+                          ? <><Loader size={13} className="animate-spin" /> Sending…</>
+                          : <><Send size={13} /> Send Reminder</>}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* New batch modal */}
               {newBatchModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: "rgba(0,0,0,0.6)" }} onClick={() => setNewBatchModal(false)}>
@@ -3159,28 +3259,12 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                     )}
                                     <button
                                       disabled={isSending || !s.email}
-                                      onClick={async () => {
-                                        setSendingReminder(s.id);
-                                        try {
-                                          const res = await fetch("/api/admin/send-payment-reminder", {
-                                            method: "POST",
-                                            headers: { "Content-Type": "application/json" },
-                                            body: JSON.stringify({ studentId: s.id }),
-                                          });
-                                          const data = await res.json();
-                                          setReminderResults(prev => ({
-                                            ...prev,
-                                            [s.id]: res.ok ? { type: "ok", text: "Sent ✓" } : { type: "err", text: data.error ?? "Failed" },
-                                          }));
-                                          if (res.ok) {
-                                            setReminderStudents(prev => prev.map(r => r.id === s.id ? { ...r, last_reminded_at: new Date().toISOString() } : r));
-                                            setDueIds(prev => prev.filter(id => id !== s.id));
-                                          }
-                                        } catch {
-                                          setReminderResults(prev => ({ ...prev, [s.id]: { type: "err", text: "Network error" } }));
-                                        }
-                                        setSendingReminder(null);
-                                      }}
+                                      onClick={() => setReminderDraft({
+                                        student: s,
+                                        paid: String(Number(s.paid)),
+                                        pending: String(Number(s.pending)),
+                                        message: `We hope your MRCPI OBGYN OSCE preparation is going well. This is a friendly reminder regarding your outstanding course fee balance.`,
+                                      })}
                                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-40"
                                       style={{ backgroundColor: isDue ? "var(--gold)" : "rgba(21,176,151,0.1)", color: isDue ? "var(--navy)" : "var(--teal)" }}>
                                       {isSending ? <><Loader size={11} className="animate-spin" /> Sending…</> : <><Send size={11} /> Send Reminder</>}

@@ -17,8 +17,10 @@ function transporter() {
   });
 }
 
-function buildReminderHtml(name: string, paid: number, pending: number, batchName: string) {
-  const firstName = name.split(" ")[0] || "Doctor";
+function buildReminderHtml(name: string, paid: number, pending: number, batchName: string, customMessage?: string) {
+  const firstName = (name.split(" ").find(w => !w.match(/^dr\.?$/i)) ?? name.split(" ")[0] ?? "Doctor");
+  const bodyText = customMessage?.trim()
+    || `We hope your MRCPI OBGYN OSCE preparation is going well. This is a friendly reminder regarding your outstanding course fee balance for <strong>${batchName}</strong>.`;
   return `
     <div style="font-family:Georgia,serif;max-width:600px;margin:0 auto;padding:32px 24px;background:#f8f7f4;">
       <div style="background:#0B1E3D;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center;">
@@ -26,11 +28,8 @@ function buildReminderHtml(name: string, paid: number, pending: number, batchNam
         <h1 style="color:#15B097;font-size:20px;margin:0;letter-spacing:0.05em;">MRCPI OBGYN Unlocked</h1>
       </div>
       <div style="background:#ffffff;padding:32px;border-radius:0 0 12px 12px;border:1px solid rgba(15,76,92,0.15);border-top:none;">
-        <p style="color:#0B1E3D;font-size:16px;margin-top:0;">Dear ${firstName},</p>
-        <p style="color:#1a1a1a;font-size:15px;line-height:1.7;">
-          We hope your MRCPI OBGYN OSCE preparation is going well. This is a friendly reminder
-          regarding your outstanding course fee balance for <strong>${batchName}</strong>.
-        </p>
+        <p style="color:#0B1E3D;font-size:16px;margin-top:0;">Dear Dr. ${firstName},</p>
+        <p style="color:#1a1a1a;font-size:15px;line-height:1.7;">${bodyText}</p>
 
         <div style="background:#f0faf8;border:1px solid rgba(21,176,151,0.25);border-radius:10px;padding:20px 24px;margin:24px 0;">
           <table style="width:100%;border-collapse:collapse;">
@@ -78,7 +77,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { studentId, testOnly } = await req.json();
+  const { studentId, testOnly, overridePaid, overridePending, customMessage } = await req.json();
   const service = serviceClient();
 
   const { data: student } = await service
@@ -93,7 +92,9 @@ export async function POST(req: Request) {
   if (!toEmail) return NextResponse.json({ error: "No email address on file for this student." }, { status: 400 });
 
   const batchName = (student.payment_batches as { name: string } | null)?.name ?? "MRCPI OBGYN Course";
-  const html = buildReminderHtml(student.student_name, Number(student.paid), Number(student.pending), batchName);
+  const paid = overridePaid !== undefined ? Number(overridePaid) : Number(student.paid);
+  const pending = overridePending !== undefined ? Number(overridePending) : Number(student.pending);
+  const html = buildReminderHtml(student.student_name, paid, pending, batchName, customMessage);
 
   try {
     await transporter().sendMail({
