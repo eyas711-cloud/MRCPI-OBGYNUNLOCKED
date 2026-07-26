@@ -1696,10 +1696,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                 </>
                               )}
                               {s.status === "rejected" && (
-                                <>
-                                  <button onClick={() => handleStudentAction(s.id, "approve")} disabled={actionLoading === s.id + "approve"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--teal)" }}>{actionLoading === s.id + "approve" ? "…" : "Approve"}</button>
-                                  <button onClick={() => { if (confirm(`TERMINATE account for ${s.full_name || s.email}? This permanently deletes their account and cannot be undone.`)) handleStudentAction(s.id, "terminate"); }} disabled={actionLoading === s.id + "terminate"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(200,50,50,0.35)", color: "rgba(180,40,40,0.9)" }}>{actionLoading === s.id + "terminate" ? "…" : "Terminate"}</button>
-                                </>
+                                <button onClick={() => { if (confirm(`Clear rejected registration for ${s.full_name || s.email}? Their account will be permanently deleted.`)) handleStudentAction(s.id, "clear"); }} disabled={actionLoading === s.id + "clear"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(200,50,50,0.25)", color: "rgba(180,40,40,0.8)" }}>{actionLoading === s.id + "clear" ? "…" : "Clear"}</button>
                               )}
                             </div>
                           </div>
