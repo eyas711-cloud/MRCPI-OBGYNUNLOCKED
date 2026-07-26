@@ -3039,6 +3039,30 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       <button onClick={() => setReminderDraft(null)} className="w-8 h-8 rounded flex items-center justify-center hover:bg-gray-100"><X size={16} /></button>
                     </div>
 
+                    {/* Type toggle */}
+                    <div className="flex gap-2 mb-5">
+                      <button
+                        onClick={() => setReminderDraft(d => d ? { ...d, type: "reminder", message: `We hope your MRCPI OBGYN OSCE preparation is going well. This is a friendly reminder regarding your outstanding course fee balance.` } : d)}
+                        className="flex-1 py-2 rounded-lg text-xs font-semibold border transition-all"
+                        style={{
+                          backgroundColor: reminderDraft.type === "reminder" ? "rgba(21,176,151,0.12)" : "white",
+                          color: reminderDraft.type === "reminder" ? "var(--teal)" : "rgba(26,26,26,0.5)",
+                          borderColor: reminderDraft.type === "reminder" ? "var(--teal)" : "rgba(15,76,92,0.15)",
+                        }}>
+                        Regular Reminder
+                      </button>
+                      <button
+                        onClick={() => setReminderDraft(d => d ? { ...d, type: "final_warning", message: `We hope your MRCPI OBGYN OSCE preparation is going well. We are writing to inform you that your course access is scheduled to be suspended within the next 24 to 48 hours due to an outstanding balance on your account.\n\nWe kindly urge you to arrange payment of the remaining amount at your earliest convenience to avoid any interruption to your access.` } : d)}
+                        className="flex-1 py-2 rounded-lg text-xs font-semibold border transition-all"
+                        style={{
+                          backgroundColor: reminderDraft.type === "final_warning" ? "rgba(200,50,50,0.08)" : "white",
+                          color: reminderDraft.type === "final_warning" ? "rgba(180,30,30,0.85)" : "rgba(26,26,26,0.5)",
+                          borderColor: reminderDraft.type === "final_warning" ? "rgba(200,50,50,0.4)" : "rgba(15,76,92,0.15)",
+                        }}>
+                        Final Warning
+                      </button>
+                    </div>
+
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -3288,19 +3312,6 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-40"
                                       style={{ backgroundColor: isDue ? "var(--gold)" : "rgba(21,176,151,0.1)", color: isDue ? "var(--navy)" : "var(--teal)" }}>
                                       {isSending ? <><Loader size={11} className="animate-spin" /> Sending…</> : <><Send size={11} /> Send Reminder</>}
-                                    </button>
-                                    <button
-                                      disabled={isSending || !s.email}
-                                      onClick={() => setReminderDraft({
-                                        student: s,
-                                        paid: String(Number(s.paid)),
-                                        pending: String(Number(s.pending)),
-                                        message: `We hope your MRCPI OBGYN OSCE preparation is going well. We are writing to inform you that your course access is scheduled to be suspended within the next 24 to 48 hours due to an outstanding balance on your account.\n\nWe kindly urge you to arrange payment of the remaining amount at your earliest convenience to avoid any interruption to your access.`,
-                                        type: "final_warning",
-                                      })}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-40"
-                                      style={{ backgroundColor: "rgba(200,50,50,0.08)", color: "rgba(180,30,30,0.8)" }}>
-                                      <Send size={11} /> Final Warning
                                     </button>
                                     {s.email && (
                                       <button
