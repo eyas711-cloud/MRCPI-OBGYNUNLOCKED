@@ -776,22 +776,22 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
               {/* My Feedback card */}
               <button
                 onClick={() => setFeedbackView("feedback")}
-                className="text-left rounded-2xl border p-6 transition-all hover:shadow-md hover:-translate-y-0.5 group"
-                style={{ borderColor: "rgba(21,176,151,0.25)", backgroundColor: "rgba(21,176,151,0.03)" }}
+                className="text-left rounded-2xl p-6 transition-all hover:shadow-md hover:-translate-y-0.5 group"
+                style={{ backgroundColor: "#fdf8ee", border: "1.5px solid var(--gold)" }}
               >
                 <div className="flex items-start justify-between mb-5">
-                  <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}>
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(201,162,39,0.15)", color: "var(--gold)" }}>
                     <MessageSquare size={28} />
                   </div>
                   {(myFeedback.length + mySessionFeedback.length) > 0 && (
-                    <span className="text-xs font-mono-data font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(21,176,151,0.12)", color: "var(--teal)" }}>
+                    <span className="text-xs font-mono-data font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(201,162,39,0.15)", color: "var(--gold)" }}>
                       {myFeedback.length + mySessionFeedback.length} new
                     </span>
                   )}
                 </div>
                 <h2 className="font-serif font-semibold text-lg mb-1" style={{ color: "var(--navy)" }}>My Feedback</h2>
-                <p className="text-sm" style={{ color: "rgba(26,26,26,0.55)" }}>Personal notes, progress comments & session scorecards from Dr. Diab</p>
-                <div className="flex items-center gap-1 mt-4 text-xs font-semibold" style={{ color: "var(--teal)" }}>
+                <p className="text-sm" style={{ color: "rgba(61,10,20,0.55)" }}>Personal notes, progress comments & session scorecards from Dr. Diab</p>
+                <div className="flex items-center gap-1 mt-4 text-xs font-semibold" style={{ color: "var(--gold)" }}>
                   View Feedback <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
               </button>
@@ -799,17 +799,17 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
               {/* Mock OSCE booking card */}
               <Link
                 href="/mock-osce"
-                className="text-left rounded-2xl border p-6 transition-all hover:shadow-md hover:-translate-y-0.5 group"
-                style={{ borderColor: "rgba(201,162,39,0.25)", backgroundColor: "rgba(201,162,39,0.04)" }}
+                className="text-left rounded-2xl p-6 transition-all hover:shadow-md hover:-translate-y-0.5 group"
+                style={{ backgroundColor: "#fdf8ee", border: "1.5px solid var(--gold)" }}
               >
                 <div className="flex items-start justify-between mb-5">
-                  <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(201,162,39,0.12)", color: "var(--gold)" }}>
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(201,162,39,0.15)", color: "var(--gold)" }}>
                     <Award size={28} />
                   </div>
-                  <span className="text-xs font-mono-data font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(201,162,39,0.12)", color: "var(--gold)" }}>Live</span>
+                  <span className="text-xs font-mono-data font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(201,162,39,0.15)", color: "var(--gold)" }}>Live</span>
                 </div>
                 <h2 className="font-serif font-semibold text-lg mb-1" style={{ color: "var(--navy)" }}>Mock OSCE Sessions</h2>
-                <p className="text-sm" style={{ color: "rgba(26,26,26,0.55)" }}>Book a live 1:1 mock examination with Dr. Einas Diab</p>
+                <p className="text-sm" style={{ color: "rgba(61,10,20,0.55)" }}>Book a live 1:1 mock examination with Dr. Einas Diab</p>
                 <div className="flex items-center gap-1 mt-4 text-xs font-semibold" style={{ color: "var(--gold)" }}>
                   Book Now <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                 </div>
