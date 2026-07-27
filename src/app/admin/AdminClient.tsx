@@ -791,6 +791,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [adminNotified, setAdminNotified] = useState(false);
   const [reminderLog, setReminderLog] = useState<AuditRow[]>([]);
   const [finalWarningLog, setFinalWarningLog] = useState<AuditRow[]>([]);
+  const [receiptLog, setReceiptLog] = useState<AuditRow[]>([]);
 
   // Announcement email state
   const [announcementSubject, setAnnouncementSubject] = useState("Announcement from MRCPI OBGYN Unlocked");
@@ -1101,6 +1102,12 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setFinalWarningLog(json.logs ?? []);
   }, []);
 
+  const fetchReceiptLog = useCallback(async () => {
+    const res = await fetch("/api/admin/blocked-logs?action=receipt_sent");
+    const json = await res.json();
+    setReceiptLog(json.logs ?? []);
+  }, []);
+
   const checkDueStudents = useCallback(async (interval: number, notify = false) => {
     setCheckingDue(true);
     const res = await fetch(`/api/admin/send-payment-reminder?interval=${interval}&notify=${notify ? 1 : 0}`);
@@ -1157,7 +1164,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     if (activeNav === "Reviews") fetchReviews();
     if (activeNav === "Mock OSCEs") { fetchSlots(); fetchBookings(); }
     if (activeNav === "Payments") {
-      fetchPayments(); fetchBatches(); fetchReminderLog(); fetchFinalWarningLog();
+      fetchPayments(); fetchBatches(); fetchReminderLog(); fetchFinalWarningLog(); fetchReceiptLog();
       fetch("/api/admin/sync-batch-emails", { method: "POST" }).then(() => fetchReminderStudents());
     }
     if (activeNav === "Settings") { fetchSettings(); fetchAnnouncementLog(); }
@@ -3545,6 +3552,67 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                           }}
                           className="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50 flex-shrink-0"
                           style={{ color: "rgba(200,50,50,0.45)" }}>
+                          <X size={13} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* ── Sent Receipts Log ── */}
+              <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.15)" }}>
+                <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: "rgba(15,76,92,0.08)", backgroundColor: "rgba(15,76,92,0.02)" }}>
+                  <div className="flex items-center gap-2">
+                    <FileText size={15} style={{ color: "var(--teal)" }} />
+                    <h2 className="font-semibold text-sm" style={{ color: "var(--navy)" }}>Sent Receipts Log</h2>
+                    {receiptLog.length > 0 && (
+                      <span className="text-xs px-2 py-0.5 rounded-full font-semibold" style={{ backgroundColor: "rgba(15,76,92,0.08)", color: "var(--teal)" }}>
+                        {receiptLog.length}
+                      </span>
+                    )}
+                  </div>
+                  {receiptLog.length > 0 && (
+                    <button
+                      onClick={async () => {
+                        await fetch("/api/admin/blocked-logs", {
+                          method: "DELETE",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ id: "all", action: "receipt_sent" }),
+                        });
+                        setReceiptLog([]);
+                      }}
+                      className="text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors"
+                      style={{ color: "rgba(26,26,26,0.45)" }}>
+                      Clear All
+                    </button>
+                  )}
+                </div>
+                {receiptLog.length === 0 ? (
+                  <p className="text-sm text-center py-8" style={{ color: "rgba(26,26,26,0.35)" }}>No receipts sent yet.</p>
+                ) : (
+                  <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.06)" }}>
+                    {receiptLog.map(log => (
+                      <div key={log.id} className="flex items-center gap-3 px-5 py-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium" style={{ color: "var(--navy)" }}>{log.details?.student_name ?? "—"}</p>
+                          <p className="text-xs" style={{ color: "rgba(26,26,26,0.45)" }}>{log.details?.email ?? "—"} · {log.details?.receipt_number ?? ""}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xs font-semibold" style={{ color: "var(--teal)" }}>{log.details?.currency ?? "SAR"} {Number(log.details?.amount ?? 0).toLocaleString()}</p>
+                          <p className="text-xs" style={{ color: "rgba(26,26,26,0.4)" }}>{new Date(log.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            await fetch("/api/admin/blocked-logs", {
+                              method: "DELETE",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ id: log.id }),
+                            });
+                            setReceiptLog(prev => prev.filter(r => r.id !== log.id));
+                          }}
+                          className="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-50 flex-shrink-0"
+                          style={{ color: "rgba(26,26,26,0.3)" }}>
                           <X size={13} />
                         </button>
                       </div>
