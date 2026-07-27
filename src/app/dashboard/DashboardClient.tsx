@@ -1155,16 +1155,17 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
                     </p>
                   </div>
                 ) : (
-                  <div className="rounded-xl border bg-white overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
-                    <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.06)" }}>
+                  <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.08)" }}>
+                    <div className="divide-y" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
                       {filtered.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 transition-colors"
+                          className="flex items-center gap-4 px-5 py-4 transition-colors"
+                          style={{ backgroundColor: "var(--navy)" }}
                         >
                           <div
                             className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: section.bg, color: section.color }}
+                            style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "var(--gold)" }}
                           >
                             {section.fileLabel === "PDF" && <FileText size={16} />}
                             {section.fileLabel === "Image" && <Image size={16} />}
@@ -1172,8 +1173,8 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
                             {section.fileLabel === "Audio" && <Mic size={16} />}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate" style={{ color: "var(--navy)" }}>{item.title}</p>
-                            <p className="text-xs mt-0.5" style={{ color: "rgba(26,26,26,0.4)" }}>
+                            <p className="text-sm font-medium truncate" style={{ color: "#ffffff" }}>{item.title}</p>
+                            <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
                               {item.file_name}
                               {item.file_size ? ` · ${formatSize(item.file_size)}` : ""}
                               {` · ${new Date(item.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}`}
@@ -1181,8 +1182,8 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
                           </div>
                           <button
                             onClick={() => setViewItem(item)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 flex-shrink-0"
-                            style={{ backgroundColor: section.bg, color: section.color }}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-80 flex-shrink-0"
+                            style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "var(--gold)" }}
                           >
                             {section.fileLabel === "Video" || section.fileLabel === "Audio" ? (
                               <><Play size={12} /> Play</>
