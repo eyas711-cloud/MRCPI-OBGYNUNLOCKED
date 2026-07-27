@@ -746,28 +746,28 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
                 <button
                   key={s.id}
                   onClick={() => { setActiveSection(s.id); setFeedbackView("home"); }}
-                  className="text-left rounded-2xl border bg-white p-6 transition-all hover:shadow-md hover:-translate-y-0.5 group"
-                  style={{ borderColor: "rgba(15,76,92,0.12)" }}
+                  className="text-left rounded-2xl p-6 transition-all hover:shadow-lg hover:-translate-y-0.5 group"
+                  style={{ backgroundColor: "var(--navy)", border: "1px solid rgba(255,255,255,0.08)" }}
                 >
                   <div className="flex items-start justify-between mb-5">
                     <div
                       className="w-14 h-14 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: s.bg, color: s.color }}
+                      style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "var(--gold)" }}
                     >
                       {s.icon}
                     </div>
                     <span
                       className="text-xs font-mono-data font-semibold px-2.5 py-1 rounded-full"
-                      style={{ backgroundColor: s.bg, color: s.color }}
+                      style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.75)" }}
                     >
                       {s.fileLabel}
                     </span>
                   </div>
-                  <h2 className="font-serif font-semibold text-lg mb-1" style={{ color: "var(--navy)" }}>
+                  <h2 className="font-serif font-semibold text-lg mb-1" style={{ color: "#ffffff" }}>
                     {`${i + 1}. ${s.name}`}
                   </h2>
-                  <p className="text-sm" style={{ color: "rgba(26,26,26,0.55)" }}>{s.description}</p>
-                  <div className="flex items-center gap-1 mt-4 text-xs font-semibold" style={{ color: s.color }}>
+                  <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{s.description}</p>
+                  <div className="flex items-center gap-1 mt-4 text-xs font-semibold" style={{ color: "var(--gold)" }}>
                     Open <ChevronRight size={14} className="group-hover:translate-x-1 transition-transform" />
                   </div>
                 </button>
