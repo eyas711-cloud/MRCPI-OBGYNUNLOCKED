@@ -734,7 +734,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
             <div className="mb-8">
               <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "var(--teal)" }}>Student Dashboard</p>
               <h1 className="font-serif font-semibold text-2xl" style={{ color: "var(--navy)" }}>
-                Welcome back, {displayName}
+                Welcome back, Dr. {displayName}
               </h1>
               <p className="text-sm mt-1" style={{ color: "rgba(26,26,26,0.55)" }}>
                 Select a section to access your study materials.
