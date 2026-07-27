@@ -736,7 +736,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   }, []);
   useEffect(() => {
     const hash = window.location.hash.replace("#", "");
-    const valid = NAV_ITEMS.map(n => n.label);
+    const valid = navItems.map(n => n.label);
     if (hash && valid.includes(hash)) setActiveNavRaw(hash);
   }, []);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
