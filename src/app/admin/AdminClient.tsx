@@ -70,11 +70,11 @@ const CONTENT_SECTIONS = [
 
 type SectionId = (typeof CONTENT_SECTIONS)[number]["id"];
 
-const buildStats = (studentCount: number, mtd: number, total: number) => [
+const buildStats = (studentCount: number, rate: number, total: number) => [
   { label: "Total Students",       value: String(studentCount), change: studentCount === 0 ? "Starts at first enrolment" : `${studentCount} registered`,  icon: <Users size={18} />,     color: "var(--teal)"        },
   { label: "Active Courses",       value: "1",                  change: "MRCPI OBGYN OSCE",                                                                icon: <BookOpen size={18} />,  color: "var(--navy)"        },
   { label: "Mock Sessions Booked", value: "0",                  change: "Starts at first booking",                                                         icon: <Calendar size={18} />,  color: "var(--gold)"        },
-  { label: "Revenue (MTD)",        value: `SAR ${mtd.toLocaleString()}`, change: `Total all-time: SAR ${total.toLocaleString()}`,                          icon: <DollarSign size={18} />, color: "var(--teal-bright)" },
+  { label: "Collection Rate",      value: `${rate}%`,           change: `Total collected: SAR ${total.toLocaleString()}`,                                  icon: <DollarSign size={18} />, color: "var(--teal-bright)" },
 ];
 
 
@@ -871,6 +871,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [paymentDone, setPaymentDone] = useState(false);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [mtdRevenue, setMtdRevenue] = useState(0);
+  const [collectionRate, setCollectionRate] = useState(0);
   const [paidStudentsCount, setPaidStudentsCount] = useState(0);
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
@@ -1065,14 +1066,16 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const fetchPayments = useCallback(async () => {
     const [{ data }, { data: batchData }] = await Promise.all([
       supabase.from("payments").select("*").order("payment_date", { ascending: false }),
-      supabase.from("batch_students").select("paid"),
+      supabase.from("batch_students").select("paid, pending"),
     ]);
     const rows = (data ?? []) as PaymentRow[];
     setPayments(rows);
-    // Total Revenue = sum of paid across all batch students
-    setTotalRevenue((batchData ?? []).reduce((sum, r) => sum + Number(r.paid), 0));
-    // Payments Recorded = batch students who have paid something
+    const totalPaid = (batchData ?? []).reduce((sum, r) => sum + Number(r.paid), 0);
+    const totalPending = (batchData ?? []).reduce((sum, r) => sum + Number(r.pending), 0);
+    setTotalRevenue(totalPaid);
     setPaidStudentsCount((batchData ?? []).filter(r => Number(r.paid) > 0).length);
+    const total = totalPaid + totalPending;
+    setCollectionRate(total > 0 ? Math.round((totalPaid / total) * 100) : 0);
   }, []);
 
   const fetchReminderStudents = useCallback(async () => {
@@ -1449,7 +1452,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
           {activeNav === "Overview" && (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {buildStats(students.length, mtdRevenue, totalRevenue).map((s, i) => (
+                {buildStats(students.length, collectionRate, totalRevenue).map((s, i) => (
                   <div key={i} className="rounded-xl border bg-white p-5" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                     <div className="flex items-start justify-between mb-4">
                       <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: "rgba(0,0,0,0.04)", color: s.color }}>{s.icon}</div>
