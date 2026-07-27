@@ -613,7 +613,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
         <div className="flex items-center gap-2 text-sm" style={{ color: "rgba(26,26,26,0.5)" }}>
           {/* Breadcrumb */}
           <button
-            onClick={() => { setActiveSection(null); setActiveSubsection(null); }}
+            onClick={() => setActiveSection(null)}
             className="font-medium hover:underline"
             style={{ color: activeSection ? "var(--teal)" : "var(--navy)" }}
           >
