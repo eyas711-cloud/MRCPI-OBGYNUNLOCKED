@@ -777,7 +777,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
               <button
                 onClick={() => setFeedbackView("feedback")}
                 className="text-left rounded-2xl p-6 transition-all hover:shadow-md hover:-translate-y-0.5 group"
-                style={{ backgroundColor: "#fdf8ee", border: "1.5px solid var(--gold)" }}
+                style={{ backgroundColor: "#fdf8ee", border: "1.5px solid var(--navy)" }}
               >
                 <div className="flex items-start justify-between mb-5">
                   <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(201,162,39,0.15)", color: "var(--gold)" }}>
@@ -800,7 +800,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
               <Link
                 href="/mock-osce"
                 className="text-left rounded-2xl p-6 transition-all hover:shadow-md hover:-translate-y-0.5 group"
-                style={{ backgroundColor: "#fdf8ee", border: "1.5px solid var(--gold)" }}
+                style={{ backgroundColor: "#fdf8ee", border: "1.5px solid var(--navy)" }}
               >
                 <div className="flex items-start justify-between mb-5">
                   <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ backgroundColor: "rgba(201,162,39,0.15)", color: "var(--gold)" }}>
