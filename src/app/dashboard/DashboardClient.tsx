@@ -1081,20 +1081,20 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
                   <button
                     key={sub.id}
                     onClick={() => setActiveSubsection(sub.id)}
-                    className="text-left rounded-xl border bg-white p-5 transition-all hover:shadow-sm hover:border-teal group"
-                    style={{ borderColor: "rgba(15,76,92,0.12)" }}
+                    className="text-left rounded-xl p-5 transition-all hover:shadow-md hover:-translate-y-0.5 group"
+                    style={{ backgroundColor: "var(--navy)", border: "1px solid rgba(255,255,255,0.08)" }}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                        style={{ backgroundColor: section.bg, color: section.color }}
+                        style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "var(--gold)" }}
                       >
                         {String.fromCharCode(65 + i)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate" style={{ color: "var(--navy)" }}>{sub.name}</p>
+                        <p className="font-semibold text-sm truncate" style={{ color: "#ffffff" }}>{sub.name}</p>
                       </div>
-                      <ChevronRight size={15} style={{ color: "rgba(26,26,26,0.3)" }} className="flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                      <ChevronRight size={15} style={{ color: "rgba(255,255,255,0.4)" }} className="flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </button>
                 ))}
