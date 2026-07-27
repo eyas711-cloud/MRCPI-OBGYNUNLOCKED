@@ -728,18 +728,16 @@ function ContentPanel({ user }: { user: AdminUser }) {
 
 // ── Main AdminClient ──────────────────────────────────────────────────────────
 export default function AdminClient({ user }: { user: AdminUser }) {
-  const [activeNav, setActiveNavRaw] = useState(() => {
-    if (typeof window !== "undefined") {
-      const hash = window.location.hash.replace("#", "");
-      const valid = NAV_ITEMS.map(n => n.label);
-      if (hash && valid.includes(hash)) return hash;
-    }
-    return "Overview";
-  });
+  const [activeNav, setActiveNavRaw] = useState("Overview");
   const setActiveNav = useCallback((nav: string) => {
     setActiveNavRaw(nav);
     window.location.hash = nav;
     window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+  useEffect(() => {
+    const hash = window.location.hash.replace("#", "");
+    const valid = NAV_ITEMS.map(n => n.label);
+    if (hash && valid.includes(hash)) setActiveNavRaw(hash);
   }, []);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [students, setStudents] = useState<StudentRow[]>([]);

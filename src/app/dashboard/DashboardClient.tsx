@@ -344,21 +344,18 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   const displayName = user.name ? user.name.split(" ")[0] : user.email.split("@")[0];
   const initials = (user.name ?? user.email).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
-  const [activeSection, setActiveSectionRaw] = useState<SectionId | null>(() => {
-    if (typeof window !== "undefined") {
-      const [sec] = window.location.hash.replace("#", "").split("|");
-      const valid = SECTIONS.map(s => s.id);
-      if (sec && valid.includes(sec as SectionId)) return sec as SectionId;
+  const [activeSection, setActiveSectionRaw] = useState<SectionId | null>(null);
+  const [activeSubsection, setActiveSubsectionRaw] = useState<string | null>(null);
+
+  useEffect(() => {
+    const parts = window.location.hash.replace("#", "").split("|");
+    const sec = parts[0] as SectionId;
+    const valid = SECTIONS.map(s => s.id);
+    if (sec && valid.includes(sec)) {
+      setActiveSectionRaw(sec);
+      if (parts[1]) setActiveSubsectionRaw(parts[1]);
     }
-    return null;
-  });
-  const [activeSubsection, setActiveSubsectionRaw] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      const parts = window.location.hash.replace("#", "").split("|");
-      return parts[1] ?? null;
-    }
-    return null;
-  });
+  }, []);
 
   const setActiveSection = useCallback((sec: SectionId | null) => {
     setActiveSectionRaw(sec);
@@ -367,14 +364,12 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
-  const setActiveSubsection = useCallback((sub: string | null) => {
+  const setActiveSubsection = useCallback((sub: string | null, sec?: SectionId | null) => {
     setActiveSubsectionRaw(sub);
-    setActiveSectionRaw(prev => {
-      window.location.hash = prev ? (sub ? `${prev}|${sub}` : prev) : "";
-      return prev;
-    });
+    const currentSec = sec ?? activeSection;
+    window.location.hash = currentSec ? (sub ? `${currentSec}|${sub}` : currentSec) : "";
     window.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
+  }, [activeSection]);
   const [subsections, setSubsections] = useState<Subsection[]>([]);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(false);
