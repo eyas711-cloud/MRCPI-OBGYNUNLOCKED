@@ -2843,7 +2843,33 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                         <table className="w-full text-sm border-collapse" style={{ minWidth: 700 }}>
                           <thead>
                             <tr style={{ backgroundColor: "rgba(11,30,61,0.04)", borderBottom: "1px solid rgba(15,76,92,0.1)" }}>
-                              {["No", "Name", "Email", "Paid (SAR)", "Pending (SAR)", "Telegram", "Web Access", "Comments", ""].map((h, i) => (
+                              {["No", "Name", "Email", "Paid (SAR)", "Pending (SAR)"].map((h, i) => (
+                                <th key={i} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider"
+                                  style={{ color: "rgba(26,26,26,0.5)", whiteSpace: "nowrap" }}>{h}</th>
+                              ))}
+                              {(["Telegram", "Web Access"] as const).map(col => {
+                                const field = col === "Telegram" ? "telegram" : "web_account";
+                                const allChecked = batchStudents.length > 0 && batchStudents.every(r => r[field]);
+                                return (
+                                  <th key={col} className="px-3 py-2.5 text-xs font-semibold uppercase tracking-wider"
+                                    style={{ color: "rgba(26,26,26,0.5)", whiteSpace: "nowrap" }}>
+                                    <div className="flex flex-col items-center gap-1">
+                                      <span>{col}</span>
+                                      <button
+                                        onClick={async () => {
+                                          const newVal = !allChecked;
+                                          await supabase.from("batch_students").update({ [field]: newVal }).eq("batch_id", activeBatchId!);
+                                          setBatchStudents(prev => prev.map(r => ({ ...r, [field]: newVal })));
+                                        }}
+                                        className="text-xs px-2 py-0.5 rounded font-semibold transition-all hover:opacity-80"
+                                        style={{ backgroundColor: allChecked ? "rgba(22,163,74,0.12)" : "rgba(26,26,26,0.07)", color: allChecked ? "#16a34a" : "rgba(26,26,26,0.5)", fontSize: "10px" }}>
+                                        {allChecked ? "Uncheck All" : "Check All"}
+                                      </button>
+                                    </div>
+                                  </th>
+                                );
+                              })}
+                              {["Comments", ""].map((h, i) => (
                                 <th key={i} className="px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider"
                                   style={{ color: "rgba(26,26,26,0.5)", whiteSpace: "nowrap" }}>{h}</th>
                               ))}
