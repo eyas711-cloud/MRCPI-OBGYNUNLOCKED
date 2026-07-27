@@ -155,13 +155,8 @@ export async function GET(req: Request) {
 
   if (!students) return NextResponse.json({ due: [] });
 
-  const now = Date.now();
-  const intervalMs = intervalDays * 24 * 60 * 60 * 1000;
-
-  const due = students.filter(s => {
-    if (!s.last_reminded_at) return true; // never reminded → always due
-    return (now - new Date(s.last_reminded_at).getTime()) >= intervalMs;
-  });
+  // All students with a pending balance are always due
+  const due = students;
 
   // Optionally email the admin a digest
   if (notify && due.length > 0 && user.email) {
