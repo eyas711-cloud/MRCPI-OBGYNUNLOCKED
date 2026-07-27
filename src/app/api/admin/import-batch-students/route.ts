@@ -26,12 +26,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ imported: 0 });
   }
 
-  // Get existing names in this batch to avoid duplicates
+  // Get existing emails AND names in this batch to avoid duplicates
   const { data: existing } = await serviceClient
     .from("batch_students")
-    .select("student_name")
+    .select("student_name, email")
     .eq("batch_id", batchId);
 
+  const existingEmails = new Set(
+    (existing ?? []).filter(r => r.email).map(r => r.email!.trim().toLowerCase())
+  );
   const existingNames = new Set(
     (existing ?? []).map(r => r.student_name?.trim().toLowerCase())
   );
@@ -50,7 +53,11 @@ export async function POST(req: Request) {
   const toInsert = [];
   for (const p of profiles) {
     const name = p.full_name?.trim() ?? "";
-    if (!name || existingNames.has(name.toLowerCase())) continue;
+    const email = p.email?.trim().toLowerCase() ?? "";
+    // Skip if already in batch by email (catches nickname/full-name duplicates) or by exact name
+    if (!name) continue;
+    if (email && existingEmails.has(email)) continue;
+    if (existingNames.has(name.toLowerCase())) continue;
     sortOrder++;
     toInsert.push({
       batch_id: batchId,
