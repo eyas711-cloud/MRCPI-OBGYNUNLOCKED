@@ -861,6 +861,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [paymentDone, setPaymentDone] = useState(false);
   const [totalRevenue, setTotalRevenue] = useState(0);
   const [mtdRevenue, setMtdRevenue] = useState(0);
+  const [paidStudentsCount, setPaidStudentsCount] = useState(0);
+  const now = new Date();
+  const [selectedMonth, setSelectedMonth] = useState(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`);
 
   // Mock OSCEs state
   const [slots, setSlots] = useState<SlotRow[]>([]);
@@ -1050,16 +1053,16 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   };
 
   const fetchPayments = useCallback(async () => {
-    const { data } = await supabase.from("payments").select("*").order("payment_date", { ascending: false });
+    const [{ data }, { data: batchData }] = await Promise.all([
+      supabase.from("payments").select("*").order("payment_date", { ascending: false }),
+      supabase.from("batch_students").select("paid"),
+    ]);
     const rows = (data ?? []) as PaymentRow[];
     setPayments(rows);
-    setTotalRevenue(rows.reduce((sum, p) => sum + Number(p.amount), 0));
-    const now = new Date();
-    const mtd = rows.filter(p => {
-      const d = new Date(p.payment_date);
-      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-    });
-    setMtdRevenue(mtd.reduce((sum, p) => sum + Number(p.amount), 0));
+    // Total Revenue = sum of paid across all batch students
+    setTotalRevenue((batchData ?? []).reduce((sum, r) => sum + Number(r.paid), 0));
+    // Payments Recorded = batch students who have paid something
+    setPaidStudentsCount((batchData ?? []).filter(r => Number(r.paid) > 0).length);
   }, []);
 
   const fetchReminderStudents = useCallback(async () => {
@@ -1153,6 +1156,15 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     const interval = setInterval(fetchStudents, 30000);
     return () => clearInterval(interval);
   }, [fetchStudents]);
+
+  useEffect(() => {
+    const [year, month] = selectedMonth.split("-").map(Number);
+    const mtd = payments.filter(p => {
+      const d = new Date(p.payment_date);
+      return d.getFullYear() === year && d.getMonth() + 1 === month;
+    });
+    setMtdRevenue(mtd.reduce((sum, p) => sum + Number(p.amount), 0));
+  }, [selectedMonth, payments]);
 
   useEffect(() => {
     if (!activeBatchId) return;
@@ -2623,16 +2635,30 @@ export default function AdminClient({ user }: { user: AdminUser }) {
             <div className="space-y-6">
               {/* Summary */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  { label: "Total Revenue", value: `SAR ${totalRevenue.toLocaleString()}`, color: "var(--teal)" },
-                  { label: "This Month", value: `SAR ${mtdRevenue.toLocaleString()}`, color: "var(--gold)" },
-                  { label: "Payments Recorded", value: String(payments.length), color: "var(--navy)" },
-                ].map((s, i) => (
-                  <div key={i} className="rounded-xl border bg-white p-5" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
-                    <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "rgba(26,26,26,0.45)" }}>{s.label}</p>
-                    <p className="font-serif font-bold text-2xl" style={{ color: s.color }}>{s.value}</p>
+                <div className="rounded-xl border bg-white p-5" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "rgba(26,26,26,0.45)" }}>Total Revenue</p>
+                  <p className="font-serif font-bold text-2xl" style={{ color: "var(--teal)" }}>SAR {totalRevenue.toLocaleString()}</p>
+                  <p className="text-xs mt-1" style={{ color: "rgba(26,26,26,0.4)" }}>sum of paid across all batch students</p>
+                </div>
+                <div className="rounded-xl border bg-white p-5" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "rgba(26,26,26,0.45)" }}>This Month</p>
+                    <input
+                      type="month"
+                      value={selectedMonth}
+                      onChange={e => setSelectedMonth(e.target.value)}
+                      className="text-xs border rounded px-2 py-1 focus:outline-none"
+                      style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }}
+                    />
                   </div>
-                ))}
+                  <p className="font-serif font-bold text-2xl" style={{ color: "var(--gold)" }}>SAR {mtdRevenue.toLocaleString()}</p>
+                  <p className="text-xs mt-1" style={{ color: "rgba(26,26,26,0.4)" }}>from payment history log</p>
+                </div>
+                <div className="rounded-xl border bg-white p-5" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+                  <p className="text-xs font-semibold uppercase tracking-widest mb-2" style={{ color: "rgba(26,26,26,0.45)" }}>Payments Recorded</p>
+                  <p className="font-serif font-bold text-2xl" style={{ color: "var(--navy)" }}>{paidStudentsCount}</p>
+                  <p className="text-xs mt-1" style={{ color: "rgba(26,26,26,0.4)" }}>students who paid in part or full</p>
+                </div>
               </div>
 
               {/* Add payment form */}
