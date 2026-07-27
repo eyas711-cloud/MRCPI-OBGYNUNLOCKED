@@ -20,7 +20,7 @@ const SECTIONS = [
     description: "OSCE station exam templates",
     icon: <FileText size={28} />,
     color: "var(--navy)",
-    bg: "rgba(11,30,61,0.07)",
+    bg: "rgba(61,10,20,0.08)",
     fileLabel: "PDF",
   },
   {
@@ -28,8 +28,8 @@ const SECTIONS = [
     name: "Recalls",
     description: "Past exam recall questions",
     icon: <BookOpen size={28} />,
-    color: "var(--teal)",
-    bg: "rgba(15,76,92,0.08)",
+    color: "var(--navy)",
+    bg: "rgba(61,10,20,0.08)",
     fileLabel: "PDF",
   },
   {
@@ -37,8 +37,8 @@ const SECTIONS = [
     name: "Flashcards",
     description: "Visual learning flashcard images",
     icon: <Image size={28} />,
-    color: "var(--gold)",
-    bg: "rgba(201,162,39,0.1)",
+    color: "var(--navy)",
+    bg: "rgba(61,10,20,0.08)",
     fileLabel: "Image",
   },
   {
@@ -46,8 +46,8 @@ const SECTIONS = [
     name: "Videos",
     description: "Lecture and teaching videos",
     icon: <Video size={28} />,
-    color: "var(--teal-bright)",
-    bg: "rgba(21,176,151,0.1)",
+    color: "var(--navy)",
+    bg: "rgba(61,10,20,0.08)",
     fileLabel: "Video",
   },
   {
@@ -55,8 +55,8 @@ const SECTIONS = [
     name: "Recorded Sessions",
     description: "Live session recordings",
     icon: <Mic size={28} />,
-    color: "#8b5cf6",
-    bg: "rgba(139,92,246,0.1)",
+    color: "var(--navy)",
+    bg: "rgba(61,10,20,0.08)",
     fileLabel: "Audio",
   },
 ] as const;
