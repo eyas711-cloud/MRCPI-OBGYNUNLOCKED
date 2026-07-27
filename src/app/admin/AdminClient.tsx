@@ -2699,6 +2699,24 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     receipt_number: receiptNumber,
                   }]).select("id").single();
                   await logAudit(user.id, user.email, user.role, "payment_recorded", paymentForm.student_name, { amount: paymentForm.amount, currency: paymentForm.currency });
+                  // Sync batch_students.paid and pending for the matching student
+                  if (activeBatchId) {
+                    const email = paymentForm.student_email.trim().toLowerCase();
+                    const amountPaid = parseFloat(paymentForm.amount);
+                    const { data: bsRow } = await supabase
+                      .from("batch_students")
+                      .select("id, paid, pending")
+                      .eq("batch_id", activeBatchId)
+                      .eq("email", email)
+                      .single();
+                    if (bsRow) {
+                      const newPaid = Number(bsRow.paid) + amountPaid;
+                      const newPending = paymentForm.remaining_fee
+                        ? parseFloat(paymentForm.remaining_fee)
+                        : Math.max(0, Number(bsRow.pending) - amountPaid);
+                      await supabase.from("batch_students").update({ paid: newPaid, pending: newPending }).eq("id", bsRow.id);
+                    }
+                  }
                   // Auto-send receipt email
                   if (inserted?.id) {
                     fetch("/api/admin/send-payment-receipt", {
