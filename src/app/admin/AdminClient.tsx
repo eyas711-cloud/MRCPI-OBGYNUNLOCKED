@@ -2722,6 +2722,35 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                         ? parseFloat(paymentForm.remaining_fee)
                         : Math.max(0, Number(bsRow.pending) - amountPaid);
                       await supabase.from("batch_students").update({ paid: newPaid, pending: newPending }).eq("id", bsRow.id);
+                      // If fully paid, remove from reminder and final warning logs
+                      if (newPending === 0) {
+                        const logRes = await fetch(`/api/admin/blocked-logs?action=payment_reminder_sent`);
+                        const logJson = await logRes.json();
+                        const studentLogs = (logJson.logs ?? []).filter((l: AuditRow) =>
+                          l.details?.email?.toLowerCase() === email
+                        );
+                        for (const l of studentLogs) {
+                          await fetch("/api/admin/blocked-logs", {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: l.id }),
+                          });
+                        }
+                        const warnRes = await fetch(`/api/admin/blocked-logs?action=payment_final_warning_sent`);
+                        const warnJson = await warnRes.json();
+                        const warnLogs = (warnJson.logs ?? []).filter((l: AuditRow) =>
+                          l.details?.email?.toLowerCase() === email
+                        );
+                        for (const l of warnLogs) {
+                          await fetch("/api/admin/blocked-logs", {
+                            method: "DELETE",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ id: l.id }),
+                          });
+                        }
+                        setReminderLog(prev => prev.filter(r => r.details?.email?.toLowerCase() !== email));
+                        setFinalWarningLog(prev => prev.filter(r => r.details?.email?.toLowerCase() !== email));
+                      }
                     }
                   }
                   // Auto-send receipt email
