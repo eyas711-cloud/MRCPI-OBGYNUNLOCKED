@@ -344,8 +344,37 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   const displayName = user.name ? user.name.split(" ")[0] : user.email.split("@")[0];
   const initials = (user.name ?? user.email).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
 
-  const [activeSection, setActiveSection] = useState<SectionId | null>(null);
-  const [activeSubsection, setActiveSubsection] = useState<string | null>(null);
+  const [activeSection, setActiveSectionRaw] = useState<SectionId | null>(() => {
+    if (typeof window !== "undefined") {
+      const [sec] = window.location.hash.replace("#", "").split("|");
+      const valid = SECTIONS.map(s => s.id);
+      if (sec && valid.includes(sec as SectionId)) return sec as SectionId;
+    }
+    return null;
+  });
+  const [activeSubsection, setActiveSubsectionRaw] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const parts = window.location.hash.replace("#", "").split("|");
+      return parts[1] ?? null;
+    }
+    return null;
+  });
+
+  const setActiveSection = useCallback((sec: SectionId | null) => {
+    setActiveSectionRaw(sec);
+    setActiveSubsectionRaw(null);
+    window.location.hash = sec ?? "";
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
+  const setActiveSubsection = useCallback((sub: string | null) => {
+    setActiveSubsectionRaw(sub);
+    setActiveSectionRaw(prev => {
+      window.location.hash = prev ? (sub ? `${prev}|${sub}` : prev) : "";
+      return prev;
+    });
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
   const [subsections, setSubsections] = useState<Subsection[]>([]);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(false);
