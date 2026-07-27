@@ -731,7 +731,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [activeNav, setActiveNavRaw] = useState("Overview");
   const setActiveNav = useCallback((nav: string) => {
     setActiveNavRaw(nav);
-    window.location.hash = nav;
+    history.replaceState(null, "", `${window.location.pathname}#${nav}`);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
   useEffect(() => {

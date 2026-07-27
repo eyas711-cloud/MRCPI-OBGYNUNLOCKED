@@ -360,14 +360,17 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   const setActiveSection = useCallback((sec: SectionId | null) => {
     setActiveSectionRaw(sec);
     setActiveSubsectionRaw(null);
-    window.location.hash = sec ?? "";
+    const url = sec ? `${window.location.pathname}#${sec}` : window.location.pathname;
+    history.replaceState(null, "", url);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, []);
 
   const setActiveSubsection = useCallback((sub: string | null, sec?: SectionId | null) => {
     setActiveSubsectionRaw(sub);
     const currentSec = sec ?? activeSection;
-    window.location.hash = currentSec ? (sub ? `${currentSec}|${sub}` : currentSec) : "";
+    const hash = currentSec ? (sub ? `${currentSec}|${sub}` : currentSec) : null;
+    const url = hash ? `${window.location.pathname}#${hash}` : window.location.pathname;
+    history.replaceState(null, "", url);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [activeSection]);
   const [subsections, setSubsections] = useState<Subsection[]>([]);
