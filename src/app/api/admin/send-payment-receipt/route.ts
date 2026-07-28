@@ -122,7 +122,6 @@ function buildReceiptHtml(p: {
             </td>
             <td style="padding-left:12px;vertical-align:middle;">
               <p style="margin:0;font-size:13px;font-weight:700;color:#1a1a1a;text-transform:uppercase;">Amount Paid</p>
-              <p style="margin:2px 0 0;font-size:11px;color:rgba(26,26,26,0.5);">(Please enter amount)</p>
             </td>
           </tr></table>
         </td>
@@ -146,7 +145,6 @@ function buildReceiptHtml(p: {
             </td>
             <td style="padding-left:12px;vertical-align:middle;">
               <p style="margin:0;font-size:13px;font-weight:700;color:#1a1a1a;text-transform:uppercase;">Payment Status</p>
-              <p style="margin:2px 0 0;font-size:11px;color:rgba(26,26,26,0.5);">(Please select one)</p>
             </td>
           </tr></table>
         </td>
@@ -175,7 +173,6 @@ function buildReceiptHtml(p: {
             </td>
             <td style="padding-left:12px;vertical-align:middle;">
               <p style="margin:0;font-size:13px;font-weight:700;color:#1a1a1a;text-transform:uppercase;">Total Course Fee</p>
-              <p style="margin:2px 0 0;font-size:11px;color:rgba(26,26,26,0.5);">(Please enter total fee)</p>
             </td>
           </tr></table>
         </td>
@@ -199,7 +196,6 @@ function buildReceiptHtml(p: {
             </td>
             <td style="padding-left:12px;vertical-align:middle;">
               <p style="margin:0;font-size:13px;font-weight:700;color:#1a1a1a;text-transform:uppercase;">Remaining Fees</p>
-              <p style="margin:2px 0 0;font-size:11px;color:rgba(26,26,26,0.5);">(If any)</p>
             </td>
           </tr></table>
         </td>
