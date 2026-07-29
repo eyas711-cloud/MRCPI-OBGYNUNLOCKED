@@ -381,18 +381,25 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
 
   const section = SECTIONS.find((s) => s.id === activeSection);
 
-  // Poll session every 30s — kick out immediately if account is deleted/blocked
+  // Poll session every 60s — kick out if account is deleted/blocked
   useEffect(() => {
     const check = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
-      if (!user || error) { window.location.href = "/login"; return; }
-      const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).single();
+      if (!user || error) {
+        // Retry once after 3s before redirecting (avoids false kicks during token refresh)
+        await new Promise(r => setTimeout(r, 3000));
+        const { data: { user: retryUser } } = await supabase.auth.getUser();
+        if (!retryUser) { window.location.href = "/login"; return; }
+      }
+      const uid = (user ?? (await supabase.auth.getUser()).data.user)?.id;
+      if (!uid) return;
+      const { data: profile } = await supabase.from("profiles").select("status").eq("id", uid).single();
       if (!profile || profile.status !== "active") {
         await supabase.auth.signOut();
         window.location.href = profile?.status === "blocked" ? "/access-blocked" : "/pending-approval";
       }
     };
-    const interval = setInterval(check, 30000);
+    const interval = setInterval(check, 60000);
     return () => clearInterval(interval);
   }, []);
 
