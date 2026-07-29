@@ -43,7 +43,8 @@ function buildReceiptHtml(p: {
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 40px 24px;">
     <tr>
       <td style="vertical-align:top;width:50%;">
-        <span style="font-size:16px;font-weight:700;color:#6B1E2E;letter-spacing:0.04em;font-family:Georgia,serif;">MRCPI-OBGYN UNLOCKED</span>
+        <span style="font-size:17px;font-weight:700;color:#0B1E3D;font-family:Georgia,serif;display:block;">MRCPI-OBGYN</span>
+        <span style="font-size:15px;font-weight:600;color:#15B097;font-family:Georgia,serif;display:block;border-bottom:2px solid #C9A227;padding-bottom:4px;display:inline-block;">Unlocked</span>
       </td>
       <td style="text-align:right;vertical-align:top;">
         <h1 style="margin:0;font-size:26px;font-weight:700;color:#6B1E2E;letter-spacing:0.08em;text-transform:uppercase;">PAYMENT RECEIPT</h1>
