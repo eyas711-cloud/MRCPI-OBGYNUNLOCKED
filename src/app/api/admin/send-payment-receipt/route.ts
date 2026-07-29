@@ -43,11 +43,7 @@ function buildReceiptHtml(p: {
   <table width="100%" cellpadding="0" cellspacing="0" style="padding:32px 40px 24px;">
     <tr>
       <td style="vertical-align:top;width:50%;">
-        <!-- Logo text block (image not available in email) -->
-        <div style="display:inline-block;">
-          <p style="margin:0;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#0B1E3D;font-weight:700;">MRCPI-OBGYN</p>
-          <p style="margin:2px 0 0;font-size:13px;color:#15B097;letter-spacing:0.08em;border-bottom:2px solid #C9A227;padding-bottom:2px;">Unlocked</p>
-        </div>
+        <img src="https://mrcpiobgynunlocked.com/logo-transparent.png" alt="MRCPI-OBGYN Unlocked" style="height:80px;width:auto;display:block;" />
       </td>
       <td style="text-align:right;vertical-align:top;">
         <h1 style="margin:0;font-size:26px;font-weight:700;color:#6B1E2E;letter-spacing:0.08em;text-transform:uppercase;">PAYMENT RECEIPT</h1>
