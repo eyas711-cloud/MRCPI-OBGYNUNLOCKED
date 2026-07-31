@@ -250,7 +250,6 @@ function FileViewer({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center sm:p-4"
       style={{ backgroundColor: "rgba(0,0,0,0.7)" }}
-      onClick={onClose}
     >
       <div
         className="bg-white sm:rounded-2xl overflow-hidden shadow-2xl w-full max-w-4xl flex flex-col"
