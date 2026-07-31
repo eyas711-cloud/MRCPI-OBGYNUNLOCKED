@@ -381,18 +381,6 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
 
   const section = SECTIONS.find((s) => s.id === activeSection);
 
-  // Poll profile status every 2 minutes — kick out only if account is blocked/deleted
-  useEffect(() => {
-    const check = async () => {
-      const { data: profile } = await supabase.from("profiles").select("status").eq("id", user.id).single();
-      if (!profile || profile.status !== "active") {
-        await supabase.auth.signOut();
-        window.location.href = profile?.status === "blocked" ? "/access-blocked" : "/pending-approval";
-      }
-    };
-    const interval = setInterval(check, 120000);
-    return () => clearInterval(interval);
-  }, [user.id]);
 
   // Load subsections when a section is selected
   useEffect(() => {
