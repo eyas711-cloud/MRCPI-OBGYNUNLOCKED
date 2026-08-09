@@ -23,8 +23,10 @@ async function sendEmail(to: string, subject: string, html: string) {
   });
 }
 
-function buildEmailHtml(sectionLabel: string, subsectionLabel: string | null, title: string, contentType: string, sectionId: string, subsectionId: string | null): string {
-  const params = subsectionId ? `?section=${sectionId}&sub=${subsectionId}` : `?section=${sectionId}`;
+function buildEmailHtml(sectionLabel: string, subsectionLabel: string | null, title: string, contentType: string, sectionId: string, subsectionId: string | null, itemId: string | null): string {
+  let params = `?section=${sectionId}`;
+  if (subsectionId) params += `&sub=${subsectionId}`;
+  if (itemId) params += `&item=${itemId}`;
   const dashboardUrl = `https://mrcpi-obgynunlocked.com/dashboard${params}`;
   const typeIcon: Record<string, string> = {
     video: "🎬",
@@ -88,7 +90,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { sectionLabel, subsectionLabel, title, contentType, sectionId, subsectionId } = await req.json();
+  const { sectionLabel, subsectionLabel, title, contentType, sectionId, subsectionId, itemId } = await req.json();
 
   const serviceClient = createServiceClient();
   const { data: students } = await serviceClient
@@ -102,7 +104,7 @@ export async function POST(req: Request) {
   }
 
   const subject = `New ${sectionLabel} material added: ${title}`;
-  const html = buildEmailHtml(sectionLabel, subsectionLabel || null, title, contentType, sectionId, subsectionId || null);
+  const html = buildEmailHtml(sectionLabel, subsectionLabel || null, title, contentType, sectionId, subsectionId || null, itemId || null);
 
   let sent = 0;
   for (const student of students) {

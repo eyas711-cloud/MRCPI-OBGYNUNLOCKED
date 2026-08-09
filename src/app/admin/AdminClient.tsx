@@ -324,7 +324,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
     }
     setProgress(90);
 
-    const { error: dbErr } = await supabase.from("content_items").insert([{
+    const { data: insertedItem, error: dbErr } = await supabase.from("content_items").insert([{
       section_id: activeSec,
       subsection_id: activeSub || null,
       title: form.title,
@@ -334,7 +334,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
       storage_path: storagePath,
       uploaded_by: user.id,
       uploaded_by_email: user.email,
-    }]);
+    }]).select("id").single();
 
     if (dbErr) { setErr(dbErr.message); setUploading(false); return; }
 
@@ -361,6 +361,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
         contentType: contentTypeMap[activeSec] || "pdf",
         sectionId: activeSec,
         subsectionId: activeSub || null,
+        itemId: insertedItem?.id || null,
       }),
     }).catch(console.error);
 

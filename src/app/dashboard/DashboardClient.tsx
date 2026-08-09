@@ -346,16 +346,20 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   const [activeSection, setActiveSectionRaw] = useState<SectionId | null>(null);
   const [activeSubsection, setActiveSubsectionRaw] = useState<string | null>(null);
 
+  const pendingSubRef = useRef<string | null>(null);
+  const pendingItemIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const qSection = params.get("section");
     const qSub = params.get("sub");
+    const qItem = params.get("item");
     const valid = SECTIONS.map(s => s.id);
 
     if (qSection && valid.includes(qSection as SectionId)) {
       setActiveSectionRaw(qSection as SectionId);
-      if (qSub) setActiveSubsectionRaw(qSub);
-      // Clean up query params from URL without reload
+      if (qSub) pendingSubRef.current = qSub;
+      if (qItem) pendingItemIdRef.current = qItem;
       history.replaceState(null, "", window.location.pathname + (qSub ? `#${qSection}|${qSub}` : `#${qSection}`));
       return;
     }
@@ -405,7 +409,14 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
       .select("*")
       .eq("section_id", activeSection)
       .order("sort_order")
-      .then(({ data }) => setSubsections(data ?? []));
+      .then(({ data }) => {
+        setSubsections(data ?? []);
+        // If we arrived via a deep-link, restore the pending subsection
+        if (pendingSubRef.current) {
+          setActiveSubsectionRaw(pendingSubRef.current);
+          pendingSubRef.current = null;
+        }
+      });
   }, [activeSection]);
 
   // Load items when subsection selected (or when section has no subsections)
@@ -414,8 +425,15 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     let q = supabase.from("content_items").select("*").eq("section_id", sectionId).order("created_at", { ascending: false });
     if (subsectionId) q = q.eq("subsection_id", subsectionId);
     const { data } = await q;
-    setItems(data ?? []);
+    const fetched = data ?? [];
+    setItems(fetched);
     setLoading(false);
+    // Auto-open item if we arrived via a deep-link
+    if (pendingItemIdRef.current) {
+      const target = fetched.find((i) => i.id === pendingItemIdRef.current);
+      if (target) setViewItem(target);
+      pendingItemIdRef.current = null;
+    }
   }, []);
 
   useEffect(() => {
