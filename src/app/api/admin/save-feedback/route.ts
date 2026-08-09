@@ -47,12 +47,12 @@ function buildEmailHtml(studentName: string, title: string, content: string, fee
           <p style="margin:0;font-size:14px;color:#0B1E3D;line-height:1.7;white-space:pre-line;">${content}</p>
         </div>
         <div style="text-align:center;margin:28px 0 20px 0;">
-          <a href="https://mrcpi-obgynunlocked.com/dashboard" style="background:#15B097;color:#0B1E3D;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">View in My Dashboard →</a>
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard" style="background:#15B097;color:#0B1E3D;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">View in My Dashboard →</a>
         </div>
         <hr style="border:none;border-top:1px solid rgba(15,76,92,0.1);margin:24px 0;" />
         <p style="color:rgba(26,26,26,0.5);font-size:13px;margin:0;">Questions? Contact us at <a href="mailto:info@mrcpiobgynunlocked.com" style="color:#15B097;">info@mrcpiobgynunlocked.com</a> or WhatsApp <a href="https://wa.me/201559912306" style="color:#15B097;">+20 155 991 2306</a>.</p>
       </div>
-      <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">© ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp; <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpiobgynunlocked.com</a></p>
+      <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">© ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp; <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color:rgba(26,26,26,0.35);">mrcpiobgynunlocked.com</a></p>
     </div>
   `;
 }

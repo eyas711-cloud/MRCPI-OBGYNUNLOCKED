@@ -62,7 +62,7 @@ export async function POST(req: Request) {
   });
   if (linkErr) console.error("[reinstate] generateLink error:", linkErr.message);
 
-  const recoveryUrl = linkData?.properties?.action_link ?? `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://mrcpi-obgynunlocked.com"}/login`;
+  const recoveryUrl = linkData?.properties?.action_link ?? `${process.env.NEXT_PUBLIC_SITE_URL ?? "${process.env.NEXT_PUBLIC_SITE_URL}"}/login`;
 
   // Send reinstate email
   await sendEmail(
@@ -99,7 +99,7 @@ export async function POST(req: Request) {
       </div>
       <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
         © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
-        <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
+        <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
       </p>
     </div>
     `

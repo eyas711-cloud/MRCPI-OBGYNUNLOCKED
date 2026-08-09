@@ -38,7 +38,7 @@ export function buildAnnouncementHtml(subject: string, body: string): string {
       </div>
       <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
         © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
-        <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpiobgynunlocked.com</a>
+        <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color:rgba(26,26,26,0.35);">mrcpiobgynunlocked.com</a>
       </p>
     </div>
   `;

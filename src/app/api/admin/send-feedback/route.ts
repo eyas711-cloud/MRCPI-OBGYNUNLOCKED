@@ -44,7 +44,7 @@ function buildEmailHtml(studentName: string, title: string, content: string, fee
         </div>
 
         <div style="text-align:center;margin:28px 0 20px 0;">
-          <a href="https://mrcpi-obgynunlocked.com/dashboard"
+          <a href="${process.env.NEXT_PUBLIC_SITE_URL}/dashboard"
              style="background:#15B097;color:#0B1E3D;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">
             View in My Dashboard →
           </a>
@@ -59,7 +59,7 @@ function buildEmailHtml(studentName: string, title: string, content: string, fee
       </div>
       <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
         © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
-        <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpiobgynunlocked.com</a>
+        <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color:rgba(26,26,26,0.35);">mrcpiobgynunlocked.com</a>
       </p>
     </div>
   `;

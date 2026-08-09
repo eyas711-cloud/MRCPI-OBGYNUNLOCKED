@@ -102,7 +102,7 @@ export async function POST(req: Request) {
           </div>
           <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
             © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
-            <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
           </p>
         </div>
         `
@@ -167,7 +167,7 @@ export async function POST(req: Request) {
           </div>
           <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
             © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
-            <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
+            <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
           </p>
         </div>
         `
@@ -235,7 +235,7 @@ export async function POST(req: Request) {
                 You now have full access to your student dashboard and all course materials.
               </p>
               <div style="text-align:center;margin:32px 0;">
-                <a href="https://mrcpi-obgynunlocked.com/login"
+                <a href="${process.env.NEXT_PUBLIC_SITE_URL}/login"
                    style="background:#15B097;color:#0B1E3D;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">
                   Access My Dashboard →
                 </a>
@@ -250,7 +250,7 @@ export async function POST(req: Request) {
               </p>
             </div>
             <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.4);margin-top:16px;">
-              © ${new Date().getFullYear()} MRCPI OBGYN Unlocked · <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.4);">mrcpiobgynunlocked.com</a>
+              © ${new Date().getFullYear()} MRCPI OBGYN Unlocked · <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color:rgba(26,26,26,0.4);">mrcpiobgynunlocked.com</a>
             </p>
           </div>
           `
@@ -281,7 +281,7 @@ export async function POST(req: Request) {
               </p>
             </div>
             <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.4);margin-top:16px;">
-              © ${new Date().getFullYear()} MRCPI OBGYN Unlocked · <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.4);">mrcpiobgynunlocked.com</a>
+              © ${new Date().getFullYear()} MRCPI OBGYN Unlocked · <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color:rgba(26,26,26,0.4);">mrcpiobgynunlocked.com</a>
             </p>
           </div>
           `

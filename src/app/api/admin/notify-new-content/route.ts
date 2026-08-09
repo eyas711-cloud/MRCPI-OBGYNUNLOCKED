@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase-server";
+﻿import { createClient } from "@/lib/supabase-server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
@@ -27,7 +27,7 @@ function buildEmailHtml(sectionLabel: string, subsectionLabel: string | null, ti
   let params = `?section=${sectionId}`;
   if (subsectionId) params += `&sub=${subsectionId}`;
   if (itemId) params += `&item=${itemId}`;
-  const dashboardUrl = `https://mrcpi-obgynunlocked.com/dashboard${params}`;
+  const dashboardUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard${params}`;
   const typeIcon: Record<string, string> = {
     video: "🎬",
     "recorded-session": "🎙️",
@@ -74,7 +74,7 @@ function buildEmailHtml(sectionLabel: string, subsectionLabel: string | null, ti
       </div>
       <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
         © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
-        <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
+        <a href="${process.env.NEXT_PUBLIC_SITE_URL}" style="color:rgba(26,26,26,0.35);">mrcpi-obgynunlocked.com</a>
       </p>
     </div>
   `;
