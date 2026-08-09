@@ -359,6 +359,8 @@ function ContentPanel({ user }: { user: AdminUser }) {
         subsectionLabel,
         title: form.title,
         contentType: contentTypeMap[activeSec] || "pdf",
+        sectionId: activeSec,
+        subsectionId: activeSub || null,
       }),
     }).catch(console.error);
 
