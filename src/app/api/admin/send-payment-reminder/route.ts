@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase-server";
+﻿import { createClient } from "@/lib/supabase-server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
@@ -61,7 +61,7 @@ function buildReminderHtml(name: string, paid: number, pending: number, batchNam
       </div>
       <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
         © ${new Date().getFullYear()} MRCPI OBGYN Unlocked &nbsp;·&nbsp;
-        <a href="https://mrcpiobgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpiobgynunlocked.com</a>
+        <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.35);">mrcpiobgynunlocked.com</a>
       </p>
     </div>
   `;
@@ -192,7 +192,7 @@ export async function GET(req: Request) {
             <tbody>${rows}</tbody>
           </table>
           <p style="color:#1a1a1a;font-size:14px;">Log in to the admin panel to send individual reminders.</p>
-          <a href="https://mrcpiobgynunlocked.com/admin" style="display:inline-block;padding:12px 24px;background:#15B097;color:#0B1E3D;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;margin-top:8px;">Open Admin Panel →</a>
+          <a href="https://mrcpi-obgynunlocked.com/admin" style="display:inline-block;padding:12px 24px;background:#15B097;color:#0B1E3D;text-decoration:none;border-radius:8px;font-weight:700;font-size:14px;margin-top:8px;">Open Admin Panel →</a>
         </div>
         <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.35);margin-top:16px;">
           © ${new Date().getFullYear()} MRCPI OBGYN Unlocked

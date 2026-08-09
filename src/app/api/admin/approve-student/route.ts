@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase-server";
+﻿import { createClient } from "@/lib/supabase-server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
@@ -235,7 +235,7 @@ export async function POST(req: Request) {
                 You now have full access to your student dashboard and all course materials.
               </p>
               <div style="text-align:center;margin:32px 0;">
-                <a href="https://mrcpiobgynunlocked.com/login"
+                <a href="https://mrcpi-obgynunlocked.com/login"
                    style="background:#15B097;color:#0B1E3D;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">
                   Access My Dashboard →
                 </a>
@@ -250,7 +250,7 @@ export async function POST(req: Request) {
               </p>
             </div>
             <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.4);margin-top:16px;">
-              © ${new Date().getFullYear()} MRCPI OBGYN Unlocked · <a href="https://mrcpiobgynunlocked.com" style="color:rgba(26,26,26,0.4);">mrcpiobgynunlocked.com</a>
+              © ${new Date().getFullYear()} MRCPI OBGYN Unlocked · <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.4);">mrcpiobgynunlocked.com</a>
             </p>
           </div>
           `
@@ -281,7 +281,7 @@ export async function POST(req: Request) {
               </p>
             </div>
             <p style="text-align:center;font-size:12px;color:rgba(26,26,26,0.4);margin-top:16px;">
-              © ${new Date().getFullYear()} MRCPI OBGYN Unlocked · <a href="https://mrcpiobgynunlocked.com" style="color:rgba(26,26,26,0.4);">mrcpiobgynunlocked.com</a>
+              © ${new Date().getFullYear()} MRCPI OBGYN Unlocked · <a href="https://mrcpi-obgynunlocked.com" style="color:rgba(26,26,26,0.4);">mrcpiobgynunlocked.com</a>
             </p>
           </div>
           `
