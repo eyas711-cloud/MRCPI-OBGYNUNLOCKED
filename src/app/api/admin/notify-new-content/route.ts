@@ -24,8 +24,8 @@ async function sendEmail(to: string, subject: string, html: string) {
 }
 
 function buildEmailHtml(sectionLabel: string, subsectionLabel: string | null, title: string, contentType: string, sectionId: string, subsectionId: string | null): string {
-  const hash = subsectionId ? `${sectionId}|${subsectionId}` : sectionId;
-  const dashboardUrl = `https://mrcpi-obgynunlocked.com/dashboard#${hash}`;
+  const params = subsectionId ? `?section=${sectionId}&sub=${subsectionId}` : `?section=${sectionId}`;
+  const dashboardUrl = `https://mrcpi-obgynunlocked.com/dashboard${params}`;
   const typeIcon: Record<string, string> = {
     video: "🎬",
     "recorded-session": "🎙️",

@@ -347,9 +347,22 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   const [activeSubsection, setActiveSubsectionRaw] = useState<string | null>(null);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const qSection = params.get("section");
+    const qSub = params.get("sub");
+    const valid = SECTIONS.map(s => s.id);
+
+    if (qSection && valid.includes(qSection as SectionId)) {
+      setActiveSectionRaw(qSection as SectionId);
+      if (qSub) setActiveSubsectionRaw(qSub);
+      // Clean up query params from URL without reload
+      history.replaceState(null, "", window.location.pathname + (qSub ? `#${qSection}|${qSub}` : `#${qSection}`));
+      return;
+    }
+
+    // Fall back to hash-based navigation
     const parts = window.location.hash.replace("#", "").split("|");
     const sec = parts[0] as SectionId;
-    const valid = SECTIONS.map(s => s.id);
     if (sec && valid.includes(sec)) {
       setActiveSectionRaw(sec);
       if (parts[1]) setActiveSubsectionRaw(parts[1]);
