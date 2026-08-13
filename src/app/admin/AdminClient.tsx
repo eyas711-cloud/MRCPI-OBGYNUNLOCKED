@@ -891,12 +891,13 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [confirmSent, setConfirmSent] = useState<string | null>(null);
 
   // Notification bell state
-  type NotifItem = { id: string; type: "registration" | "payment" | "booking" | "review"; title: string; body: string; ts: string; nav: string };
+  type NotifItem = { id: string; type: "registration" | "payment" | "booking" | "review"; title: string; body: string; ts: string; nav: string; resourceId: string };
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifs, setNotifs] = useState<NotifItem[]>([]);
   const [seenNotifIds, setSeenNotifIds] = useState<Set<string>>(new Set());
   const [dismissedNotifIds, setDismissedNotifIds] = useState<Set<string>>(new Set());
   const notifRef = useRef<HTMLDivElement>(null);
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
 
   // Load seen + dismissed from localStorage after mount (avoids SSR mismatch)
   useEffect(() => {
@@ -930,11 +931,11 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     ]);
     for (const s of studRes.data ?? []) {
       const label = s.status === "pending" ? "awaiting approval" : s.status === "active" ? "approved" : s.status === "rejected" ? "rejected" : s.status;
-      items.push({ id: `reg-${s.id}`, type: "registration", title: "New Registration", body: `${s.full_name || s.email} — ${label}`, ts: s.created_at, nav: "Students" });
+      items.push({ id: `reg-${s.id}`, type: "registration", title: "New Registration", body: `${s.full_name || s.email} — ${label}`, ts: s.created_at, nav: "Students", resourceId: s.id });
     }
-    for (const p of payRes.data ?? []) items.push({ id: `pay-${p.id}`, type: "payment", title: "Payment Recorded", body: `${p.student_name} — ${p.currency} ${Number(p.amount).toLocaleString()}`, ts: p.created_at, nav: "Payments" });
-    for (const b of bookRes.data ?? []) items.push({ id: `bk-${b.id}`, type: "booking", title: "Mock OSCE Booking", body: `${b.name} booked ${b.date} at ${b.time_slot}`, ts: b.created_at, nav: "Mock OSCEs" });
-    for (const r of revRes.data ?? []) items.push({ id: `rv-${r.id}`, type: "review", title: "New Review", body: `${r.student_name} left a ${r.rating}-star review`, ts: r.created_at, nav: "Reviews" });
+    for (const p of payRes.data ?? []) items.push({ id: `pay-${p.id}`, type: "payment", title: "Payment Recorded", body: `${p.student_name} — ${p.currency} ${Number(p.amount).toLocaleString()}`, ts: p.created_at, nav: "Payments", resourceId: p.id });
+    for (const b of bookRes.data ?? []) items.push({ id: `bk-${b.id}`, type: "booking", title: "Mock OSCE Booking", body: `${b.name} booked ${b.date} at ${b.time_slot}`, ts: b.created_at, nav: "Mock OSCEs", resourceId: b.id });
+    for (const r of revRes.data ?? []) items.push({ id: `rv-${r.id}`, type: "review", title: "New Review", body: `${r.student_name} left a ${r.rating}-star review`, ts: r.created_at, nav: "Reviews", resourceId: r.id });
     items.sort((a, b) => b.ts.localeCompare(a.ts));
     return items;
   }, []);
@@ -967,6 +968,16 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [notifOpen]);
+
+  useEffect(() => {
+    if (!highlightedId) return;
+    const timer = setTimeout(() => {
+      const el = document.querySelector(`[data-row-id="${highlightedId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+    const clear = setTimeout(() => setHighlightedId(null), 3000);
+    return () => { clearTimeout(timer); clearTimeout(clear); };
+  }, [highlightedId]);
 
   const visibleNotifs = notifs.filter(n => !dismissedNotifIds.has(n.id));
   const unreadCount = visibleNotifs.filter(n => !seenNotifIds.has(n.id)).length;
@@ -1428,7 +1439,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       })();
                       return (
                         <div key={n.id} className="flex items-start border-b" style={{ borderColor: "rgba(15,76,92,0.06)", backgroundColor: isNew ? "rgba(21,176,151,0.06)" : undefined }}>
-                          <button onClick={() => { setActiveNav(n.nav); setNotifOpen(false); }} className="flex-1 text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors min-w-0">
+                          <button onClick={() => { setActiveNav(n.nav); setHighlightedId(n.resourceId); setNotifOpen(false); }} className="flex-1 text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors min-w-0">
                             <span className="text-lg flex-shrink-0 mt-0.5">{iconMap[n.type]}</span>
                             <div className="flex-1 min-w-0">
                               <p className="text-xs font-semibold mb-0.5" style={{ color: "var(--navy)" }}>{n.title}</p>
@@ -1719,7 +1730,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                         const badgeBg = s.status === "active" ? "rgba(21,176,151,0.1)" : s.status === "pending" ? "rgba(201,162,39,0.12)" : s.status === "blocked" ? "rgba(107,33,168,0.1)" : "rgba(200,50,50,0.08)";
                         const badgeColor = s.status === "active" ? "var(--teal)" : s.status === "pending" ? "var(--gold)" : s.status === "blocked" ? "#6b21a8" : "rgba(180,40,40,0.8)";
                         return (
-                          <div key={s.id} className="flex items-center gap-4 px-5 py-4" style={{ backgroundColor: bulkSelected.has(s.id) ? "rgba(200,50,50,0.03)" : undefined }}>
+                          <div key={s.id} data-row-id={s.id} className="flex items-center gap-4 px-5 py-4 transition-colors" style={{ backgroundColor: highlightedId === s.id ? "rgba(21,176,151,0.1)" : bulkSelected.has(s.id) ? "rgba(200,50,50,0.03)" : undefined }}>
                             <input type="checkbox" checked={bulkSelected.has(s.id)} onChange={() => setBulkSelected(prev => { const n = new Set(prev); n.has(s.id) ? n.delete(s.id) : n.add(s.id); return n; })} className="w-4 h-4 rounded cursor-pointer flex-shrink-0" style={{ accentColor: "var(--teal)" }} />
                             <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: avatarColor }}>{ini}</div>
                             <div className="flex-1 min-w-0">
@@ -2343,7 +2354,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
               ) : (
                 <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.07)" }}>
                   {reviews.filter(r => r.status === reviewFilter).map(r => (
-                    <div key={r.id} className="p-5">
+                    <div key={r.id} data-row-id={r.id} className="p-5 transition-colors" style={{ backgroundColor: highlightedId === r.id ? "rgba(21,176,151,0.1)" : undefined }}>
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
@@ -2518,7 +2529,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       const isPending = b.status === "pending";
                       const isConfirmed = b.status === "confirmed";
                       return (
-                        <div key={b.id} className="flex items-start gap-4 p-5">
+                        <div key={b.id} data-row-id={b.id} className="flex items-start gap-4 p-5 transition-colors" style={{ backgroundColor: highlightedId === b.id ? "rgba(21,176,151,0.1)" : undefined }}>
                           <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
                             style={{ backgroundColor: isPending ? "var(--gold)" : "var(--teal)" }}>
                             {b.name.charAt(0).toUpperCase()}
@@ -3667,7 +3678,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 ) : (
                   <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.07)" }}>
                     {payments.map(p => (
-                      <div key={p.id} className="flex items-center gap-4 px-5 py-4">
+                      <div key={p.id} data-row-id={p.id} className="flex items-center gap-4 px-5 py-4 transition-colors" style={{ backgroundColor: highlightedId === p.id ? "rgba(21,176,151,0.1)" : undefined }}>
                         <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: "var(--teal)" }}>
                           {p.student_name.charAt(0).toUpperCase()}
                         </div>
