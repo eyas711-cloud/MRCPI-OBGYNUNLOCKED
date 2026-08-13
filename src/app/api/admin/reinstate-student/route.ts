@@ -1,4 +1,4 @@
-﻿import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 
@@ -33,38 +33,30 @@ export async function POST(req: Request) {
   const serviceClient = createServiceClient();
   const firstName = (name || "Doctor").split(" ")[0];
 
-  // Create new auth user (email already confirmed)
-  const { data: created, error: createErr } = await serviceClient.auth.admin.createUser({
-    email,
-    email_confirm: true,
-    user_metadata: { full_name: name || "" },
-  });
+  // Find the existing profile by email and reactivate it
+  const { data: profile, error: findErr } = await serviceClient
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .single();
 
-  if (createErr) {
-    console.error("[reinstate] createUser error:", createErr.message);
-    return NextResponse.json({ error: createErr.message }, { status: 500 });
+  if (findErr || !profile) {
+    console.error("[reinstate] Could not find profile for email:", email, findErr?.message);
+    return NextResponse.json({ error: "Student profile not found. They may need to re-register." }, { status: 404 });
   }
 
-  const newUserId = created.user.id;
-
-  // Wait briefly for the DB trigger to create the pending profile row, then override it
-  await new Promise(r => setTimeout(r, 500));
-  const { error: profileErr } = await serviceClient
+  const { error: updateErr } = await serviceClient
     .from("profiles")
-    .update({ status: "active", role: "student", full_name: name || "", email })
-    .eq("id", newUserId);
-  if (profileErr) console.error("[reinstate] Profile update error:", profileErr.message);
+    .update({ status: "active" })
+    .eq("id", profile.id);
 
-  // Generate a password-reset link so they can set a new password and log in
-  const { data: linkData, error: linkErr } = await serviceClient.auth.admin.generateLink({
-    type: "recovery",
-    email,
-  });
-  if (linkErr) console.error("[reinstate] generateLink error:", linkErr.message);
+  if (updateErr) {
+    console.error("[reinstate] Profile update error:", updateErr.message);
+    return NextResponse.json({ error: updateErr.message }, { status: 500 });
+  }
 
-  const recoveryUrl = linkData?.properties?.action_link ?? `${process.env.NEXT_PUBLIC_SITE_URL ?? "${process.env.NEXT_PUBLIC_SITE_URL}"}/login`;
+  const loginUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/login`;
 
-  // Send reinstate email
   await sendEmail(
     email,
     "Your Access Has Been Reinstated — MRCPI OBGYN Unlocked",
@@ -79,18 +71,14 @@ export async function POST(req: Request) {
           We are pleased to inform you that your access to the <strong style="color:#0B1E3D;">MRCPI OBGYN Unlocked</strong> platform has been reinstated, effective immediately.
         </p>
         <p style="color:#1a1a1a;font-size:15px;line-height:1.8;margin-bottom:28px;">
-          To log back in, please click the button below to set a new password for your account:
+          You can log back in using your existing email address and password.
         </p>
         <div style="text-align:center;margin:32px 0;">
-          <a href="${recoveryUrl}"
+          <a href="${loginUrl}"
              style="background:#15B097;color:#0B1E3D;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">
-            Set Password &amp; Log In →
+            Log In to My Dashboard →
           </a>
         </div>
-        <p style="color:#1a1a1a;font-size:13px;line-height:1.6;margin-bottom:28px;color:rgba(26,26,26,0.55);">
-          If the button above doesn't work, copy and paste this link into your browser:<br/>
-          <a href="${recoveryUrl}" style="color:#15B097;word-break:break-all;">${recoveryUrl}</a>
-        </p>
         <hr style="border:none;border-top:1px solid rgba(15,76,92,0.1);margin:24px 0;" />
         <p style="color:#1a1a1a;font-size:14px;margin:0;">
           With respect,<br/>
@@ -110,10 +98,9 @@ export async function POST(req: Request) {
     await serviceClient.from("audit_logs").delete().eq("id", logId);
   }
 
-  // Write a reinstate audit entry
   await serviceClient.from("audit_logs").insert([{
     action: "student_reinstate_from_block",
-    resource: newUserId,
+    resource: profile.id,
     details: { reinstated_email: email, reinstated_name: name },
   }]);
 

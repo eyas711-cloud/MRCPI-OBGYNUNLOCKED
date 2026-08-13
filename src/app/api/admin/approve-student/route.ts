@@ -185,11 +185,9 @@ export async function POST(req: Request) {
     }]);
     console.log("[block] Audit log error:", auditErr?.message ?? "none");
 
-    // Delete profile and auth account so student can re-register
-    const { error: profileDelErr } = await serviceClient.from("profiles").delete().eq("id", studentId);
-    console.log("[block] Profile delete error:", profileDelErr?.message ?? "none");
-    const { error: authDelErr } = await serviceClient.auth.admin.deleteUser(studentId);
-    console.log("[block] Auth delete error:", authDelErr?.message ?? "none");
+    // Set profile status to blocked (keep auth account so they can be reinstated with same password)
+    const { error: profileUpdErr } = await serviceClient.from("profiles").update({ status: "blocked" }).eq("id", studentId);
+    console.log("[block] Profile update error:", profileUpdErr?.message ?? "none");
 
     return NextResponse.json({ ok: true });
   }

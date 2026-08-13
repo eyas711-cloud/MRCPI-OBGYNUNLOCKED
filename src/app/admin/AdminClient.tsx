@@ -1659,7 +1659,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                           <p className="text-xs flex-shrink-0" style={{ color: "rgba(26,26,26,0.35)" }}>{new Date(l.created_at).toLocaleDateString()}</p>
                           <button
                             onClick={async () => {
-                              if (!confirm(`Reinstate ${l.details?.blocked_name || l.details?.blocked_email}? A new account will be created and they will receive a reinstate email.`)) return;
+                              if (!confirm(`Reinstate ${l.details?.blocked_name || l.details?.blocked_email}? They will receive an email and can log in with their existing password.`)) return;
                               const res = await fetch("/api/admin/reinstate-student", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: l.details?.blocked_email, name: l.details?.blocked_name, logId: l.id }) });
                               if (res.ok) { setBlockedLogs(prev => prev.filter(b => b.id !== l.id)); fetchStudents(); }
                               else { const j = await res.json().catch(() => ({})); alert(`Reinstate failed: ${j.error || "Unknown error"}`); }
