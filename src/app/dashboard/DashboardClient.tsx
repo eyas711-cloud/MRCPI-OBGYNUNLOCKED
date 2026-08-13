@@ -517,7 +517,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   };
 
   // ── Student notifications ─────────────────────────────────────────────────
-  type StudentNotif = { id: string; type: "content" | "feedback" | "payment" | "booking"; title: string; body: string; ts: string; action?: () => void };
+  type StudentNotif = { id: string; type: "content" | "feedback" | "payment" | "booking"; title: string; body: string; ts: string; sectionId?: string; subsectionId?: string; itemId?: string; action?: () => void };
   const [notifOpen, setNotifOpen] = useState(false);
   const [studentNotifs, setStudentNotifs] = useState<StudentNotif[]>([]);
   const [seenNotifIds, setSeenNotifIds] = useState<Set<string>>(new Set());
@@ -538,7 +538,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   const fetchStudentNotifs = useCallback(async () => {
     const items: StudentNotif[] = [];
     const [contentRes, feedbackRes, sessionRes, bookingRes, batchRes] = await Promise.all([
-      supabase.from("content_items").select("id, section_id, title, created_at").order("created_at", { ascending: false }).limit(30),
+      supabase.from("content_items").select("id, section_id, subsection_id, title, created_at").order("created_at", { ascending: false }).limit(30),
       supabase.from("student_feedback").select("id, feedback_type, title, created_at, updated_at").eq("student_id", user.id).order("updated_at", { ascending: false }).limit(20),
       supabase.from("session_feedback").select("id, session_date, created_at").eq("student_id", user.id).order("created_at", { ascending: false }).limit(10),
       supabase.from("osce_bookings").select("id, date, time_slot, status, meet_link, created_at").eq("email", user.email).order("created_at", { ascending: false }).limit(10),
@@ -549,7 +549,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
       "flashcards": "Flashcards", "videos": "Videos", "recorded-sessions": "Recorded Sessions",
     };
     for (const c of contentRes.data ?? []) {
-      items.push({ id: `content-${c.id}`, type: "content", title: "New Material Uploaded", body: `${c.title} — ${sectionLabel[c.section_id] ?? c.section_id}`, ts: c.created_at });
+      items.push({ id: `content-${c.id}`, type: "content", title: "New Material Uploaded", body: `${c.title} — ${sectionLabel[c.section_id] ?? c.section_id}`, ts: c.created_at, sectionId: c.section_id, subsectionId: c.subsection_id ?? undefined, itemId: c.id });
     }
     for (const f of feedbackRes.data ?? []) {
       const ts = f.updated_at || f.created_at;
@@ -689,7 +689,11 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
                       return `${Math.floor(h / 24)}d ago`;
                     })();
                     const handleClick = () => {
-                      if (n.type === "content") setActiveSection(null);
+                      if (n.type === "content" && n.sectionId) {
+                        if (n.subsectionId) pendingSubRef.current = n.subsectionId;
+                        if (n.itemId) pendingItemIdRef.current = n.itemId;
+                        setActiveSectionRaw(n.sectionId as SectionId);
+                      }
                       if (n.type === "feedback") setFeedbackView("feedback");
                       setNotifOpen(false);
                     };
