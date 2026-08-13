@@ -537,12 +537,13 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
 
   const fetchStudentNotifs = useCallback(async () => {
     const items: StudentNotif[] = [];
-    const [contentRes, feedbackRes, sessionRes, bookingRes, batchRes] = await Promise.all([
+    const [contentRes, feedbackRes, sessionRes, bookingRes, batchRes, paymentRes] = await Promise.all([
       supabase.from("content_items").select("id, section_id, subsection_id, title, created_at").order("created_at", { ascending: false }).limit(30),
       supabase.from("student_feedback").select("id, feedback_type, title, created_at, updated_at").eq("student_id", user.id).order("updated_at", { ascending: false }).limit(20),
       supabase.from("session_feedback").select("id, session_date, created_at").eq("student_id", user.id).order("created_at", { ascending: false }).limit(10),
       supabase.from("osce_bookings").select("id, date, time_slot, status, meet_link, created_at").eq("email", user.email).order("created_at", { ascending: false }).limit(10),
       supabase.from("batch_students").select("id, pending, last_reminded_at").eq("email", user.email).gt("pending", 0).limit(5),
+      supabase.from("payments").select("id, amount, currency, payment_date, created_at").eq("student_email", user.email).order("created_at", { ascending: false }).limit(10),
     ]);
     const sectionLabel: Record<string, string> = {
       "exam-templates": "Exam Templates", "recalls": "Recalls",
@@ -567,6 +568,10 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     for (const bs of batchRes.data ?? []) {
       const ts = bs.last_reminded_at || new Date().toISOString();
       items.push({ id: `pay-${bs.id}`, type: "payment", title: "Payment Due", body: `SAR ${Number(bs.pending).toLocaleString()} outstanding balance`, ts });
+    }
+    for (const p of paymentRes.data ?? []) {
+      const date = new Date(p.payment_date || p.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+      items.push({ id: `rec-${p.id}`, type: "payment", title: "Payment Received", body: `${p.currency} ${Number(p.amount).toLocaleString()} — ${date}`, ts: p.created_at });
     }
     items.sort((a, b) => b.ts.localeCompare(a.ts));
     return items;
