@@ -31,7 +31,7 @@ function ResetPasswordForm() {
     if (password !== confirm) { setError("Passwords do not match."); return; }
     setLoading(true);
 
-    // If there's a PKCE code in the URL, exchange it now (on submit, not on load)
+    // Exchange the PKCE code for a session (on submit, not on load)
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     if (code) {
@@ -43,18 +43,23 @@ function ResetPasswordForm() {
       }
     }
 
-    // Get session to retrieve access token
+    // Grab the access token before signing out
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       setError("This reset link has expired or has already been used. Please request a new password reset.");
       setLoading(false);
       return;
     }
+    const accessToken = session.access_token;
 
-    // Update password server-side using the access token (avoids client-side hang)
+    // Sign out the client session immediately so no auth state changes
+    // interfere with the API call below
+    await supabase.auth.signOut();
+
+    // Update password server-side using the still-valid JWT
     const res = await fetch("/api/auth/update-password", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
       body: JSON.stringify({ password }),
     });
     const data = await res.json();
