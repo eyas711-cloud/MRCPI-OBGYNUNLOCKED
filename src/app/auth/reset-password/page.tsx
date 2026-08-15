@@ -52,9 +52,24 @@ function ResetPasswordForm() {
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
     if (password !== confirm) { setError("Passwords do not match."); return; }
     setLoading(true);
-    const { error: updateError } = await supabase.auth.updateUser({ password });
+
+    const timeout = new Promise<{ error: { message: string } }>(resolve =>
+      setTimeout(() => resolve({ error: { message: "timeout" } }), 10000)
+    );
+    const { error: updateError } = await Promise.race([
+      supabase.auth.updateUser({ password }),
+      timeout,
+    ]) as { error: { message: string } | null };
+
     setLoading(false);
-    if (updateError) { setError(updateError.message); return; }
+    if (updateError) {
+      if (updateError.message === "timeout") {
+        setError("The reset link has expired or already been used. Please request a new one.");
+      } else {
+        setError(updateError.message);
+      }
+      return;
+    }
 
     // Log successful reset to audit
     const { data: { user } } = await supabase.auth.getUser();
