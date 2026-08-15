@@ -14,36 +14,14 @@ function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
-  const [sessionReady, setSessionReady] = useState(false);
 
+  // Listen for implicit-flow PASSWORD_RECOVERY event (hash-based links)
   useEffect(() => {
-    let cancelled = false;
-
-    const init = async () => {
-      // PKCE flow: exchange ?code= query param for a session
-      const params = new URLSearchParams(window.location.search);
-      const code = params.get("code");
-      if (code) {
-        await supabase.auth.exchangeCodeForSession(code);
-      }
-
-      // Poll for session (covers both PKCE and implicit hash flow)
-      for (let i = 0; i < 15; i++) {
-        if (cancelled) return;
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) { setSessionReady(true); return; }
-        await new Promise((r) => setTimeout(r, 400));
-      }
-    };
-    init();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") && session) {
-        setSessionReady(true);
-      }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      // Nothing to do — we handle session establishment in handleSubmit
+      void event;
     });
-
-    return () => { cancelled = true; subscription.unsubscribe(); };
+    return () => subscription.unsubscribe();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,6 +30,18 @@ function ResetPasswordForm() {
     if (password.length < 8) { setError("Password must be at least 8 characters."); return; }
     if (password !== confirm) { setError("Passwords do not match."); return; }
     setLoading(true);
+
+    // If there's a PKCE code in the URL, exchange it now (on submit, not on load)
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    if (code) {
+      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+      if (exchangeError) {
+        setError("This reset link has expired or has already been used. Please request a new password reset.");
+        setLoading(false);
+        return;
+      }
+    }
 
     const timeout = new Promise<{ error: { message: string } }>(resolve =>
       setTimeout(() => resolve({ error: { message: "timeout" } }), 10000)
@@ -64,14 +54,14 @@ function ResetPasswordForm() {
     setLoading(false);
     if (updateError) {
       if (updateError.message === "timeout") {
-        setError("The reset link has expired or already been used. Please request a new one.");
+        setError("This reset link has expired or has already been used. Please request a new password reset.");
       } else {
         setError(updateError.message);
       }
       return;
     }
 
-    // Log successful reset to audit
+    // Log successful reset
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       await supabase.from("audit_logs").insert([{
@@ -111,22 +101,17 @@ function ResetPasswordForm() {
               <p className="font-serif font-semibold text-lg mb-2" style={{ color: "var(--navy)" }}>Password updated!</p>
               <p className="text-sm" style={{ color: "rgba(26,26,26,0.6)" }}>Redirecting you to sign in…</p>
             </div>
-          ) : !sessionReady ? (
-            <div className="text-center py-4">
-              <AlertCircle size={36} className="mx-auto mb-4" style={{ color: "var(--gold)" }} />
-              <p className="font-semibold mb-2" style={{ color: "var(--navy)" }}>Waiting for reset link…</p>
-              <p className="text-sm mb-4" style={{ color: "rgba(26,26,26,0.55)" }}>
-                Please open this page from the reset link in your email. If you arrived here directly, go back to login and request a new link.
-              </p>
-              <Link href="/login" className="text-sm font-semibold" style={{ color: "var(--teal)" }}>
-                Back to sign in
-              </Link>
-            </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5">
               {error && (
                 <div className="flex items-start gap-2.5 rounded-lg px-4 py-3 text-sm" style={{ backgroundColor: "rgba(200,50,50,0.06)", color: "rgba(160,30,30,0.9)", border: "1px solid rgba(200,50,50,0.15)" }}>
-                  <AlertCircle size={15} className="mt-0.5 flex-shrink-0" /> {error}
+                  <AlertCircle size={15} className="mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p>{error}</p>
+                    <Link href="/login" className="underline font-semibold mt-1 inline-block" style={{ color: "var(--teal)" }}>
+                      Back to sign in
+                    </Link>
+                  </div>
                 </div>
               )}
               <div>
