@@ -43,35 +43,25 @@ function ResetPasswordForm() {
       }
     }
 
-    const timeout = new Promise<{ error: { message: string } }>(resolve =>
-      setTimeout(() => resolve({ error: { message: "timeout" } }), 10000)
-    );
-    const { error: updateError } = await Promise.race([
-      supabase.auth.updateUser({ password }),
-      timeout,
-    ]) as { error: { message: string } | null };
-
-    setLoading(false);
-    if (updateError) {
-      if (updateError.message === "timeout") {
-        setError("This reset link has expired or has already been used. Please request a new password reset.");
-      } else {
-        setError(updateError.message);
-      }
+    // Get session to retrieve access token
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setError("This reset link has expired or has already been used. Please request a new password reset.");
+      setLoading(false);
       return;
     }
 
-    // Log successful reset
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      await supabase.from("audit_logs").insert([{
-        user_id: user.id,
-        user_email: user.email,
-        user_role: "student",
-        action: "password_reset_complete",
-        resource: user.email,
-        metadata: { completed_at: new Date().toISOString() },
-      }]);
+    // Update password server-side using the access token (avoids client-side hang)
+    const res = await fetch("/api/auth/update-password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session.access_token}` },
+      body: JSON.stringify({ password }),
+    });
+    const data = await res.json();
+    setLoading(false);
+    if (!res.ok) {
+      setError(data.error || "Failed to update password. Please request a new reset link.");
+      return;
     }
 
     setDone(true);
