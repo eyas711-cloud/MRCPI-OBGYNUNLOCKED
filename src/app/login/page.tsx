@@ -13,7 +13,7 @@ function LoginForm() {
   const [tab, setTab] = useState<"login" | "register">("login");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchParams.get("error") === "reset_link_expired" ? "Your reset link has expired or already been used. Please request a new one." : null);
   const [success, setSuccess] = useState<string | null>(null);
   const [forgotMode, setForgotMode] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
@@ -32,7 +32,7 @@ function LoginForm() {
     setError(null);
     const email = forgotEmail.trim().toLowerCase();
     const { error: authError } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
     });
     // Log to audit_logs so admin is notified in Security section
     await supabase.from("audit_logs").insert([{

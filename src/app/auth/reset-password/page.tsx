@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff, CheckCircle, AlertCircle, Lock } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
-function ResetPasswordForm() {
+export default function ResetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -15,15 +15,6 @@ function ResetPasswordForm() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  // Listen for implicit-flow PASSWORD_RECOVERY event (hash-based links)
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      // Nothing to do — we handle session establishment in handleSubmit
-      void event;
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -31,43 +22,34 @@ function ResetPasswordForm() {
     if (password !== confirm) { setError("Passwords do not match."); return; }
     setLoading(true);
 
-    // Exchange the PKCE code for a session (on submit, not on load)
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
-    if (code) {
-      const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-      if (exchangeError) {
-        setError("This reset link has expired or has already been used. Please request a new password reset.");
-        setLoading(false);
-        return;
-      }
-    }
-
-    // Grab the access token before signing out
+    // Session was already established server-side by /auth/callback
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      setError("This reset link has expired or has already been used. Please request a new password reset.");
+      setError("Your reset link has expired. Please request a new one.");
       setLoading(false);
       return;
     }
-    const accessToken = session.access_token;
 
-    // Sign out the client session immediately so no auth state changes
-    // interfere with the API call below
-    await supabase.auth.signOut();
-
-    // Update password server-side using the still-valid JWT
+    // Update password via server-side API using the session's access token
     const res = await fetch("/api/auth/update-password", {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+      },
       body: JSON.stringify({ password }),
     });
-    const data = await res.json();
+
+    const data = await res.json().catch(() => ({}));
     setLoading(false);
+
     if (!res.ok) {
       setError(data.error || "Failed to update password. Please request a new reset link.");
       return;
     }
+
+    // Sign out the recovery session so the user logs in fresh
+    await supabase.auth.signOut();
 
     setDone(true);
     setTimeout(() => router.push("/login"), 3000);
@@ -157,13 +139,5 @@ function ResetPasswordForm() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense>
-      <ResetPasswordForm />
-    </Suspense>
   );
 }
