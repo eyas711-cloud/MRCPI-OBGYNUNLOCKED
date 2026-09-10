@@ -65,7 +65,8 @@ const CONTENT_SECTIONS = [
   { id: "recalls",           label: "2. Recalls",            icon: <BookOpen size={15} />, color: "var(--teal)",       bucket: "recalls",           accept: "application/pdf",                            fileLabel: "PDF",   hasSubs: true  },
   { id: "flashcards",        label: "3. Flashcards",         icon: <Image size={15} />,    color: "var(--gold)",       bucket: "flashcards",        accept: "image/jpeg,image/png,image/webp,image/gif",  fileLabel: "Image", hasSubs: false },
   { id: "videos",            label: "4. Videos",             icon: <Video size={15} />,    color: "var(--teal-bright)",bucket: "course-videos",     accept: "video/mp4,video/webm,video/quicktime",       fileLabel: "Video", hasSubs: false },
-  { id: "recorded-sessions", label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions", accept: "",                                                                                      fileLabel: "Vimeo", hasSubs: true  },
+  { id: "recorded-sessions",  label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions",  accept: "",                 fileLabel: "Vimeo", hasSubs: true  },
+  { id: "last-minute-prep",   label: "6. Last Minute Prep",   icon: <Star size={15} />,     color: "#d97706",           bucket: "last-minute-prep",   accept: "application/pdf",  fileLabel: "PDF",   hasSubs: true  },
 ] as const;
 
 type SectionId = (typeof CONTENT_SECTIONS)[number]["id"];
@@ -347,6 +348,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
       "flashcards": "flashcard",
       "exam-templates": "pdf",
       "recalls": "pdf",
+      "last-minute-prep": "pdf",
     };
     const subsectionLabel = activeSub
       ? subsections.find((s) => s.id === activeSub)?.name || activeSub
@@ -463,7 +465,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
               <input
                 type="text" required value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder={`e.g. ${activeSec === "exam-templates" ? "Antenatal Station Template" : activeSec === "recalls" ? "2024 Antenatal Recall Questions" : activeSec === "flashcards" ? "Flashcard: Preeclampsia" : activeSec === "videos" ? "Video: Communication Skills" : "Session Recording — June 2025"}`}
+                placeholder={`e.g. ${activeSec === "exam-templates" ? "Antenatal Station Template" : activeSec === "recalls" ? "2024 Antenatal Recall Questions" : activeSec === "flashcards" ? "Flashcard: Preeclampsia" : activeSec === "videos" ? "Video: Communication Skills" : activeSec === "last-minute-prep" ? "Antenatal Last Minute Prep" : "Session Recording — June 2025"}`}
                 className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none"
                 style={{ borderColor: "rgba(15,76,92,0.2)" }}
               />

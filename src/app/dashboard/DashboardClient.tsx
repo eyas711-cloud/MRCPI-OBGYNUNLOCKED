@@ -59,6 +59,15 @@ const SECTIONS = [
     bg: "rgba(61,10,20,0.08)",
     fileLabel: "Audio",
   },
+  {
+    id: "last-minute-prep",
+    name: "Last Minute Prep",
+    description: "Last minute revision PDFs",
+    icon: <Star size={28} />,
+    color: "var(--navy)",
+    bg: "rgba(61,10,20,0.08)",
+    fileLabel: "PDF",
+  },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
@@ -438,7 +447,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
 
   useEffect(() => {
     if (!activeSection) return;
-    const hasSubs = ["exam-templates", "recalls", "recorded-sessions"].includes(activeSection);
+    const hasSubs = ["exam-templates", "recalls", "recorded-sessions", "last-minute-prep"].includes(activeSection);
     if (!hasSubs) fetchItems(activeSection, null);
     else if (activeSubsection) fetchItems(activeSection, activeSubsection);
   }, [activeSection, activeSubsection, fetchItems]);
@@ -548,6 +557,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     const sectionLabel: Record<string, string> = {
       "exam-templates": "Exam Templates", "recalls": "Recalls",
       "flashcards": "Flashcards", "videos": "Videos", "recorded-sessions": "Recorded Sessions",
+      "last-minute-prep": "Last Minute Prep",
     };
     for (const c of contentRes.data ?? []) {
       items.push({ id: `content-${c.id}`, type: "content", title: "New Material Uploaded", body: `${c.title} — ${sectionLabel[c.section_id] ?? c.section_id}`, ts: c.created_at, sectionId: c.section_id, subsectionId: c.subsection_id ?? undefined, itemId: c.id });
@@ -624,7 +634,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     });
   };
 
-  const hasSubs = activeSection ? ["exam-templates", "recalls", "recorded-sessions"].includes(activeSection) : false;
+  const hasSubs = activeSection ? ["exam-templates", "recalls", "recorded-sessions", "last-minute-prep"].includes(activeSection) : false;
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--paper)" }}>
@@ -1239,6 +1249,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
             activeSection === "recalls" ? "recalls" :
             activeSection === "flashcards" ? "flashcards" :
             activeSection === "videos" ? "course-videos" :
+            activeSection === "last-minute-prep" ? "last-minute-prep" :
             "recorded-sessions"
           }
           fileType={
