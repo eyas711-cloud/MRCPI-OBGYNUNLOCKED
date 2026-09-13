@@ -358,6 +358,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
 
   const pendingSubRef = useRef<string | null>(null);
   const pendingItemIdRef = useRef<string | null>(null);
+  const pendingBatchRef = useRef<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -421,7 +422,13 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     setBatches([]);
     if (activeSection === "recorded-sessions") {
       supabase.from("content_batches").select("*").eq("section_id", activeSection).order("sort_order")
-        .then(({ data }) => setBatches(data ?? []));
+        .then(({ data }) => {
+          setBatches(data ?? []);
+          if (pendingBatchRef.current) {
+            setActiveBatch(pendingBatchRef.current);
+            pendingBatchRef.current = null;
+          }
+        });
     } else {
       supabase.from("content_subsections").select("*").eq("section_id", activeSection).order("sort_order")
         .then(({ data }) => {
@@ -547,7 +554,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   };
 
   // ── Student notifications ─────────────────────────────────────────────────
-  type StudentNotif = { id: string; type: "content" | "feedback" | "payment" | "booking"; title: string; body: string; ts: string; sectionId?: string; subsectionId?: string; itemId?: string; action?: () => void };
+  type StudentNotif = { id: string; type: "content" | "feedback" | "payment" | "booking"; title: string; body: string; ts: string; sectionId?: string; subsectionId?: string; itemId?: string; batchId?: string; action?: () => void };
   const [notifOpen, setNotifOpen] = useState(false);
   const [studentNotifs, setStudentNotifs] = useState<StudentNotif[]>([]);
   const [seenNotifIds, setSeenNotifIds] = useState<Set<string>>(new Set());
@@ -580,8 +587,27 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
       "flashcards": "Flashcards", "videos": "Videos", "recorded-sessions": "Recorded Sessions",
       "last-minute-prep": "Last Minute Prep",
     };
+
+    // For recorded-sessions items, resolve batch names via subsection → batch
+    const rsContent = (contentRes.data ?? []).filter(c => c.section_id === "recorded-sessions" && c.subsection_id);
+    const rsSubIds = [...new Set(rsContent.map(c => c.subsection_id as string))];
+    const batchBySubId: Record<string, { batch_id: string; batch_name: string }> = {};
+    if (rsSubIds.length > 0) {
+      const { data: subs } = await supabase.from("content_subsections").select("id, batch_id").in("id", rsSubIds);
+      const batchIds = [...new Set((subs ?? []).filter(s => s.batch_id).map(s => s.batch_id as string))];
+      if (batchIds.length > 0) {
+        const { data: batchData } = await supabase.from("content_batches").select("id, name").in("id", batchIds);
+        const batchMap: Record<string, string> = Object.fromEntries((batchData ?? []).map(b => [b.id, b.name]));
+        for (const sub of subs ?? []) {
+          if (sub.batch_id) batchBySubId[sub.id] = { batch_id: sub.batch_id, batch_name: batchMap[sub.batch_id] || "" };
+        }
+      }
+    }
+
     for (const c of contentRes.data ?? []) {
-      items.push({ id: `content-${c.id}`, type: "content", title: "New Material Uploaded", body: `${c.title} — ${sectionLabel[c.section_id] ?? c.section_id}`, ts: c.created_at, sectionId: c.section_id, subsectionId: c.subsection_id ?? undefined, itemId: c.id });
+      const batchInfo = c.subsection_id ? batchBySubId[c.subsection_id] : undefined;
+      const bodyPrefix = batchInfo ? `[${batchInfo.batch_name}] ` : "";
+      items.push({ id: `content-${c.id}`, type: "content", title: "New Material Uploaded", body: `${bodyPrefix}${c.title} — ${sectionLabel[c.section_id] ?? c.section_id}`, ts: c.created_at, sectionId: c.section_id, subsectionId: c.subsection_id ?? undefined, itemId: c.id, batchId: batchInfo?.batch_id });
     }
     for (const f of feedbackRes.data ?? []) {
       const ts = f.updated_at || f.created_at;
@@ -741,6 +767,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
                     })();
                     const handleClick = () => {
                       if (n.type === "content" && n.sectionId) {
+                        if (n.batchId) pendingBatchRef.current = n.batchId;
                         if (n.subsectionId) pendingSubRef.current = n.subsectionId;
                         if (n.itemId) pendingItemIdRef.current = n.itemId;
                         setActiveSectionRaw(n.sectionId as SectionId);

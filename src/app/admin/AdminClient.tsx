@@ -415,6 +415,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
         sectionId: activeSec,
         subsectionId: activeSub || null,
         itemId: insertedItem?.id || null,
+        batchLabel: section.hasBatches && activeBatch ? (batches.find(b => b.id === activeBatch)?.name || null) : null,
       }),
     }).catch(console.error);
 
