@@ -18,7 +18,8 @@ type StudentRow = {
   last_seen: string | null;
 };
 
-type Subsection = { id: string; section_id: string; name: string; sort_order: number };
+type Subsection = { id: string; section_id: string; name: string; sort_order: number; batch_id?: string | null };
+type ContentBatch = { id: string; section_id: string; name: string; sort_order: number };
 
 type ContentItem = {
   id: string; section_id: string; subsection_id: string | null;
@@ -61,12 +62,12 @@ type TestimonialRow = {
 
 // ── Static config ─────────────────────────────────────────────────────────────
 const CONTENT_SECTIONS = [
-  { id: "exam-templates",    label: "1. Exam Templates",     icon: <FileText size={15} />, color: "var(--navy)",       bucket: "exam-templates",    accept: "application/pdf",                            fileLabel: "PDF",   hasSubs: true  },
-  { id: "recalls",           label: "2. Recalls",            icon: <BookOpen size={15} />, color: "var(--teal)",       bucket: "recalls",           accept: "application/pdf",                            fileLabel: "PDF",   hasSubs: true  },
-  { id: "flashcards",        label: "3. Flashcards",         icon: <Image size={15} />,    color: "var(--gold)",       bucket: "flashcards",        accept: "image/jpeg,image/png,image/webp,image/gif",  fileLabel: "Image", hasSubs: false },
-  { id: "videos",            label: "4. Videos",             icon: <Video size={15} />,    color: "var(--teal-bright)",bucket: "course-videos",     accept: "video/mp4,video/webm,video/quicktime",       fileLabel: "Video", hasSubs: false },
-  { id: "recorded-sessions",  label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions",  accept: "",                 fileLabel: "Vimeo", hasSubs: true  },
-  { id: "last-minute-prep",   label: "6. Last Minute Prep",   icon: <Star size={15} />,     color: "#d97706",           bucket: "last-minute-prep",   accept: "application/pdf",  fileLabel: "PDF",   hasSubs: true  },
+  { id: "exam-templates",    label: "1. Exam Templates",     icon: <FileText size={15} />, color: "var(--navy)",       bucket: "exam-templates",    accept: "application/pdf",                            fileLabel: "PDF",   hasSubs: true,  hasBatches: false },
+  { id: "recalls",           label: "2. Recalls",            icon: <BookOpen size={15} />, color: "var(--teal)",       bucket: "recalls",           accept: "application/pdf",                            fileLabel: "PDF",   hasSubs: true,  hasBatches: false },
+  { id: "flashcards",        label: "3. Flashcards",         icon: <Image size={15} />,    color: "var(--gold)",       bucket: "flashcards",        accept: "image/jpeg,image/png,image/webp,image/gif",  fileLabel: "Image", hasSubs: false, hasBatches: false },
+  { id: "videos",            label: "4. Videos",             icon: <Video size={15} />,    color: "var(--teal-bright)",bucket: "course-videos",     accept: "video/mp4,video/webm,video/quicktime",       fileLabel: "Video", hasSubs: false, hasBatches: false },
+  { id: "recorded-sessions",  label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions",  accept: "",                 fileLabel: "Vimeo", hasSubs: true,  hasBatches: true  },
+  { id: "last-minute-prep",   label: "6. Last Minute Prep",   icon: <Star size={15} />,     color: "#d97706",           bucket: "last-minute-prep",   accept: "application/pdf",  fileLabel: "PDF",   hasSubs: true,  hasBatches: false },
 ] as const;
 
 type SectionId = (typeof CONTENT_SECTIONS)[number]["id"];
@@ -221,6 +222,15 @@ function ContentPanel({ user }: { user: AdminUser }) {
   // Subsections for the selected section
   const [subsections, setSubsections] = useState<Subsection[]>([]);
 
+  // Batch state (recorded-sessions only)
+  const [batches, setBatches] = useState<ContentBatch[]>([]);
+  const [activeBatch, setActiveBatch] = useState<string>("");
+  const [showBatchMgmt, setShowBatchMgmt] = useState(false);
+  const [newBatchName, setNewBatchName] = useState("");
+  const [addingBatch, setAddingBatch] = useState(false);
+  const [renamingBatch, setRenamingBatch] = useState<string | null>(null);
+  const [renameBatchName, setRenameBatchName] = useState("");
+
   // Upload form
   const [form, setForm] = useState({ title: "", description: "", vimeoUrl: "" });
   const [file, setFile] = useState<File | null>(null);
@@ -262,18 +272,29 @@ function ContentPanel({ user }: { user: AdminUser }) {
   // Load subsections when active section changes
   useEffect(() => {
     setActiveSub("");
+    setActiveBatch("");
     setItems([]);
-    if (!section.hasSubs) {
-      setSubsections([]);
+    setSubsections([]);
+    setBatches([]);
+    setShowBatchMgmt(false);
+    if (section.hasBatches) {
+      supabase.from("content_batches").select("*").eq("section_id", activeSec).order("sort_order")
+        .then(({ data }) => setBatches(data ?? []));
       return;
     }
-    supabase
-      .from("content_subsections")
-      .select("*")
-      .eq("section_id", activeSec)
-      .order("sort_order")
+    if (!section.hasSubs) return;
+    supabase.from("content_subsections").select("*").eq("section_id", activeSec).order("sort_order")
       .then(({ data }) => setSubsections(data ?? []));
   }, [activeSec]);
+
+  // Load subsections when batch changes (recorded-sessions only)
+  useEffect(() => {
+    setActiveSub("");
+    setItems([]);
+    if (!activeBatch) { setSubsections([]); return; }
+    supabase.from("content_subsections").select("*").eq("section_id", activeSec).eq("batch_id", activeBatch).order("sort_order")
+      .then(({ data }) => setSubsections(data ?? []));
+  }, [activeBatch, activeSec]);
 
   // Load items
   const fetchItems = useCallback(async () => {
@@ -288,9 +309,39 @@ function ContentPanel({ user }: { user: AdminUser }) {
 
   useEffect(() => { fetchItems(); }, [fetchItems]);
 
+  const handleAddBatch = async () => {
+    if (!newBatchName.trim()) return;
+    setAddingBatch(true);
+    const id = `rs-${Date.now()}`;
+    const maxOrder = batches.reduce((m, b) => Math.max(m, b.sort_order), 0);
+    const { data } = await supabase.from("content_batches").insert({ id, section_id: activeSec, name: newBatchName.trim(), sort_order: maxOrder + 1 }).select().single();
+    if (data) {
+      setBatches(prev => [...prev, data]);
+      const subsToInsert = [
+        "Introduction", "Antenatal Recorded Sessions", "Early Pregnancy Recorded Sessions",
+        "Maternal Medicine Recorded Sessions", "Labor Room Recorded Sessions",
+        "Postnatal Recorded Sessions", "Emergency Medicine Recorded Sessions",
+        "Surgical Recorded Sessions", "Gynecology Recorded Sessions",
+        "Infertility Recorded Sessions", "Oncology Recorded Sessions",
+        "Risk Management Recorded Sessions",
+      ].map((name, i) => ({ id: crypto.randomUUID(), section_id: activeSec, batch_id: data.id, name, sort_order: i + 1 }));
+      await supabase.from("content_subsections").insert(subsToInsert);
+    }
+    setNewBatchName("");
+    setAddingBatch(false);
+  };
+
+  const handleRenameBatch = async (id: string) => {
+    if (!renameBatchName.trim()) return;
+    await supabase.from("content_batches").update({ name: renameBatchName.trim() }).eq("id", id);
+    setBatches(prev => prev.map(b => b.id === id ? { ...b, name: renameBatchName.trim() } : b));
+    setRenamingBatch(null);
+  };
+
   const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (activeSec !== "videos" && activeSec !== "recorded-sessions" && !file) return;
+    if (section.hasBatches && !activeBatch) { setErr("Please select a batch first."); return; }
     if (section.hasSubs && !activeSub) { setErr("Please select a sub-section first."); return; }
     setUploading(true); setErr(null); setProgress(20);
 
@@ -426,8 +477,67 @@ function ContentPanel({ user }: { user: AdminUser }) {
         ))}
       </div>
 
+      {/* Batch picker (Recorded Sessions only) */}
+      {section.hasBatches && (
+        <div className="rounded-xl border bg-white p-4" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#8b5cf6" }}>Batch</p>
+            <button onClick={() => setShowBatchMgmt(v => !v)} className="text-xs font-semibold" style={{ color: "var(--teal)" }}>
+              {showBatchMgmt ? "Done" : "Manage Batches"}
+            </button>
+          </div>
+          {showBatchMgmt && (
+            <div className="mb-4 space-y-2 border-b pb-4" style={{ borderColor: "rgba(15,76,92,0.1)" }}>
+              {batches.map(b => (
+                <div key={b.id} className="flex items-center gap-2">
+                  {renamingBatch === b.id ? (
+                    <>
+                      <input value={renameBatchName} onChange={e => setRenameBatchName(e.target.value)}
+                        className="flex-1 px-2 py-1.5 rounded-lg border text-xs focus:outline-none"
+                        style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                      <button onClick={() => handleRenameBatch(b.id)} className="px-2 py-1 rounded text-xs font-semibold" style={{ backgroundColor: "var(--teal)", color: "white" }}>Save</button>
+                      <button onClick={() => setRenamingBatch(null)} className="px-2 py-1 rounded text-xs" style={{ color: "rgba(26,26,26,0.5)" }}>Cancel</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className="flex-1 text-xs font-medium" style={{ color: "var(--navy)" }}>{b.name}</span>
+                      <button onClick={() => { setRenamingBatch(b.id); setRenameBatchName(b.name); }}
+                        className="px-2 py-1 rounded text-xs" style={{ color: "var(--teal)" }}>Rename</button>
+                    </>
+                  )}
+                </div>
+              ))}
+              <div className="flex items-center gap-2 pt-1">
+                <input value={newBatchName} onChange={e => setNewBatchName(e.target.value)}
+                  placeholder="New batch name (e.g. January 2027)…"
+                  className="flex-1 px-2 py-1.5 rounded-lg border text-xs focus:outline-none"
+                  style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                <button onClick={handleAddBatch} disabled={addingBatch || !newBatchName.trim()}
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold disabled:opacity-50"
+                  style={{ backgroundColor: "#8b5cf6", color: "white" }}>
+                  {addingBatch ? "Adding…" : "Add"}
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-wrap gap-2">
+            {batches.map(b => (
+              <button key={b.id} onClick={() => setActiveBatch(b.id)}
+                className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all border"
+                style={{
+                  backgroundColor: activeBatch === b.id ? "#8b5cf6" : "transparent",
+                  color: activeBatch === b.id ? "white" : "rgba(26,26,26,0.65)",
+                  borderColor: activeBatch === b.id ? "#8b5cf6" : "rgba(15,76,92,0.15)",
+                }}>
+                {b.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Subsection picker (sections 1 & 2) */}
-      {section.hasSubs && (
+      {section.hasSubs && (!section.hasBatches || activeBatch) && (
         <div className="rounded-xl border bg-white p-4" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
           <p className="text-xs font-semibold uppercase tracking-widest mb-3" style={{ color: "var(--teal)" }}>Sub-section</p>
           <div className="flex flex-wrap gap-2">
@@ -456,6 +566,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
             <Upload size={14} style={{ color: section.color }} />
             <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: section.color }}>
               {activeSec === "videos" ? "Add Vimeo Video" : `Upload ${section.fileLabel}`}
+              {section.hasBatches && activeBatch && ` — ${batches.find(b => b.id === activeBatch)?.name}`}
               {activeSub && subsections.length > 0 && ` — ${subsections.find((s) => s.id === activeSub)?.name}`}
             </p>
           </div>
@@ -569,6 +680,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
           <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: "rgba(15,76,92,0.08)" }}>
             <p className="font-mono-data text-xs uppercase tracking-widest" style={{ color: section.color }}>
               {section.fileLabel} Library
+              {section.hasBatches && activeBatch && ` — ${batches.find(b => b.id === activeBatch)?.name}`}
               {activeSub && subsections.length > 0 && ` — ${subsections.find((s) => s.id === activeSub)?.name}`}
             </p>
             <button onClick={fetchItems} className="text-xs font-semibold" style={{ color: "var(--teal)" }}>Refresh</button>

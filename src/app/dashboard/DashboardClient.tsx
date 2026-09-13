@@ -72,7 +72,8 @@ const SECTIONS = [
 
 type SectionId = (typeof SECTIONS)[number]["id"];
 
-type Subsection = { id: string; section_id: string; name: string; sort_order: number };
+type Subsection = { id: string; section_id: string; name: string; sort_order: number; batch_id?: string | null };
+type ContentBatch = { id: string; section_id: string; name: string; sort_order: number };
 type ContentItem = {
   id: string;
   section_id: string;
@@ -399,6 +400,8 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [activeSection]);
   const [subsections, setSubsections] = useState<Subsection[]>([]);
+  const [batches, setBatches] = useState<ContentBatch[]>([]);
+  const [activeBatch, setActiveBatch] = useState<string | null>(null);
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -407,26 +410,44 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   const section = SECTIONS.find((s) => s.id === activeSection);
 
 
-  // Load subsections when a section is selected
+  // Load subsections (or batches) when a section is selected
   useEffect(() => {
     if (!activeSection) return;
+    setActiveBatch(null);
     setActiveSubsection(null);
     setItems([]);
     setSearch("");
-    supabase
-      .from("content_subsections")
-      .select("*")
-      .eq("section_id", activeSection)
-      .order("sort_order")
+    setSubsections([]);
+    setBatches([]);
+    if (activeSection === "recorded-sessions") {
+      supabase.from("content_batches").select("*").eq("section_id", activeSection).order("sort_order")
+        .then(({ data }) => setBatches(data ?? []));
+    } else {
+      supabase.from("content_subsections").select("*").eq("section_id", activeSection).order("sort_order")
+        .then(({ data }) => {
+          setSubsections(data ?? []);
+          if (pendingSubRef.current) {
+            setActiveSubsectionRaw(pendingSubRef.current);
+            pendingSubRef.current = null;
+          }
+        });
+    }
+  }, [activeSection]);
+
+  // Load subsections filtered by batch (recorded-sessions only)
+  useEffect(() => {
+    if (!activeBatch || !activeSection) { if (!activeBatch) setSubsections([]); return; }
+    setActiveSubsection(null);
+    setItems([]);
+    supabase.from("content_subsections").select("*").eq("section_id", activeSection).eq("batch_id", activeBatch).order("sort_order")
       .then(({ data }) => {
         setSubsections(data ?? []);
-        // If we arrived via a deep-link, restore the pending subsection
         if (pendingSubRef.current) {
           setActiveSubsectionRaw(pendingSubRef.current);
           pendingSubRef.current = null;
         }
       });
-  }, [activeSection]);
+  }, [activeBatch, activeSection]);
 
   // Load items when subsection selected (or when section has no subsections)
   const fetchItems = useCallback(async (sectionId: string, subsectionId: string | null) => {
@@ -635,6 +656,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
   };
 
   const hasSubs = activeSection ? ["exam-templates", "recalls", "recorded-sessions", "last-minute-prep"].includes(activeSection) : false;
+  const hasBatches = activeSection === "recorded-sessions";
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--paper)" }}>
@@ -654,16 +676,30 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
             <>
               <ChevronRight size={14} />
               <button
-                onClick={() => { setActiveSubsection(null); setItems([]); }}
+                onClick={() => { setActiveBatch(null); setActiveSubsection(null); setItems([]); }}
                 className="font-medium hover:underline"
-                style={{ color: activeSubsection ? "var(--teal)" : "var(--navy)" }}
+                style={{ color: (activeBatch || activeSubsection) ? "var(--teal)" : "var(--navy)" }}
               >
                 {section.name}
               </button>
             </>
           )}
+          {activeBatch && !activeSubsection && (
+            <>
+              <ChevronRight size={14} />
+              <span style={{ color: "var(--navy)" }}>{batches.find(b => b.id === activeBatch)?.name}</span>
+            </>
+          )}
           {activeSubsection && (
             <>
+              {activeBatch && (
+                <>
+                  <ChevronRight size={14} />
+                  <button onClick={() => { setActiveSubsection(null); setItems([]); }} className="font-medium hover:underline" style={{ color: "var(--teal)" }}>
+                    {batches.find(b => b.id === activeBatch)?.name}
+                  </button>
+                </>
+              )}
               <ChevronRight size={14} />
               <span style={{ color: "var(--navy)" }}>
                 {subsections.find((s) => s.id === activeSubsection)?.name}
@@ -1112,31 +1148,70 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
               </div>
             </div>
 
-            {/* Subsection grid (sections 1 & 2) */}
-            {hasSubs && !activeSubsection && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {subsections.map((sub, i) => (
+            {/* Batch grid (Recorded Sessions only) */}
+            {hasBatches && !activeBatch && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {batches.map((b) => (
                   <button
-                    key={sub.id}
-                    onClick={() => setActiveSubsection(sub.id)}
+                    key={b.id}
+                    onClick={() => setActiveBatch(b.id)}
                     className="text-left rounded-xl p-5 transition-all hover:shadow-md hover:-translate-y-0.5 group"
                     style={{ backgroundColor: "var(--navy)", border: "1px solid rgba(255,255,255,0.08)" }}
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                        style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "var(--gold)" }}
-                      >
-                        {String.fromCharCode(65 + i)}
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "var(--gold)" }}>
+                        <Mic size={15} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate" style={{ color: "#ffffff" }}>{sub.name}</p>
+                        <p className="font-semibold text-sm truncate" style={{ color: "#ffffff" }}>{b.name}</p>
+                        <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>Recorded Sessions</p>
                       </div>
                       <ChevronRight size={15} style={{ color: "rgba(255,255,255,0.4)" }} className="flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
                     </div>
                   </button>
                 ))}
               </div>
+            )}
+
+            {/* Subsection grid */}
+            {hasSubs && (!hasBatches || activeBatch) && !activeSubsection && (
+              <>
+                {/* Back to batches */}
+                {hasBatches && activeBatch && (
+                  <button
+                    onClick={() => { setActiveBatch(null); setSubsections([]); setItems([]); }}
+                    className="flex items-center gap-1.5 text-sm mb-5"
+                    style={{ color: "var(--teal)" }}
+                  >
+                    <ChevronLeft size={14} />
+                    {batches.find(b => b.id === activeBatch)?.name}
+                  </button>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {subsections.map((sub, i) => (
+                    <button
+                      key={sub.id}
+                      onClick={() => setActiveSubsection(sub.id)}
+                      className="text-left rounded-xl p-5 transition-all hover:shadow-md hover:-translate-y-0.5 group"
+                      style={{ backgroundColor: "var(--navy)", border: "1px solid rgba(255,255,255,0.08)" }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{ backgroundColor: "rgba(255,255,255,0.12)", color: "var(--gold)" }}
+                        >
+                          {String.fromCharCode(65 + i)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate" style={{ color: "#ffffff" }}>{sub.name}</p>
+                        </div>
+                        <ChevronRight size={15} style={{ color: "rgba(255,255,255,0.4)" }} className="flex-shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
 
             {/* Content list (after subsection selected or for sections 3-5) */}
