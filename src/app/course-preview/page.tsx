@@ -3,6 +3,11 @@
 import { useEffect, useState } from "react";
 import PdfViewer from "@/components/PdfViewer";
 
+const BG     = "#0B1E3D";
+const BG_MID = "#12285A";
+const TEAL   = "#15B097";
+const OFF_WHITE = "#F8F7F4";
+
 export default function CoursePreviewPage() {
   const [cfUrl, setCfUrl] = useState<string | null>(null);
   const [csUrl, setCsUrl] = useState<string | null>(null);
@@ -17,31 +22,25 @@ export default function CoursePreviewPage() {
   }, []);
 
   return (
-    <main style={{ background: "var(--navy)", minHeight: "100vh" }}>
+    <main style={{ background: BG, minHeight: "100vh", color: OFF_WHITE }}>
 
       {/* ── HERO ── */}
-      <section
-        className="relative overflow-hidden py-16 px-6"
-        style={{ background: "var(--navy)" }}
-      >
+      <section className="relative overflow-hidden py-16 px-6" style={{ background: BG }}>
         <div
           className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(21,176,151,0.12) 0%, transparent 70%)",
-          }}
+          style={{ background: "radial-gradient(ellipse 70% 55% at 50% 0%, rgba(21,176,151,0.12) 0%, transparent 70%)" }}
         />
         <div className="relative max-w-3xl mx-auto text-center">
           <span
             className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest mb-4"
-            style={{ color: "var(--teal-bright)" }}
+            style={{ color: TEAL }}
           >
-            <span style={{ display: "inline-block", width: 24, height: 2, background: "var(--teal-bright)", borderRadius: 1 }} />
+            <span style={{ display: "inline-block", width: 24, height: 2, background: TEAL, borderRadius: 1 }} />
             Course Preview
           </span>
           <h1
             className="text-4xl md:text-5xl font-bold leading-tight mb-4"
-            style={{ color: "#F8F7F4", fontFamily: "Georgia, serif" }}
+            style={{ color: OFF_WHITE, fontFamily: "Georgia, serif" }}
           >
             See What&apos;s Inside
           </h1>
@@ -56,38 +55,20 @@ export default function CoursePreviewPage() {
       <div className="max-w-4xl mx-auto px-6 pb-20 flex flex-col gap-14">
 
         {/* 1 — RECORDED SESSION */}
-        <PreviewBlock
-          number="01"
-          label="Recorded Session"
-          title="Ectopic Pregnancy"
-          accent="var(--teal-bright)"
-        >
-          <VimeoWithPoster
-            videoId="1207380804"
-            title="Ectopic Pregnancy — Recorded Session"
-          />
+        <PreviewBlock number="01" label="Recorded Session" title="Ectopic Pregnancy" accent={TEAL}>
+          <VimeoWithPoster videoId="1207380804" title="Ectopic Pregnancy — Recorded Session" />
           <p
             className="mt-3 text-xs leading-relaxed"
-            style={{
-              color: "rgba(248,247,244,0.45)",
-              borderLeft: "3px solid rgba(21,176,151,0.4)",
-              paddingLeft: 12,
-            }}
+            style={{ color: "rgba(248,247,244,0.45)", borderLeft: `3px solid ${TEAL}55`, paddingLeft: 12 }}
           >
-            This session is 13 minutes — an edited highlight. Full course sessions typically run
-            1.5 to 2.5 hours each.
+            This session is 13 minutes — an edited highlight. Full course sessions typically run 1.5 to 2.5 hours each.
           </p>
         </PreviewBlock>
 
         {/* 2 — CLINICAL PDF */}
-        <PreviewBlock
-          number="02"
-          label="Clinical PDF"
-          title="Cystic Fibrosis and Pregnancy"
-          accent="#f87171"
-        >
+        <PreviewBlock number="02" label="Clinical PDF" title="Cystic Fibrosis and Pregnancy" accent="#f87171">
           {cfUrl ? (
-            <div className="rounded-xl overflow-hidden" style={{ height: 520, background: "#0d1e35" }}>
+            <div className="rounded-xl overflow-hidden" style={{ height: 520, background: BG_MID }}>
               <PdfViewer url={cfUrl} title="Cystic Fibrosis and Pregnancy" />
             </div>
           ) : (
@@ -96,24 +77,14 @@ export default function CoursePreviewPage() {
         </PreviewBlock>
 
         {/* 3 — FLASHCARD */}
-        <PreviewBlock
-          number="03"
-          label="Strategy Flashcard"
-          title="Time Management"
-          accent="#fbbf24"
-        >
+        <PreviewBlock number="03" label="Strategy Flashcard" title="Time Management" accent="#fbbf24">
           <TimeManagementCard />
         </PreviewBlock>
 
         {/* 4 — LAST MINUTE PREP */}
-        <PreviewBlock
-          number="04"
-          label="Last Minute Prep"
-          title="Antenatal Corticosteroids"
-          accent="#a78bfa"
-        >
+        <PreviewBlock number="04" label="Last Minute Prep" title="Antenatal Corticosteroids" accent="#a78bfa">
           {csUrl ? (
-            <div className="rounded-xl overflow-hidden" style={{ height: 520, background: "#0d1e35" }}>
+            <div className="rounded-xl overflow-hidden" style={{ height: 520, background: BG_MID }}>
               <PdfViewer url={csUrl} title="Antenatal Corticosteroids" />
             </div>
           ) : (
@@ -122,19 +93,15 @@ export default function CoursePreviewPage() {
         </PreviewBlock>
 
         {/* 5 — DASHBOARD WALKTHROUGH */}
-        <PreviewBlock
-          number="05"
-          label="Dashboard Walkthrough"
-          title="Inside the Student Experience"
-          accent="var(--teal-bright)"
-        >
-          <div className="rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
+        <PreviewBlock number="05" label="Dashboard Walkthrough" title="Inside the Student Experience" accent={TEAL}>
+          <div className="rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", background: "#000", border: `1px solid ${TEAL}33` }}>
             <iframe
               src="https://player.vimeo.com/video/1227763214?h=062fbfe194&autoplay=0&title=0&byline=0&portrait=0"
               className="w-full h-full"
               allow="autoplay; fullscreen; picture-in-picture"
               allowFullScreen
               title="Student Dashboard Walkthrough"
+              style={{ display: "block", width: "100%", height: "100%" }}
             />
           </div>
           <p className="mt-3 text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>
@@ -147,12 +114,9 @@ export default function CoursePreviewPage() {
       {/* ── CTA ── */}
       <section
         className="py-16 px-6 text-center"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
+        style={{ borderTop: "1px solid rgba(255,255,255,0.07)", background: BG }}
       >
-        <h2
-          className="text-2xl md:text-3xl font-bold mb-3"
-          style={{ fontFamily: "Georgia, serif", color: "#F8F7F4" }}
-        >
+        <h2 className="text-2xl md:text-3xl font-bold mb-3" style={{ fontFamily: "Georgia, serif", color: OFF_WHITE }}>
           Ready to unlock the full course?
         </h2>
         <p className="mb-8 text-sm md:text-base" style={{ color: "rgba(248,247,244,0.5)" }}>
@@ -162,13 +126,13 @@ export default function CoursePreviewPage() {
           <a
             href="/contact"
             className="px-8 py-3.5 rounded-lg text-sm font-bold transition-all hover:opacity-90"
-            style={{ background: "var(--teal-bright)", color: "var(--navy)" }}
+            style={{ background: TEAL, color: BG }}
           >
             Enquire Now →
           </a>
           <a
             href="/courses"
-            className="px-8 py-3.5 rounded-lg text-sm font-semibold transition-colors"
+            className="px-8 py-3.5 rounded-lg text-sm font-semibold"
             style={{ color: "rgba(248,247,244,0.6)", border: "1px solid rgba(255,255,255,0.15)" }}
           >
             View Course Details
@@ -184,61 +148,40 @@ function VimeoWithPoster({ videoId, title }: { videoId: string; title: string })
   const [playing, setPlaying] = useState(false);
 
   return (
-    <div className="rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", background: "#0B1E3D", position: "relative" }}>
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{ aspectRatio: "16/9", background: BG, position: "relative", border: `1px solid ${TEAL}33` }}
+    >
       {playing ? (
         <iframe
           src={`https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0`}
-          className="w-full h-full"
           allow="autoplay; fullscreen; picture-in-picture"
           allowFullScreen
           title={title}
-          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
         />
       ) : (
         <button
           onClick={() => setPlaying(true)}
-          className="w-full h-full flex flex-col items-center justify-center gap-5"
-          style={{
-            background: "linear-gradient(135deg, #0B1E3D 0%, #12285A 100%)",
-            border: "none",
-            cursor: "pointer",
-            position: "absolute",
-            inset: 0,
-          }}
           aria-label={`Play ${title}`}
+          style={{
+            position: "absolute", inset: 0, width: "100%", height: "100%",
+            background: `linear-gradient(135deg, ${BG} 0%, ${BG_MID} 100%)`,
+            border: "none", cursor: "pointer",
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20,
+          }}
         >
-          {/* Logo */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.png"
-            alt="MRCPI OBGYN Unlocked"
-            style={{ height: 80, width: "auto", maxWidth: "60%", objectFit: "contain" }}
-          />
-          {/* Play circle */}
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: "50%",
-              background: "rgba(21,176,151,0.9)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              boxShadow: "0 0 0 12px rgba(21,176,151,0.15), 0 0 0 24px rgba(21,176,151,0.07)",
-              transition: "transform 0.2s",
-            }}
-          >
-            <div style={{
-              width: 0, height: 0,
-              borderTop: "9px solid transparent",
-              borderBottom: "9px solid transparent",
-              borderLeft: "15px solid #0B1E3D",
-              marginLeft: 4,
-            }} />
+          <img src="/logo.png" alt="MRCPI OBGYN Unlocked" style={{ height: 80, width: "auto", maxWidth: "60%", objectFit: "contain" }} />
+          <div style={{
+            width: 56, height: 56, borderRadius: "50%",
+            background: TEAL,
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: `0 0 0 12px ${TEAL}26, 0 0 0 24px ${TEAL}12`,
+          }}>
+            <div style={{ width: 0, height: 0, borderTop: "9px solid transparent", borderBottom: "9px solid transparent", borderLeft: `15px solid ${BG}`, marginLeft: 4 }} />
           </div>
-          <span style={{ fontSize: 12, color: "rgba(248,247,244,0.5)", marginTop: -8 }}>
-            Click to play
-          </span>
+          <span style={{ fontSize: 12, color: "rgba(248,247,244,0.45)" }}>Click to play</span>
         </button>
       )}
     </div>
@@ -246,39 +189,21 @@ function VimeoWithPoster({ videoId, title }: { videoId: string; title: string })
 }
 
 /* ── Section wrapper ── */
-function PreviewBlock({
-  number, label, title, accent, children,
-}: {
-  number: string;
-  label: string;
-  title: string;
-  accent: string;
-  children: React.ReactNode;
+function PreviewBlock({ number, label, title, accent, children }: {
+  number: string; label: string; title: string; accent: string; children: React.ReactNode;
 }) {
   return (
     <div>
       <div className="flex items-center gap-3 mb-4">
-        <span
-          className="text-xs font-bold tabular-nums"
-          style={{ color: accent, fontVariantNumeric: "tabular-nums" }}
-        >
-          {number}
-        </span>
+        <span className="text-xs font-bold tabular-nums" style={{ color: accent }}>{number}</span>
         <span
           className="text-xs font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full"
-          style={{
-            background: `${accent}18`,
-            color: accent,
-            border: `1px solid ${accent}35`,
-          }}
+          style={{ background: `${accent}18`, color: accent, border: `1px solid ${accent}40` }}
         >
           {label}
         </span>
       </div>
-      <h2
-        className="text-xl md:text-2xl font-bold mb-5"
-        style={{ color: "#F8F7F4", fontFamily: "Georgia, serif" }}
-      >
+      <h2 className="text-xl md:text-2xl font-bold mb-5" style={{ color: OFF_WHITE, fontFamily: "Georgia, serif" }}>
         {title}
       </h2>
       {children}
@@ -291,13 +216,11 @@ function PdfSkeleton() {
   return (
     <div
       className="rounded-xl flex items-center justify-center"
-      style={{ height: 520, background: "#0d1e35", border: "1px solid rgba(255,255,255,0.07)" }}
+      style={{ height: 520, background: BG_MID, border: "1px solid rgba(255,255,255,0.07)" }}
     >
       <div className="flex flex-col items-center gap-3">
-        <div
-          className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
-          style={{ borderColor: "rgba(21,176,151,0.6)", borderTopColor: "transparent" }}
-        />
+        <div className="w-8 h-8 rounded-full border-2 animate-spin"
+          style={{ borderColor: `${TEAL}99`, borderTopColor: "transparent" }} />
         <p className="text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>Loading PDF…</p>
       </div>
     </div>
@@ -308,52 +231,20 @@ function PdfSkeleton() {
 function TimeManagementCard() {
   return (
     <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
-      {/* header */}
-      <div
-        className="flex items-center gap-4 px-6 py-5"
-        style={{ background: "#6b1a2a" }}
-      >
-        {/* logo placeholder — matches site branding */}
-        <div
-          className="w-14 h-14 rounded-lg flex items-center justify-center text-2xl flex-shrink-0"
-          style={{ background: "rgba(255,255,255,0.1)" }}
-        >
-          🔓
-        </div>
+      <div className="flex items-center gap-4 px-6 py-5" style={{ background: "#6b1a2a" }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.png" alt="MRCPI OBGYN Unlocked" style={{ height: 56, width: "auto", objectFit: "contain", flexShrink: 0 }} />
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#c9a44a" }}>
-            OSCE Strategy
-          </p>
-          <h3 className="text-2xl font-bold" style={{ color: "#c9a44a", fontFamily: "Georgia, serif" }}>
-            Time Management
-          </h3>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#c9a44a" }}>OSCE Strategy</p>
+          <h3 className="text-2xl font-bold" style={{ color: "#c9a44a", fontFamily: "Georgia, serif" }}>Time Management</h3>
         </div>
       </div>
-
-      {/* body */}
-      <div
-        className="grid grid-cols-1 md:grid-cols-2"
-        style={{ background: "#1a0d14" }}
-      >
-        {/* Long Case */}
+      <div className="grid grid-cols-1 md:grid-cols-2" style={{ background: "#1a0d14" }}>
         <div className="p-6" style={{ borderRight: "1px solid rgba(255,255,255,0.07)" }}>
-          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#c9a44a" }}>
-            Long Case (25 min)
-          </p>
-          <p className="text-xs mb-4" style={{ color: "rgba(248,247,244,0.45)" }}>
-            Max 7 min for HX
-          </p>
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#c9a44a" }}>Long Case (25 min)</p>
+          <p className="text-xs mb-4" style={{ color: "rgba(248,247,244,0.45)" }}>Max 7 min for HX</p>
           <ul className="flex flex-col gap-2.5">
-            {[
-              "Introduction",
-              "Agenda",
-              "History",
-              "Examination",
-              "Investigations",
-              "Discussion",
-              "Counselling & management plan",
-              "Closing the case",
-            ].map((item) => (
+            {["Introduction","Agenda","History","Examination","Investigations","Discussion","Counselling & management plan","Closing the case"].map((item) => (
               <li key={item} className="flex items-start gap-2">
                 <span style={{ color: "#c9a44a", marginTop: 2, flexShrink: 0 }}>•</span>
                 <span className="text-sm" style={{ color: "rgba(248,247,244,0.85)" }}>{item}</span>
@@ -361,22 +252,18 @@ function TimeManagementCard() {
             ))}
           </ul>
         </div>
-
-        {/* OSCE Stations */}
         <div className="p-6">
-          <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#c9a44a" }}>
-            OSCE Stations (10 min)
-          </p>
+          <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#c9a44a" }}>OSCE Stations (10 min)</p>
           <ul className="flex flex-col gap-5">
             <li>
-              <p className="text-sm mb-1" style={{ color: "rgba(248,247,244,0.85)" }}>
-                <span className="font-bold" style={{ color: "#fff" }}>Role player:</span>{" "}
+              <p className="text-sm" style={{ color: "rgba(248,247,244,0.85)" }}>
+                <span className="font-bold" style={{ color: OFF_WHITE }}>Role player:</span>{" "}
                 4 min for HX — introduction, agenda, relevant HX, short Ex, counselling
               </p>
             </li>
             <li>
               <p className="text-sm" style={{ color: "rgba(248,247,244,0.85)" }}>
-                <span className="font-bold" style={{ color: "#fff" }}>Viva station:</span>{" "}
+                <span className="font-bold" style={{ color: OFF_WHITE }}>Viva station:</span>{" "}
                 2 min for HX — structure discussion; can be scenario or Q&amp;A
               </p>
             </li>
