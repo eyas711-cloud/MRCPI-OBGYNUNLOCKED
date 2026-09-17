@@ -62,15 +62,10 @@ export default function CoursePreviewPage() {
           title="Ectopic Pregnancy"
           accent="var(--teal-bright)"
         >
-          <div className="rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", background: "#000" }}>
-            <iframe
-              src="https://player.vimeo.com/video/1207380804?autoplay=0&title=0&byline=0&portrait=0"
-              className="w-full h-full"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-              title="Ectopic Pregnancy — Recorded Session"
-            />
-          </div>
+          <VimeoWithPoster
+            videoId="1207380804"
+            title="Ectopic Pregnancy — Recorded Session"
+          />
           <p
             className="mt-3 text-xs leading-relaxed"
             style={{
@@ -181,6 +176,72 @@ export default function CoursePreviewPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+/* ── Vimeo player with logo poster ── */
+function VimeoWithPoster({ videoId, title }: { videoId: string; title: string }) {
+  const [playing, setPlaying] = useState(false);
+
+  return (
+    <div className="rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", background: "#0B1E3D", position: "relative" }}>
+      {playing ? (
+        <iframe
+          src={`https://player.vimeo.com/video/${videoId}?autoplay=1&title=0&byline=0&portrait=0`}
+          className="w-full h-full"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+          title={title}
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+        />
+      ) : (
+        <button
+          onClick={() => setPlaying(true)}
+          className="w-full h-full flex flex-col items-center justify-center gap-5"
+          style={{
+            background: "linear-gradient(135deg, #0B1E3D 0%, #12285A 100%)",
+            border: "none",
+            cursor: "pointer",
+            position: "absolute",
+            inset: 0,
+          }}
+          aria-label={`Play ${title}`}
+        >
+          {/* Logo */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo.png"
+            alt="MRCPI OBGYN Unlocked"
+            style={{ height: 80, width: "auto", maxWidth: "60%", objectFit: "contain" }}
+          />
+          {/* Play circle */}
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: "50%",
+              background: "rgba(21,176,151,0.9)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: "0 0 0 12px rgba(21,176,151,0.15), 0 0 0 24px rgba(21,176,151,0.07)",
+              transition: "transform 0.2s",
+            }}
+          >
+            <div style={{
+              width: 0, height: 0,
+              borderTop: "9px solid transparent",
+              borderBottom: "9px solid transparent",
+              borderLeft: "15px solid #0B1E3D",
+              marginLeft: 4,
+            }} />
+          </div>
+          <span style={{ fontSize: 12, color: "rgba(248,247,244,0.5)", marginTop: -8 }}>
+            Click to play
+          </span>
+        </button>
+      )}
+    </div>
   );
 }
 
