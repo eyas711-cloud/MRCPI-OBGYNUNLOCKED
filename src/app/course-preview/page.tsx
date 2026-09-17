@@ -1,19 +1,29 @@
-import Link from "next/link";
+"use client";
 
-export const metadata = {
-  title: "Course Preview | MRCPI-OBGYN Unlocked",
-  description: "Get a glimpse of what's inside — recorded sessions, clinical PDFs, flashcards, and the student dashboard.",
-};
+import { useEffect, useState } from "react";
+import PdfViewer from "@/components/PdfViewer";
 
 export default function CoursePreviewPage() {
+  const [cfUrl, setCfUrl] = useState<string | null>(null);
+  const [csUrl, setCsUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/course-preview?item=cf-pdf")
+      .then((r) => r.json())
+      .then((d) => setCfUrl(d.url ?? null));
+    fetch("/api/course-preview?item=antenatal-cs")
+      .then((r) => r.json())
+      .then((d) => setCsUrl(d.url ?? null));
+  }, []);
+
   return (
-    <main>
+    <main style={{ background: "var(--navy)", minHeight: "100vh" }}>
+
       {/* ── HERO ── */}
       <section
-        className="relative overflow-hidden py-20 px-6"
+        className="relative overflow-hidden py-16 px-6"
         style={{ background: "var(--navy)" }}
       >
-        {/* radial glow */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -23,362 +33,301 @@ export default function CoursePreviewPage() {
         />
         <div className="relative max-w-3xl mx-auto text-center">
           <span
-            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest mb-5"
+            className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest mb-4"
             style={{ color: "var(--teal-bright)" }}
           >
-            <span
-              style={{
-                display: "inline-block",
-                width: 24,
-                height: 2,
-                background: "var(--teal-bright)",
-                borderRadius: 1,
-              }}
-            />
+            <span style={{ display: "inline-block", width: 24, height: 2, background: "var(--teal-bright)", borderRadius: 1 }} />
             Course Preview
           </span>
           <h1
-            className="font-serif text-4xl md:text-5xl font-bold leading-tight mb-5"
+            className="text-4xl md:text-5xl font-bold leading-tight mb-4"
             style={{ color: "#F8F7F4", fontFamily: "Georgia, serif" }}
           >
             See What&apos;s Inside
           </h1>
-          <p className="text-lg leading-relaxed max-w-xl mx-auto" style={{ color: "rgba(248,247,244,0.6)" }}>
-            A glimpse of the structured material waiting for you — recorded sessions,
-            clinical PDFs, flashcards, and a walkthrough of your student dashboard.
+          <p className="text-base md:text-lg leading-relaxed max-w-xl mx-auto" style={{ color: "rgba(248,247,244,0.6)" }}>
+            Real material from the course — a full recorded session, a clinical PDF,
+            a strategy flashcard, a last minute prep card, and a walkthrough of the student dashboard.
           </p>
         </div>
       </section>
 
-      {/* ── MATERIAL PREVIEWS ── */}
-      <section className="py-16 px-6" style={{ background: "var(--navy)" }}>
-        <div className="max-w-5xl mx-auto">
+      {/* ── CONTENT ITEMS ── */}
+      <div className="max-w-4xl mx-auto px-6 pb-20 flex flex-col gap-14">
 
-          <h2
-            className="text-sm font-semibold uppercase tracking-widest mb-8"
-            style={{ color: "rgba(248,247,244,0.4)" }}
-          >
-            Sample Material
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-
-            {/* Recorded Session card */}
-            <PreviewCard
-              icon="🎙️"
-              iconBg="rgba(21,176,151,0.15)"
-              type="Recorded Session"
-              title="Antepartum Haemorrhage — Sept 2026"
-              hint="Sign up to listen →"
-              content={
-                <div className="flex flex-col gap-3 p-4 h-full" style={{ filter: "blur(5px)", userSelect: "none" }}>
-                  {/* waveform */}
-                  <div className="flex items-center gap-0.5 h-10 mt-2">
-                    {Array.from({ length: 18 }).map((_, i) => (
-                      <div
-                        key={i}
-                        className="flex-1 rounded-sm"
-                        style={{
-                          background: "rgba(21,176,151,0.5)",
-                          height: `${30 + Math.sin(i * 0.9) * 25 + Math.cos(i * 1.4) * 15}%`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                  <FakeLine width="80%" />
-                  <FakeLine width="65%" />
-                  <FakeLine width="92%" />
-                  <FakeLine width="55%" />
-                </div>
-              }
-            />
-
-            {/* Flashcard */}
-            <PreviewCard
-              icon="🗂️"
-              iconBg="rgba(245,158,11,0.15)"
-              type="Flashcard"
-              title="OSCE Station — Ectopic Pregnancy"
-              hint="Sign up to study →"
-              content={
-                <div className="flex flex-col gap-2 p-4 h-full" style={{ filter: "blur(5px)", userSelect: "none" }}>
-                  <div className="flex-1 rounded-lg p-3" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
-                    <FakeLine width="60%" color="rgba(245,158,11,0.35)" />
-                    <div className="mt-2 flex flex-col gap-2">
-                      <FakeLine width="90%" /><FakeLine width="75%" /><FakeLine width="50%" />
-                    </div>
-                  </div>
-                  <div className="flex justify-center items-center gap-1 py-1">
-                    <div style={{ width: 18, height: 2, background: "rgba(255,255,255,0.15)", borderRadius: 1 }} />
-                    <div style={{ width: 6, height: 6, borderRadius: "50%", background: "rgba(245,158,11,0.5)" }} />
-                    <div style={{ width: 18, height: 2, background: "rgba(255,255,255,0.15)", borderRadius: 1 }} />
-                  </div>
-                  <div className="flex-1 rounded-lg p-3" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
-                    <FakeLine width="75%" /><div className="mt-2 flex flex-col gap-2"><FakeLine width="88%" /><FakeLine width="60%" /></div>
-                  </div>
-                </div>
-              }
-            />
-
-            {/* PDF */}
-            <PreviewCard
-              icon="📄"
-              iconBg="rgba(239,68,68,0.15)"
-              type="Clinical PDF"
-              title="Pre-eclampsia — Key Definitions & Management"
-              hint="Sign up to read →"
-              content={
-                <div className="p-4 h-full" style={{ filter: "blur(5px)", userSelect: "none" }}>
-                  <div className="h-full rounded-lg p-3 flex flex-col gap-2" style={{ background: "rgba(255,255,255,0.05)" }}>
-                    <FakeLine width="45%" color="rgba(239,68,68,0.35)" />
-                    <FakeLine width="90%" /><FakeLine width="78%" /><FakeLine width="92%" /><FakeLine width="60%" />
-                    <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "4px 0" }} />
-                    <FakeLine width="72%" /><FakeLine width="88%" /><FakeLine width="55%" />
-                  </div>
-                </div>
-              }
+        {/* 1 — RECORDED SESSION */}
+        <PreviewBlock
+          number="01"
+          label="Recorded Session"
+          title="Ectopic Pregnancy"
+          accent="var(--teal-bright)"
+        >
+          <div className="rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", background: "#000" }}>
+            <iframe
+              src="https://player.vimeo.com/video/1207380804?autoplay=0&title=0&byline=0&portrait=0"
+              className="w-full h-full"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              title="Ectopic Pregnancy — Recorded Session"
             />
           </div>
-
-          {/* Dashboard walkthrough */}
-          <div
-            className="rounded-2xl overflow-hidden"
+          <p
+            className="mt-3 text-xs leading-relaxed"
             style={{
-              background: "#12285A",
-              border: "1px solid rgba(21,176,151,0.2)",
+              color: "rgba(248,247,244,0.45)",
+              borderLeft: "3px solid rgba(21,176,151,0.4)",
+              paddingLeft: 12,
             }}
           >
-            <div
-              className="flex items-center justify-between px-6 py-4"
-              style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
-            >
-              <div className="flex items-center gap-3">
-                <span
-                  className="text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full"
-                  style={{
-                    background: "rgba(21,176,151,0.15)",
-                    color: "var(--teal-bright)",
-                    border: "1px solid rgba(21,176,151,0.3)",
-                  }}
-                >
-                  Walkthrough
-                </span>
-                <span className="text-sm font-semibold" style={{ color: "#F8F7F4" }}>
-                  See the student dashboard in action
-                </span>
-              </div>
-              <span
-                className="text-xs font-mono tabular-nums"
-                style={{ color: "rgba(248,247,244,0.4)" }}
-              >
-                0:45
-              </span>
+            This session is 13 minutes — an edited highlight. Full course sessions typically run
+            1.5 to 2.5 hours each.
+          </p>
+        </PreviewBlock>
+
+        {/* 2 — CLINICAL PDF */}
+        <PreviewBlock
+          number="02"
+          label="Clinical PDF"
+          title="Cystic Fibrosis and Pregnancy"
+          accent="#f87171"
+        >
+          {cfUrl ? (
+            <div className="rounded-xl overflow-hidden" style={{ height: 520, background: "#0d1e35" }}>
+              <PdfViewer url={cfUrl} title="Cystic Fibrosis and Pregnancy" />
             </div>
+          ) : (
+            <PdfSkeleton />
+          )}
+        </PreviewBlock>
 
-            {/* Fake screen */}
-            <div
-              className="relative w-full"
-              style={{ aspectRatio: "16/7", background: "#07111f", overflow: "hidden" }}
-            >
-              {/* sidebar */}
-              <div
-                className="absolute left-0 top-0 bottom-0 flex flex-col gap-1.5 p-3"
-                style={{
-                  width: "17%",
-                  background: "#0d1e35",
-                  borderRight: "1px solid rgba(255,255,255,0.06)",
-                }}
-              >
-                <div style={{ height: 8, width: "70%", background: "rgba(21,176,151,0.6)", borderRadius: 3, marginBottom: 8 }} />
-                {[90, 100, 75, 80, 60, 85].map((w, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      height: 6,
-                      width: `${w}%`,
-                      background: i === 1 ? "rgba(21,176,151,0.35)" : "rgba(255,255,255,0.08)",
-                      borderRadius: 3,
-                    }}
-                  />
-                ))}
-              </div>
+        {/* 3 — FLASHCARD */}
+        <PreviewBlock
+          number="03"
+          label="Strategy Flashcard"
+          title="Time Management"
+          accent="#fbbf24"
+        >
+          <TimeManagementCard />
+        </PreviewBlock>
 
-              {/* main area */}
-              <div className="absolute top-0 bottom-0 flex flex-col gap-2 p-3" style={{ left: "17%", right: 0 }}>
-                <div className="flex items-center gap-2 mb-1">
-                  {[14, 22].map((w, i) => (
-                    <div key={i} style={{ height: 7, width: `${w}%`, background: i === 1 ? "rgba(21,176,151,0.4)" : "rgba(255,255,255,0.1)", borderRadius: 3 }} />
-                  ))}
-                </div>
-                <div className="grid grid-cols-3 gap-2 flex-1">
-                  {[true, false, false].map((hi, i) => (
-                    <div
-                      key={i}
-                      className="flex flex-col gap-1.5 p-2 rounded-lg"
-                      style={{
-                        background: hi ? "rgba(21,176,151,0.07)" : "rgba(255,255,255,0.05)",
-                        border: `1px solid ${hi ? "rgba(21,176,151,0.4)" : "rgba(255,255,255,0.07)"}`,
-                      }}
-                    >
-                      <div style={{ height: 6, width: "75%", background: hi ? "rgba(21,176,151,0.4)" : "rgba(255,255,255,0.12)", borderRadius: 3 }} />
-                      <div style={{ height: 5, background: "rgba(255,255,255,0.07)", borderRadius: 3 }} />
-                      <div style={{ height: 5, width: "60%", background: "rgba(255,255,255,0.07)", borderRadius: 3 }} />
-                    </div>
-                  ))}
-                  <div
-                    className="col-span-3 flex items-center gap-3 p-2 rounded-lg"
-                    style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.07)" }}
-                  >
-                    <div style={{ width: 22, height: 22, borderRadius: 4, background: "rgba(21,176,151,0.2)", flexShrink: 0 }} />
-                    <div className="flex flex-col gap-1.5 flex-1">
-                      <div style={{ height: 6, width: "50%", background: "rgba(255,255,255,0.12)", borderRadius: 3 }} />
-                      <div style={{ height: 5, width: "80%", background: "rgba(255,255,255,0.07)", borderRadius: 3 }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* play overlay */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center" style={{ background: "rgba(7,17,31,0.5)" }}>
-                <div
-                  className="flex items-center justify-center rounded-full"
-                  style={{
-                    width: 60,
-                    height: 60,
-                    background: "rgba(21,176,151,0.9)",
-                    boxShadow: "0 0 0 12px rgba(21,176,151,0.15), 0 0 0 24px rgba(21,176,151,0.07)",
-                  }}
-                >
-                  <div style={{ width: 0, height: 0, borderTop: "10px solid transparent", borderBottom: "10px solid transparent", borderLeft: "16px solid #0B1E3D", marginLeft: 4 }} />
-                </div>
-                <p className="mt-4 text-xs font-medium" style={{ color: "rgba(248,247,244,0.6)" }}>
-                  Video coming soon — we&apos;re recording it now
-                </p>
-              </div>
+        {/* 4 — LAST MINUTE PREP */}
+        <PreviewBlock
+          number="04"
+          label="Last Minute Prep"
+          title="Antenatal Corticosteroids"
+          accent="#a78bfa"
+        >
+          {csUrl ? (
+            <div className="rounded-xl overflow-hidden" style={{ height: 520, background: "#0d1e35" }}>
+              <PdfViewer url={csUrl} title="Antenatal Corticosteroids" />
             </div>
+          ) : (
+            <PdfSkeleton />
+          )}
+        </PreviewBlock>
+
+        {/* 5 — DASHBOARD WALKTHROUGH */}
+        <PreviewBlock
+          number="05"
+          label="Dashboard Walkthrough"
+          title="Inside the Student Experience"
+          accent="var(--teal-bright)"
+        >
+          <div className="rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
+            <video
+              className="w-full h-full"
+              controls
+              playsInline
+              preload="metadata"
+              style={{ display: "block" }}
+            >
+              <source
+                src="https://pgcxmwlwiwkamhtuhukh.supabase.co/storage/v1/object/public/course-preview/dashboard-walkthrough.mp4"
+                type="video/mp4"
+              />
+              Your browser does not support the video tag.
+            </video>
           </div>
-        </div>
-      </section>
+          <p className="mt-3 text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>
+            A real student navigating their dashboard — opening sections, reading feedback, and browsing sessions.
+          </p>
+        </PreviewBlock>
+
+      </div>
 
       {/* ── CTA ── */}
       <section
         className="py-16 px-6 text-center"
-        style={{ background: "var(--navy)", borderTop: "1px solid rgba(255,255,255,0.07)" }}
+        style={{ borderTop: "1px solid rgba(255,255,255,0.07)" }}
       >
         <h2
-          className="font-serif text-2xl md:text-3xl font-bold mb-4"
+          className="text-2xl md:text-3xl font-bold mb-3"
           style={{ fontFamily: "Georgia, serif", color: "#F8F7F4" }}
         >
           Ready to unlock the full course?
         </h2>
-        <p className="mb-8 text-base" style={{ color: "rgba(248,247,244,0.55)" }}>
-          Get access to all recorded sessions, PDFs, flashcards, and live feedback.
+        <p className="mb-8 text-sm md:text-base" style={{ color: "rgba(248,247,244,0.5)" }}>
+          All sessions, PDFs, flashcards, and live feedback — in one place.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
-          <Link
+          <a
             href="/contact"
-            className="px-8 py-3.5 rounded-lg text-sm font-bold transition-all hover:opacity-90 hover:-translate-y-0.5"
+            className="px-8 py-3.5 rounded-lg text-sm font-bold transition-all hover:opacity-90"
             style={{ background: "var(--teal-bright)", color: "var(--navy)" }}
           >
             Enquire Now →
-          </Link>
-          <Link
+          </a>
+          <a
             href="/courses"
             className="px-8 py-3.5 rounded-lg text-sm font-semibold transition-colors"
-            style={{ color: "rgba(248,247,244,0.65)", border: "1px solid rgba(255,255,255,0.15)" }}
+            style={{ color: "rgba(248,247,244,0.6)", border: "1px solid rgba(255,255,255,0.15)" }}
           >
             View Course Details
-          </Link>
+          </a>
         </div>
       </section>
     </main>
   );
 }
 
-/* ── helpers ── */
-
-function PreviewCard({
-  icon, iconBg, type, title, hint, content,
+/* ── Section wrapper ── */
+function PreviewBlock({
+  number, label, title, accent, children,
 }: {
-  icon: string;
-  iconBg: string;
-  type: string;
+  number: string;
+  label: string;
   title: string;
-  hint: string;
-  content: React.ReactNode;
+  accent: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: "#12285A",
-        border: "1px solid rgba(21,176,151,0.2)",
-      }}
-    >
-      {/* header */}
-      <div
-        className="flex items-center gap-3 px-4 py-4"
-        style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
-      >
-        <div
-          className="w-9 h-9 rounded-lg flex items-center justify-center text-base flex-shrink-0"
-          style={{ background: iconBg }}
+    <div>
+      <div className="flex items-center gap-3 mb-4">
+        <span
+          className="text-xs font-bold tabular-nums"
+          style={{ color: accent, fontVariantNumeric: "tabular-nums" }}
         >
-          {icon}
-        </div>
-        <div>
-          <div
-            className="text-xs font-semibold uppercase tracking-widest mb-0.5"
-            style={{ color: "rgba(248,247,244,0.4)" }}
-          >
-            {type}
-          </div>
-          <div className="text-xs font-semibold leading-snug" style={{ color: "#F8F7F4" }}>
-            {title}
-          </div>
-        </div>
-      </div>
-
-      {/* preview area */}
-      <div className="relative" style={{ height: 190 }}>
-        <div className="h-full">{content}</div>
-        {/* lock overlay */}
-        <div
-          className="absolute inset-0 flex flex-col items-center justify-end pb-5 gap-1.5"
+          {number}
+        </span>
+        <span
+          className="text-xs font-semibold uppercase tracking-widest px-2.5 py-1 rounded-full"
           style={{
-            background: "linear-gradient(to bottom, transparent 0%, rgba(11,30,61,0.6) 40%, rgba(11,30,61,0.95) 100%)",
+            background: `${accent}18`,
+            color: accent,
+            border: `1px solid ${accent}35`,
           }}
         >
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-sm mb-1"
-            style={{
-              background: "rgba(21,176,151,0.18)",
-              border: "1.5px solid rgba(21,176,151,0.45)",
-            }}
-          >
-            🔒
-          </div>
-          <span className="text-xs font-semibold" style={{ color: "rgba(248,247,244,0.7)" }}>
-            Members only
-          </span>
-          <span className="text-xs font-medium" style={{ color: "var(--teal-bright)" }}>
-            {hint}
-          </span>
-        </div>
+          {label}
+        </span>
+      </div>
+      <h2
+        className="text-xl md:text-2xl font-bold mb-5"
+        style={{ color: "#F8F7F4", fontFamily: "Georgia, serif" }}
+      >
+        {title}
+      </h2>
+      {children}
+    </div>
+  );
+}
+
+/* ── PDF loading skeleton ── */
+function PdfSkeleton() {
+  return (
+    <div
+      className="rounded-xl flex items-center justify-center"
+      style={{ height: 520, background: "#0d1e35", border: "1px solid rgba(255,255,255,0.07)" }}
+    >
+      <div className="flex flex-col items-center gap-3">
+        <div
+          className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
+          style={{ borderColor: "rgba(21,176,151,0.6)", borderTopColor: "transparent" }}
+        />
+        <p className="text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>Loading PDF…</p>
       </div>
     </div>
   );
 }
 
-function FakeLine({ width, color }: { width: string; color?: string }) {
+/* ── Time Management flashcard ── */
+function TimeManagementCard() {
   return (
-    <div
-      style={{
-        height: 10,
-        width,
-        borderRadius: 5,
-        background: color ?? "rgba(248,247,244,0.18)",
-      }}
-    />
+    <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+      {/* header */}
+      <div
+        className="flex items-center gap-4 px-6 py-5"
+        style={{ background: "#6b1a2a" }}
+      >
+        {/* logo placeholder — matches site branding */}
+        <div
+          className="w-14 h-14 rounded-lg flex items-center justify-center text-2xl flex-shrink-0"
+          style={{ background: "rgba(255,255,255,0.1)" }}
+        >
+          🔓
+        </div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: "#c9a44a" }}>
+            OSCE Strategy
+          </p>
+          <h3 className="text-2xl font-bold" style={{ color: "#c9a44a", fontFamily: "Georgia, serif" }}>
+            Time Management
+          </h3>
+        </div>
+      </div>
+
+      {/* body */}
+      <div
+        className="grid grid-cols-1 md:grid-cols-2"
+        style={{ background: "#1a0d14" }}
+      >
+        {/* Long Case */}
+        <div className="p-6" style={{ borderRight: "1px solid rgba(255,255,255,0.07)" }}>
+          <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: "#c9a44a" }}>
+            Long Case (25 min)
+          </p>
+          <p className="text-xs mb-4" style={{ color: "rgba(248,247,244,0.45)" }}>
+            Max 7 min for HX
+          </p>
+          <ul className="flex flex-col gap-2.5">
+            {[
+              "Introduction",
+              "Agenda",
+              "History",
+              "Examination",
+              "Investigations",
+              "Discussion",
+              "Counselling & management plan",
+              "Closing the case",
+            ].map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span style={{ color: "#c9a44a", marginTop: 2, flexShrink: 0 }}>•</span>
+                <span className="text-sm" style={{ color: "rgba(248,247,244,0.85)" }}>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* OSCE Stations */}
+        <div className="p-6">
+          <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: "#c9a44a" }}>
+            OSCE Stations (10 min)
+          </p>
+          <ul className="flex flex-col gap-5">
+            <li>
+              <p className="text-sm mb-1" style={{ color: "rgba(248,247,244,0.85)" }}>
+                <span className="font-bold" style={{ color: "#fff" }}>Role player:</span>{" "}
+                4 min for HX — introduction, agenda, relevant HX, short Ex, counselling
+              </p>
+            </li>
+            <li>
+              <p className="text-sm" style={{ color: "rgba(248,247,244,0.85)" }}>
+                <span className="font-bold" style={{ color: "#fff" }}>Viva station:</span>{" "}
+                2 min for HX — structure discussion; can be scenario or Q&amp;A
+              </p>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 }
