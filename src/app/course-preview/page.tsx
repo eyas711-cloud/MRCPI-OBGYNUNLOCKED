@@ -134,19 +134,13 @@ export default function CoursePreviewPage() {
           accent="var(--teal-bright)"
         >
           <div className="rounded-xl overflow-hidden bg-black" style={{ aspectRatio: "16/9" }}>
-            <video
+            <iframe
+              src="https://player.vimeo.com/video/1227763214?h=062fbfe194&autoplay=0&title=0&byline=0&portrait=0"
               className="w-full h-full"
-              controls
-              playsInline
-              preload="metadata"
-              style={{ display: "block" }}
-            >
-              <source
-                src="https://pgcxmwlwiwkamhtuhukh.supabase.co/storage/v1/object/public/course-preview/dashboard-walkthrough.mp4"
-                type="video/mp4"
-              />
-              Your browser does not support the video tag.
-            </video>
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              title="Student Dashboard Walkthrough"
+            />
           </div>
           <p className="mt-3 text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>
             A real student navigating their dashboard — opening sections, reading feedback, and browsing sessions.
