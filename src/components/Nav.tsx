@@ -11,6 +11,7 @@ import { useAuth } from "./AuthProvider";
 const publicLinks = [
   { href: "/", label: "Home" },
   { href: "/courses", label: "Courses" },
+  { href: "/course-preview", label: "Course Preview" },
   { href: "/mock-osce", label: "Mock OSCE" },
   { href: "/faculty", label: "Faculty" },
   {
