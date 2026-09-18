@@ -68,7 +68,7 @@ const CONTENT_SECTIONS = [
   { id: "videos",            label: "4. Videos",             icon: <Video size={15} />,    color: "var(--teal-bright)",bucket: "course-videos",     accept: "video/mp4,video/webm,video/quicktime",       fileLabel: "Video", hasSubs: false, hasBatches: false },
   { id: "recorded-sessions",  label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions",  accept: "",                 fileLabel: "Vimeo", hasSubs: true,  hasBatches: true  },
   { id: "last-minute-prep",   label: "6. Last Minute Prep",   icon: <Star size={15} />,     color: "#d97706",           bucket: "last-minute-prep",   accept: "application/pdf",  fileLabel: "PDF",   hasSubs: true,  hasBatches: false },
-  { id: "brain-maps",         label: "7. Brain Maps",         icon: <Star size={15} />,     color: "#10b981",           bucket: "brain-maps",         accept: "application/pdf",  fileLabel: "PDF",   hasSubs: true,  hasBatches: false },
+  { id: "brain-maps",         label: "7. Brain Maps",         icon: <Star size={15} />,     color: "#10b981",           bucket: "brain-maps",         accept: "image/jpeg,image/png,image/webp,image/gif", fileLabel: "Image", hasSubs: true,  hasBatches: false },
 ] as const;
 
 type SectionId = (typeof CONTENT_SECTIONS)[number]["id"];
@@ -401,7 +401,7 @@ function ContentPanel({ user }: { user: AdminUser }) {
       "exam-templates": "pdf",
       "recalls": "pdf",
       "last-minute-prep": "pdf",
-      "brain-maps": "pdf",
+      "brain-maps": "image",
     };
     const subsectionLabel = activeSub
       ? subsections.find((s) => s.id === activeSub)?.name || activeSub

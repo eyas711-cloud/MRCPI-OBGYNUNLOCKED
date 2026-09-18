@@ -1365,7 +1365,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
             "recorded-sessions"
           }
           fileType={
-            activeSection === "flashcards" ? "image" :
+            activeSection === "flashcards" || activeSection === "brain-maps" ? "image" :
             activeSection === "videos" ? "video" :
             activeSection === "recorded-sessions" ? (
               viewItem?.file_name === "vimeo" || viewItem?.storage_path?.startsWith("http") ? "video" :
