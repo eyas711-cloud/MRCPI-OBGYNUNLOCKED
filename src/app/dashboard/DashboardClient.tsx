@@ -68,6 +68,15 @@ const SECTIONS = [
     bg: "rgba(61,10,20,0.08)",
     fileLabel: "PDF",
   },
+  {
+    id: "brain-maps",
+    name: "Brain Maps",
+    description: "Visual brain map PDFs",
+    icon: <Star size={28} />,
+    color: "var(--navy)",
+    bg: "rgba(61,10,20,0.08)",
+    fileLabel: "PDF",
+  },
 ] as const;
 
 type SectionId = (typeof SECTIONS)[number]["id"];
@@ -475,7 +484,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
 
   useEffect(() => {
     if (!activeSection) return;
-    const hasSubs = ["exam-templates", "recalls", "recorded-sessions", "last-minute-prep"].includes(activeSection);
+    const hasSubs = ["exam-templates", "recalls", "recorded-sessions", "last-minute-prep", "brain-maps"].includes(activeSection);
     if (!hasSubs) fetchItems(activeSection, null);
     else if (activeSubsection) fetchItems(activeSection, activeSubsection);
   }, [activeSection, activeSubsection, fetchItems]);
@@ -585,7 +594,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     const sectionLabel: Record<string, string> = {
       "exam-templates": "Exam Templates", "recalls": "Recalls",
       "flashcards": "Flashcards", "videos": "Videos", "recorded-sessions": "Recorded Sessions",
-      "last-minute-prep": "Last Minute Prep",
+      "last-minute-prep": "Last Minute Prep", "brain-maps": "Brain Maps",
     };
 
     // For recorded-sessions items, resolve batch names via subsection → batch
@@ -681,7 +690,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
     });
   };
 
-  const hasSubs = activeSection ? ["exam-templates", "recalls", "recorded-sessions", "last-minute-prep"].includes(activeSection) : false;
+  const hasSubs = activeSection ? ["exam-templates", "recalls", "recorded-sessions", "last-minute-prep", "brain-maps"].includes(activeSection) : false;
   const hasBatches = activeSection === "recorded-sessions";
 
   return (
@@ -1352,6 +1361,7 @@ export default function DashboardClient({ user }: { user: StudentUser }) {
             activeSection === "flashcards" ? "flashcards" :
             activeSection === "videos" ? "course-videos" :
             activeSection === "last-minute-prep" ? "last-minute-prep" :
+            activeSection === "brain-maps" ? "brain-maps" :
             "recorded-sessions"
           }
           fileType={
