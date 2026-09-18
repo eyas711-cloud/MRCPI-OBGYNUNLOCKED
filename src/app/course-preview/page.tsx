@@ -92,8 +92,23 @@ export default function CoursePreviewPage() {
           )}
         </PreviewBlock>
 
-        {/* 5 — DASHBOARD WALKTHROUGH */}
-        <PreviewBlock number="05" label="Dashboard Walkthrough" title="Inside the Student Experience" accent={TEAL}>
+        {/* 5 — BRAIN MAP */}
+        <PreviewBlock number="05" label="Brain Map" title="Down Syndrome" accent="#10b981">
+          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(16,185,129,0.25)" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://pgcxmwlwiwkamhtuhukh.supabase.co/storage/v1/object/public/course-preview/brain-map-down-syndrome.png"
+              alt="Down Syndrome Brain Map"
+              style={{ width: "100%", height: "auto", display: "block" }}
+            />
+          </div>
+          <p className="mt-3 text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>
+            A visual mind map covering the full OSCE station — case stem, history, examination, investigations, and management.
+          </p>
+        </PreviewBlock>
+
+        {/* 6 — DASHBOARD WALKTHROUGH */}
+        <PreviewBlock number="06" label="Dashboard Walkthrough" title="Inside the Student Experience" accent={TEAL}>
           <div className="rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", background: "#000", border: `1px solid ${TEAL}33` }}>
             <iframe
               src="https://player.vimeo.com/video/1227763214?h=062fbfe194&autoplay=0&title=0&byline=0&portrait=0"
