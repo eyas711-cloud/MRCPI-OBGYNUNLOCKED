@@ -97,7 +97,7 @@ export default function CoursePreviewPage() {
           <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(16,185,129,0.25)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="https://pgcxmwlwiwkamhtuhukh.supabase.co/storage/v1/object/public/course-preview/brain-map-down-syndrome.png"
+              src="https://pgcxmwlwiwkamhtuhukh.supabase.co/storage/v1/object/public/course-preview/brain-map-down-syndrome.jpg"
               alt="Down Syndrome Brain Map"
               style={{ width: "100%", height: "auto", display: "block" }}
             />
