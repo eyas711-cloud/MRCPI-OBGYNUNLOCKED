@@ -270,6 +270,57 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* PERSONALISED FEEDBACK SPOTLIGHT */}
+      <section className="py-24 px-6" style={{ backgroundColor: "var(--navy)" }}>
+        <div className="max-w-5xl mx-auto">
+          <p className="font-mono-data text-xs uppercase tracking-widest mb-3" style={{ color: "var(--gold)" }}>Personalised Feedback</p>
+          <h2 className="font-serif font-semibold mb-4" style={{ fontSize: "clamp(1.8rem,3vw,2.6rem)", color: "var(--paper)", lineHeight: 1.2 }}>
+            Not a one-size-fits-all course.<br />
+            <span style={{ color: "var(--gold)" }}>Your progress, tracked and noted.</span>
+          </h2>
+          <p className="text-base leading-relaxed mb-12 max-w-2xl" style={{ color: "rgba(250,247,242,0.6)" }}>
+            Unlike generic prep courses, every student receives personally tailored feedback on their performance — and structured progress notes written along the way, so you always know exactly where you stand and what to focus on next.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-12">
+            {/* Progress Note card */}
+            <div className="rounded-2xl p-6" style={{ backgroundColor: "rgba(250,247,242,0.05)", border: "1px solid rgba(201,162,39,0.25)" }}>
+              <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "#6BB4A0" }}>Progress Note</p>
+              <p className="text-xs mb-3" style={{ color: "rgba(250,247,242,0.35)" }}>Dr. Einas Diab · 16 Sep 2026</p>
+              <p className="font-serif font-semibold mb-3" style={{ color: "var(--paper)", fontSize: "1.05rem" }}>Ectopic Pregnancy</p>
+              <p className="text-sm leading-relaxed" style={{ color: "rgba(250,247,242,0.6)" }}>
+                Good introduction. Strong agenda. <span style={{ color: "rgba(250,247,242,0.85)", fontWeight: 500 }}>However, there is a lot of improvement from where we last landed.</span> We need to do more Role Player and Long Cases.
+              </p>
+            </div>
+            {/* General Comment card */}
+            <div className="rounded-2xl p-6" style={{ backgroundColor: "rgba(250,247,242,0.05)", border: "1px solid rgba(201,162,39,0.25)" }}>
+              <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "var(--gold)" }}>General Comment</p>
+              <p className="text-xs mb-3" style={{ color: "rgba(250,247,242,0.35)" }}>Dr. Einas Diab · after each session</p>
+              <p className="font-serif font-semibold mb-3" style={{ color: "var(--paper)", fontSize: "1.05rem" }}>Specific. Actionable. Personal.</p>
+              <p className="text-sm leading-relaxed" style={{ color: "rgba(250,247,242,0.6)" }}>
+                Every note names what went well, what needs work, and exactly what to practise next — <span style={{ color: "rgba(250,247,242,0.85)", fontWeight: 500 }}>not a generic score, but a roadmap.</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-8">
+            <blockquote className="flex-1" style={{ borderLeft: "3px solid var(--gold)", paddingLeft: "1.25rem" }}>
+              <p className="font-serif italic text-base leading-relaxed mb-2" style={{ color: "rgba(250,247,242,0.75)" }}>
+                &ldquo;She doesn&apos;t just tell you what went wrong — she tells you exactly what to do about it, and follows up to make sure it&apos;s been addressed.&rdquo;
+              </p>
+              <span className="text-xs" style={{ color: "rgba(250,247,242,0.35)" }}>— Enrolled student, 2026</span>
+            </blockquote>
+            <Link
+              href="/course-preview#feedback"
+              className="flex-shrink-0 inline-flex items-center gap-2 px-7 py-3.5 rounded-lg font-semibold text-sm transition-all hover:opacity-90"
+              style={{ backgroundColor: "var(--gold)", color: "var(--navy)" }}
+            >
+              See Real Feedback <ArrowRight size={15} />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       {/* COURSE OVERVIEW */}
       <section className="py-24 px-6" style={{ backgroundColor: "var(--paper)" }}>
         <div className="max-w-7xl mx-auto">

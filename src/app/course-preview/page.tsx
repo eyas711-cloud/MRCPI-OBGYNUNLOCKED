@@ -45,8 +45,8 @@ export default function CoursePreviewPage() {
             See What&apos;s Inside
           </h1>
           <p className="text-base md:text-lg leading-relaxed max-w-xl mx-auto" style={{ color: "rgba(248,247,244,0.6)" }}>
-            Real material from the course — a full recorded session, a clinical PDF,
-            a strategy flashcard, a last minute prep card, and a walkthrough of the student dashboard.
+            Real material from the course — a recorded session, clinical PDFs, a flashcard, a brain map,
+            real student feedback, and a walkthrough of the student dashboard.
           </p>
         </div>
       </section>
@@ -107,8 +107,59 @@ export default function CoursePreviewPage() {
           </p>
         </PreviewBlock>
 
-        {/* 6 — DASHBOARD WALKTHROUGH */}
-        <PreviewBlock number="06" label="Dashboard Walkthrough" title="Inside the Student Experience" accent={TEAL}>
+        {/* 6 — FEEDBACK THREAD */}
+        <div id="feedback">
+        <PreviewBlock number="06" label="Progress Feedback" title="Real Feedback — Dr. Layla Sami" accent="#C9A227">
+          <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(201,162,39,0.3)" }}>
+            {/* Header */}
+            <div className="px-6 py-4 flex items-center gap-3" style={{ background: "rgba(201,162,39,0.08)", borderBottom: "1px solid rgba(201,162,39,0.2)" }}>
+              <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: "rgba(201,162,39,0.2)", color: "#C9A227" }}>LS</div>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: OFF_WHITE }}>Dr. Layla Sami</p>
+                <p className="text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>Enrolled student · Progress note by Dr. Einas Diab</p>
+              </div>
+              <span className="ml-auto text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: "rgba(107,180,160,0.15)", color: "#6BB4A0", border: "1px solid rgba(107,180,160,0.3)" }}>Progress Note</span>
+            </div>
+            {/* Feedback body */}
+            <div className="px-6 py-5" style={{ background: BG_MID }}>
+              <div className="flex items-center gap-3 mb-4">
+                <p className="font-serif font-semibold text-lg" style={{ color: OFF_WHITE }}>Ectopic Pregnancy</p>
+                <span className="text-xs" style={{ color: "rgba(248,247,244,0.35)" }}>16 Sep 2026</span>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  { text: "Good introduction.", type: "positive" },
+                  { text: "Strong agenda.", type: "positive" },
+                  { text: "You need more confidence with your tone.", type: "note" },
+                  { text: "History: You missed the Allergies. Do not congratulate the patient.", type: "action" },
+                  { text: "Need to work on your way of asking about sexually transmitted illness.", type: "action" },
+                  { text: "Counselling: breaking bad news — good start. You need to control the dramatic reaction of the patient.", type: "note" },
+                  { text: "There is no place for a second appointment in such urgent cases.", type: "action" },
+                  { text: "Remember: written consent IS A MUST.", type: "action" },
+                  { text: "Don't talk about treatment options in detail if not related to the case — just mention them.", type: "note" },
+                  { text: "RP 4 mins is for: Introduction, Agenda, History, Examination — reading time is included in the station time.", type: "note" },
+                  { text: "We need to do more Role Player and Long Cases.", type: "action" },
+                  { text: "However, there is a lot of improvement from where we last landed. Well done Dr. Layla.", type: "positive" },
+                ].map((item, i) => (
+                  <div key={i} className="flex items-start gap-3 text-sm leading-relaxed" style={{ color: "rgba(248,247,244,0.8)" }}>
+                    <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full" style={{
+                      background: item.type === "positive" ? "#6BB4A0" : item.type === "action" ? "#C9A227" : "rgba(248,247,244,0.25)",
+                      marginTop: 7,
+                    }} />
+                    <span style={{ color: item.type === "positive" ? "#6BB4A0" : item.type === "action" ? "#C9A227" : "rgba(248,247,244,0.75)" }}>{item.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <p className="mt-3 text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>
+            Shared with Dr. Layla&apos;s permission. Every enrolled student receives notes like this after each session.
+          </p>
+        </PreviewBlock>
+        </div>
+
+        {/* 7 — DASHBOARD WALKTHROUGH */}
+        <PreviewBlock number="07" label="Dashboard Walkthrough" title="Inside the Student Experience" accent={TEAL}>
           <div className="rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", background: "#000", border: `1px solid ${TEAL}33` }}>
             <iframe
               src="https://player.vimeo.com/video/1227763214?h=062fbfe194&autoplay=0&title=0&byline=0&portrait=0"
