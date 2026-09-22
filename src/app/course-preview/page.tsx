@@ -33,9 +33,9 @@ export default function CoursePreviewPage() {
         <div className="relative max-w-3xl mx-auto text-center">
           <span
             className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest mb-4"
-            style={{ color: TEAL }}
+            style={{ color: "#C9A227" }}
           >
-            <span style={{ display: "inline-block", width: 24, height: 2, background: TEAL, borderRadius: 1 }} />
+            <span style={{ display: "inline-block", width: 24, height: 2, background: "#C9A227", borderRadius: 1 }} />
             Course Preview
           </span>
           <h1
