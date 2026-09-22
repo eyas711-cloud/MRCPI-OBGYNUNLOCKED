@@ -5,7 +5,7 @@ import {
   Users, BookOpen, Video, FileText, Calendar, BarChart3,
   Upload, Plus, Trash2, Settings, Shield, Bell,
   TrendingUp, DollarSign, Eye, CheckCircle, X, Loader, LogOut,
-  Image, Mic, MessageSquare, Star, Download, Send, Pencil, Maximize2, Minimize2, Share2,
+  Image, Mic, MessageSquare, Star, MapPin, Download, Send, Pencil, Maximize2, Minimize2, Share2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { logAudit } from "@/lib/audit";
@@ -68,7 +68,7 @@ const CONTENT_SECTIONS = [
   { id: "videos",            label: "4. Videos",             icon: <Video size={15} />,    color: "var(--teal-bright)",bucket: "course-videos",     accept: "video/mp4,video/webm,video/quicktime",       fileLabel: "Video", hasSubs: false, hasBatches: false },
   { id: "recorded-sessions",  label: "5. Recorded Sessions",  icon: <Mic size={15} />,      color: "#8b5cf6",           bucket: "recorded-sessions",  accept: "",                 fileLabel: "Vimeo", hasSubs: true,  hasBatches: true  },
   { id: "last-minute-prep",   label: "6. Last Minute Prep",   icon: <Star size={15} />,     color: "#d97706",           bucket: "last-minute-prep",   accept: "application/pdf",  fileLabel: "PDF",   hasSubs: true,  hasBatches: false },
-  { id: "brain-maps",         label: "7. Brain Maps",         icon: <Star size={15} />,     color: "#10b981",           bucket: "brain-maps",         accept: "image/jpeg,image/png,image/webp,image/gif", fileLabel: "Image", hasSubs: true,  hasBatches: false },
+  { id: "brain-maps",         label: "7. Brain Maps",         icon: <MapPin size={15} />,   color: "#10b981",           bucket: "brain-maps",         accept: "image/jpeg,image/png,image/webp,image/gif", fileLabel: "Image", hasSubs: true,  hasBatches: false },
 ] as const;
 
 type SectionId = (typeof CONTENT_SECTIONS)[number]["id"];

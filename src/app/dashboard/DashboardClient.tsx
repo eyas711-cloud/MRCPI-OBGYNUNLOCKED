@@ -5,7 +5,7 @@ import Link from "next/link";
 import {
   FileText, Image, Video, Mic, ChevronRight, ChevronLeft,
   Play, Bell, LogOut, Award, Search, X, Loader,
-  BookOpen, Star, MessageSquare, CheckCircle, Clock, Maximize2, Minimize2,
+  BookOpen, Star, MapPin, MessageSquare, CheckCircle, Clock, Maximize2, Minimize2,
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import PdfViewer from "@/components/PdfViewer";
@@ -72,7 +72,7 @@ const SECTIONS = [
     id: "brain-maps",
     name: "Brain Maps",
     description: "Visual brain map PDFs",
-    icon: <Star size={28} />,
+    icon: <MapPin size={28} />,
     color: "var(--navy)",
     bg: "rgba(61,10,20,0.08)",
     fileLabel: "PDF",
