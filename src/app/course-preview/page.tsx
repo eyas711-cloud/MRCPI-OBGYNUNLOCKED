@@ -128,26 +128,20 @@ export default function CoursePreviewPage() {
               </div>
               <div className="flex flex-col gap-2.5">
                 {[
-                  { text: "Good introduction.", type: "positive" },
-                  { text: "Strong agenda.", type: "positive" },
-                  { text: "You need more confidence with your tone.", type: "note" },
-                  { text: "History: You missed the Allergies. Do not congratulate the patient.", type: "action" },
-                  { text: "Need to work on your way of asking about sexually transmitted illness.", type: "action" },
-                  { text: "Counselling: breaking bad news — good start. You need to control the dramatic reaction of the patient.", type: "note" },
-                  { text: "There is no place for a second appointment in such urgent cases.", type: "action" },
-                  { text: "Remember: written consent IS A MUST.", type: "action" },
-                  { text: "Don't talk about treatment options in detail if not related to the case — just mention them.", type: "note" },
-                  { text: "RP 4 mins is for: Introduction, Agenda, History, Examination — reading time is included in the station time.", type: "note" },
-                  { text: "We need to do more Role Player and Long Cases.", type: "action" },
-                  { text: "However, there is a lot of improvement from where we last landed. Well done Dr. Layla.", type: "positive" },
-                ].map((item, i) => (
-                  <div key={i} className="flex items-start gap-3 text-sm leading-relaxed" style={{ color: "rgba(248,247,244,0.8)" }}>
-                    <span className="mt-1 flex-shrink-0 w-1.5 h-1.5 rounded-full" style={{
-                      background: item.type === "positive" ? "#6BB4A0" : item.type === "action" ? "#C9A227" : "rgba(248,247,244,0.25)",
-                      marginTop: 7,
-                    }} />
-                    <span style={{ color: item.type === "positive" ? "#6BB4A0" : item.type === "action" ? "#C9A227" : "rgba(248,247,244,0.75)" }}>{item.text}</span>
-                  </div>
+                  "Good introduction.",
+                  "Strong agenda.",
+                  "You need more confidence with your tone.",
+                  "History: You missed the Allergies. Do not congratulate the patient.",
+                  "Need to work on your way of asking about sexually transmitted illness.",
+                  "Counselling: breaking bad news — good start. You need to control the dramatic reaction of the patient.",
+                  "There is no place for a second appointment in such urgent cases.",
+                  "Remember: written consent IS A MUST.",
+                  "Don't talk about treatment options in detail if not related to the case — just mention them.",
+                  "RP 4 mins is for: Introduction, Agenda, History, Examination — reading time is included in the station time.",
+                  "We need to do more Role Player and Long Cases.",
+                  "However, there is a lot of improvement from where we last landed. Well done Dr. Layla.",
+                ].map((text, i) => (
+                  <p key={i} className="text-sm leading-relaxed" style={{ color: OFF_WHITE }}>{text}</p>
                 ))}
               </div>
             </div>
