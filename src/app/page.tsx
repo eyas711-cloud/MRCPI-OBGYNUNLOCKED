@@ -285,7 +285,7 @@ export default async function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-12">
             {/* Progress Note card */}
             <div className="rounded-2xl p-6" style={{ backgroundColor: "rgba(250,247,242,0.05)", border: "1px solid rgba(201,162,39,0.25)" }}>
-              <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "#6BB4A0" }}>Progress Note</p>
+              <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "var(--gold)" }}>Progress Note</p>
               <p className="text-xs mb-3" style={{ color: "rgba(250,247,242,0.35)" }}>Dr. Einas Diab · 16 Sep 2026</p>
               <p className="font-serif font-semibold mb-3" style={{ color: "var(--paper)", fontSize: "1.05rem" }}>Ectopic Pregnancy</p>
               <div className="flex flex-col gap-1.5">
