@@ -44,7 +44,7 @@ export default function CoursePreviewPage() {
           >
             See What&apos;s Inside
           </h1>
-          <p className="text-base md:text-lg leading-relaxed max-w-xl mx-auto" style={{ color: "rgba(248,247,244,0.6)" }}>
+          <p className="text-base md:text-lg leading-relaxed max-w-xl mx-auto" style={{ color: "#C9A227" }}>
             Real material from the course — a recorded session, clinical PDFs, a flashcard, a brain map,
             real student feedback, and a walkthrough of the student dashboard.
           </p>
