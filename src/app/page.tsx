@@ -302,11 +302,11 @@ export default async function HomePage() {
             </div>
             {/* General Comment card */}
             <div className="rounded-2xl p-6" style={{ backgroundColor: "rgba(250,247,242,0.05)", border: "1px solid rgba(201,162,39,0.25)" }}>
-              <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "var(--gold)" }}>General Comment</p>
+              <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "var(--gold)" }}>Approach</p>
               <p className="text-xs mb-3" style={{ color: "rgba(250,247,242,0.35)" }}>Dr. Einas Diab · after each session</p>
               <p className="font-serif font-semibold mb-3" style={{ color: "var(--paper)", fontSize: "1.05rem" }}>Specific. Actionable. Personal.</p>
               <p className="text-sm leading-relaxed" style={{ color: "rgba(250,247,242,0.6)" }}>
-                Every note names what went well, what needs work, and exactly what to practise next — <span style={{ color: "rgba(250,247,242,0.85)", fontWeight: 500 }}>not a generic score, but a roadmap.</span>
+                Every note names what went well, what needs work, and exactly what to practice next — <span style={{ color: "rgba(250,247,242,0.85)", fontWeight: 500 }}>not a generic score, but a roadmap.</span>
               </p>
             </div>
           </div>
