@@ -1,7 +1,6 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
 
-// Hardcoded preview items — only these paths are ever signed here
 const PREVIEW_ITEMS = {
   "cf-pdf": {
     bucket: "recalls",
@@ -13,6 +12,8 @@ const PREVIEW_ITEMS = {
   },
 } as const;
 
+const LAYLA_STUDENT_ID = "45fa97cc-cdf6-4508-8e62-5f4a594507b4";
+
 function createServiceClient() {
   return createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,8 +23,21 @@ function createServiceClient() {
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const key = searchParams.get("item") as keyof typeof PREVIEW_ITEMS | null;
+  const item = searchParams.get("item");
 
+  if (item === "layla-feedback") {
+    const supabase = createServiceClient();
+    const { data, error } = await supabase
+      .from("student_feedback")
+      .select("id, feedback_type, title, content, created_at, updated_at")
+      .eq("student_id", LAYLA_STUDENT_ID)
+      .order("created_at", { ascending: true });
+
+    if (error) return NextResponse.json({ error: "Could not fetch feedback" }, { status: 500 });
+    return NextResponse.json({ feedback: data ?? [] });
+  }
+
+  const key = item as keyof typeof PREVIEW_ITEMS | null;
   if (!key || !(key in PREVIEW_ITEMS)) {
     return NextResponse.json({ error: "Invalid item" }, { status: 400 });
   }

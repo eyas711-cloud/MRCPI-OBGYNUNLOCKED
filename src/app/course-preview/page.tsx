@@ -8,9 +8,12 @@ const BG_MID = "#12285A";
 const TEAL   = "#15B097";
 const OFF_WHITE = "#F8F7F4";
 
+type FeedbackEntry = { id: string; feedback_type: string; title: string; content: string; created_at: string; updated_at: string | null };
+
 export default function CoursePreviewPage() {
   const [cfUrl, setCfUrl] = useState<string | null>(null);
   const [csUrl, setCsUrl] = useState<string | null>(null);
+  const [laylaFeedback, setLaylaFeedback] = useState<FeedbackEntry[]>([]);
 
   useEffect(() => {
     fetch("/api/course-preview?item=cf-pdf")
@@ -19,6 +22,9 @@ export default function CoursePreviewPage() {
     fetch("/api/course-preview?item=antenatal-cs")
       .then((r) => r.json())
       .then((d) => setCsUrl(d.url ?? null));
+    fetch("/api/course-preview?item=layla-feedback")
+      .then((r) => r.json())
+      .then((d) => setLaylaFeedback(d.feedback ?? []));
   }, []);
 
   return (
@@ -110,41 +116,43 @@ export default function CoursePreviewPage() {
         {/* 6 — FEEDBACK THREAD */}
         <div id="feedback">
         <PreviewBlock number="06" label="Progress Feedback" title="Real Feedback — Dr. Layla Sami" accent="#C9A227">
-          <div className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(201,162,39,0.3)" }}>
-            {/* Header */}
-            <div className="px-6 py-4 flex items-center gap-3" style={{ background: "rgba(201,162,39,0.08)", borderBottom: "1px solid rgba(201,162,39,0.2)" }}>
-              <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: "rgba(201,162,39,0.2)", color: "#C9A227" }}>LS</div>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: OFF_WHITE }}>Dr. Layla Sami</p>
-                <p className="text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>Enrolled student · Progress note by Dr. Einas Diab</p>
+          <div className="flex flex-col gap-5">
+            {laylaFeedback.length === 0 ? (
+              <div className="rounded-2xl flex items-center justify-center" style={{ height: 120, background: BG_MID, border: "1px solid rgba(201,162,39,0.2)" }}>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-6 h-6 rounded-full border-2 animate-spin" style={{ borderColor: "rgba(201,162,39,0.5)", borderTopColor: "transparent" }} />
+                  <p className="text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>Loading feedback…</p>
+                </div>
               </div>
-              <span className="ml-auto text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: "rgba(107,180,160,0.15)", color: "#6BB4A0", border: "1px solid rgba(107,180,160,0.3)" }}>Progress Note</span>
-            </div>
-            {/* Feedback body */}
-            <div className="px-6 py-5" style={{ background: BG_MID }}>
-              <div className="flex items-center gap-3 mb-4">
-                <p className="font-serif font-semibold text-lg" style={{ color: OFF_WHITE }}>Ectopic Pregnancy</p>
-                <span className="text-xs" style={{ color: "rgba(248,247,244,0.35)" }}>16 Sep 2026</span>
+            ) : laylaFeedback.map((fb) => (
+              <div key={fb.id} className="rounded-2xl overflow-hidden" style={{ border: "1px solid rgba(201,162,39,0.3)" }}>
+                {/* Header */}
+                <div className="px-6 py-4 flex items-center gap-3" style={{ background: "rgba(201,162,39,0.08)", borderBottom: "1px solid rgba(201,162,39,0.2)" }}>
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0" style={{ background: "rgba(201,162,39,0.2)", color: "#C9A227" }}>LS</div>
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: OFF_WHITE }}>Dr. Layla Sami</p>
+                    <p className="text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>Enrolled student · by Dr. Einas Diab</p>
+                  </div>
+                  <span className="ml-auto text-xs px-2.5 py-1 rounded-full font-semibold" style={{ background: "rgba(107,180,160,0.15)", color: "#6BB4A0", border: "1px solid rgba(107,180,160,0.3)" }}>
+                    {fb.feedback_type === "progress" ? "Progress Note" : "General Comment"}
+                  </span>
+                </div>
+                {/* Body */}
+                <div className="px-6 py-5" style={{ background: BG_MID }}>
+                  <div className="flex items-center gap-3 mb-4">
+                    <p className="font-serif font-semibold text-lg" style={{ color: OFF_WHITE }}>{fb.title}</p>
+                    <span className="text-xs flex-shrink-0" style={{ color: "rgba(248,247,244,0.35)" }}>
+                      {new Date(fb.updated_at ?? fb.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {fb.content.split("\n").filter(l => l.trim()).map((line, i) => (
+                      <p key={i} className="text-sm leading-relaxed" style={{ color: OFF_WHITE }}>{line}</p>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div className="flex flex-col gap-2.5">
-                {[
-                  "Good introduction.",
-                  "Strong agenda.",
-                  "You need more confidence with your tone.",
-                  "History: You missed the Allergies. Do not congratulate the patient.",
-                  "Need to work on your way of asking about sexually transmitted illness.",
-                  "Counselling: breaking bad news — good start. You need to control the dramatic reaction of the patient.",
-                  "There is no place for a second appointment in such urgent cases.",
-                  "Remember: written consent IS A MUST.",
-                  "Don't talk about treatment options in detail if not related to the case — just mention them.",
-                  "RP 4 mins is for: Introduction, Agenda, History, Examination — reading time is included in the station time.",
-                  "We need to do more Role Player and Long Cases.",
-                  "However, there is a lot of improvement from where we last landed. Well done Dr. Layla.",
-                ].map((text, i) => (
-                  <p key={i} className="text-sm leading-relaxed" style={{ color: OFF_WHITE }}>{text}</p>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
           <p className="mt-3 text-xs" style={{ color: "rgba(248,247,244,0.4)" }}>
             Shared with Dr. Layla&apos;s permission. Every enrolled student receives notes like this after each session.
