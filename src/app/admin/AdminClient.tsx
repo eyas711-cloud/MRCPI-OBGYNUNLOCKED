@@ -940,6 +940,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [editingFeedbackId, setEditingFeedbackId] = useState<string | null>(null);
   const [editFeedbackForm, setEditFeedbackForm] = useState({ type: "general" as "general" | "progress", title: "", content: "" });
   const [editFeedbackSaving, setEditFeedbackSaving] = useState(false);
+  const [newFeedbackOpen, setNewFeedbackOpen] = useState(false);
+  const [newFeedbackForm, setNewFeedbackForm] = useState({ studentId: "", type: "progress" as "general" | "progress", title: "", content: "" });
+  const [newFeedbackSaving, setNewFeedbackSaving] = useState(false);
 
   // Broadcast state
   const [feedbackTab, setFeedbackTab] = useState<"feedback" | "broadcast">("feedback");
@@ -1957,17 +1960,12 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 </div>
                 <div className="flex items-center gap-2">
                   {feedbackTab === "feedback" && (
-                    <select
-                      className="px-3 py-2.5 rounded-xl border text-sm focus:outline-none"
-                      style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)", minWidth: 180 }}
-                      defaultValue=""
-                      onChange={e => {
-                        const student = students.find(s => s.id === e.target.value);
-                        if (student) { setFeedbackForm({ type: "general", title: "", content: "" }); setFeedbackDone(false); setFeedbackModal({ studentId: student.id, studentName: student.full_name || student.email }); e.target.value = ""; }
-                      }}>
-                      <option value="" disabled>Select student…</option>
-                      {students.filter(s => s.status === "active").map(s => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
-                    </select>
+                    <button
+                      onClick={() => { setNewFeedbackOpen(true); setNewFeedbackForm({ studentId: "", type: "progress", title: "", content: "" }); }}
+                      className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+                      style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                      <Pencil size={13} /> New Feedback
+                    </button>
                   )}
                   <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: "rgba(15,76,92,0.2)" }}>
                     <button onClick={() => setFeedbackTab("feedback")} className="px-4 py-2 text-xs font-semibold transition-colors"
@@ -2232,11 +2230,69 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                 );
               })()}
 
+              {/* ── New Feedback inline form ── */}
+              {feedbackTab === "feedback" && newFeedbackOpen && (
+                <div className="rounded-2xl border bg-white p-5 space-y-4" style={{ borderColor: "rgba(201,162,39,0.4)", boxShadow: "0 0 0 3px rgba(201,162,39,0.08)" }}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-widest" style={{ color: "var(--teal)" }}>New Feedback Entry</p>
+                    <button onClick={() => setNewFeedbackOpen(false)} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-gray-100"><X size={14} /></button>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Student *</label>
+                    <select value={newFeedbackForm.studentId} onChange={e => setNewFeedbackForm(p => ({ ...p, studentId: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)", color: "var(--navy)" }}>
+                      <option value="">Select a student…</option>
+                      {students.filter(s => s.status === "active").map(s => <option key={s.id} value={s.id}>{s.full_name || s.email}</option>)}
+                    </select>
+                  </div>
+                  <div className="flex gap-4">
+                    {(["progress", "general"] as const).map(t => (
+                      <label key={t} className="flex items-center gap-2 cursor-pointer">
+                        <input type="radio" checked={newFeedbackForm.type === t} onChange={() => setNewFeedbackForm(p => ({ ...p, type: t }))} />
+                        <span className="text-sm font-medium" style={{ color: "var(--navy)" }}>{t === "progress" ? "Progress Note" : "General Comment"}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Title *</label>
+                    <input value={newFeedbackForm.title} onChange={e => setNewFeedbackForm(p => ({ ...p, title: e.target.value }))}
+                      placeholder={newFeedbackForm.type === "progress" ? "e.g. Week 3 Progress Update" : "e.g. Strong history-taking skills"}
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold mb-1" style={{ color: "var(--navy)" }}>Feedback *</label>
+                    <textarea rows={5} value={newFeedbackForm.content} onChange={e => setNewFeedbackForm(p => ({ ...p, content: e.target.value }))}
+                      placeholder="Write detailed feedback here…"
+                      className="w-full px-3 py-2.5 rounded-lg border text-sm focus:outline-none resize-none" style={{ borderColor: "rgba(15,76,92,0.2)" }} />
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setNewFeedbackOpen(false)} className="flex-1 py-2.5 rounded-xl text-sm font-semibold border" style={{ borderColor: "rgba(15,76,92,0.2)", color: "rgba(26,26,26,0.5)" }}>Cancel</button>
+                    <button
+                      disabled={newFeedbackSaving || !newFeedbackForm.studentId || !newFeedbackForm.title.trim() || !newFeedbackForm.content.trim()}
+                      onClick={async () => {
+                        setNewFeedbackSaving(true);
+                        const student = students.find(s => s.id === newFeedbackForm.studentId);
+                        await fetch("/api/admin/save-feedback", {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ studentId: newFeedbackForm.studentId, studentEmail: student?.email ?? "", studentName: student?.full_name || student?.email || "", title: newFeedbackForm.title.trim(), content: newFeedbackForm.content.trim(), feedbackType: newFeedbackForm.type, isUpdate: false }),
+                        });
+                        setNewFeedbackSaving(false);
+                        setNewFeedbackOpen(false);
+                        fetchAllFeedback();
+                      }}
+                      className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90 disabled:opacity-50"
+                      style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>
+                      {newFeedbackSaving ? "Saving…" : "Save & Notify Student"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Feedback list */}
               {feedbackTab === "feedback" && (allFeedback.length === 0 ? (
                 <div className="rounded-xl border bg-white p-12 text-center" style={{ borderColor: "rgba(15,76,92,0.12)" }}>
                   <Pencil size={28} className="mx-auto mb-3" style={{ color: "rgba(26,26,26,0.2)" }} />
-                  <p className="text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No feedback written yet. Use the button above to write feedback for a student.</p>
+                  <p className="text-sm" style={{ color: "rgba(26,26,26,0.4)" }}>No feedback written yet. Click &quot;New Feedback&quot; above to get started.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -2288,11 +2344,11 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                         <div className="p-5">
                           <div className="flex items-start gap-3 mb-3">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <p className="text-xs font-bold uppercase tracking-widest mb-1" style={{ color: f.feedback_type === "progress" ? "var(--teal)" : "var(--gold)" }}>
+                                {f.feedback_type === "progress" ? "Progress Note" : "General Comment"}
+                              </p>
+                              <div className="flex items-center gap-2 flex-wrap mb-2">
                                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(11,30,61,0.07)", color: "var(--navy)" }}>{f.student_name}</span>
-                                <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: f.feedback_type === "progress" ? "rgba(21,176,151,0.12)" : "rgba(201,162,39,0.12)", color: f.feedback_type === "progress" ? "var(--teal)" : "var(--gold)" }}>
-                                  {f.feedback_type === "progress" ? "Progress Note" : "General Comment"}
-                                </span>
                                 <span className="text-xs" style={{ color: "rgba(26,26,26,0.35)" }}>
                                   {f.updated_at ? `Updated ${new Date(f.updated_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : new Date(f.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                                 </span>
