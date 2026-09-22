@@ -288,9 +288,17 @@ export default async function HomePage() {
               <p className="font-mono-data text-xs uppercase tracking-widest mb-1" style={{ color: "#6BB4A0" }}>Progress Note</p>
               <p className="text-xs mb-3" style={{ color: "rgba(250,247,242,0.35)" }}>Dr. Einas Diab · 16 Sep 2026</p>
               <p className="font-serif font-semibold mb-3" style={{ color: "var(--paper)", fontSize: "1.05rem" }}>Ectopic Pregnancy</p>
-              <p className="text-sm leading-relaxed" style={{ color: "rgba(250,247,242,0.6)" }}>
-                Good introduction. Strong agenda. <span style={{ color: "rgba(250,247,242,0.85)", fontWeight: 500 }}>However, there is a lot of improvement from where we last landed.</span> We need to do more Role Player and Long Cases.
-              </p>
+              <div className="flex flex-col gap-1.5">
+                {[
+                  "Good introduction.",
+                  "Strong agenda.",
+                  "You need to be more confident with your tone.",
+                  "History: You missed the Allergies, and please do not congratulate the patient.",
+                  "Need to work on your approach of asking about sexually transmitted illness.",
+                ].map((line, i) => (
+                  <p key={i} className="text-sm leading-relaxed" style={{ color: "rgba(250,247,242,0.75)" }}>{line}</p>
+                ))}
+              </div>
             </div>
             {/* General Comment card */}
             <div className="rounded-2xl p-6" style={{ backgroundColor: "rgba(250,247,242,0.05)", border: "1px solid rgba(201,162,39,0.25)" }}>
