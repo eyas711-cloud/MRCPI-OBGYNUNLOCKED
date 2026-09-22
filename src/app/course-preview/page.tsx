@@ -55,7 +55,7 @@ export default function CoursePreviewPage() {
       <div className="max-w-4xl mx-auto px-6 pb-20 flex flex-col gap-14">
 
         {/* 1 — RECORDED SESSION */}
-        <PreviewBlock number="01" label="Recorded Session" title="Ectopic Pregnancy" accent={TEAL}>
+        <PreviewBlock number="01" label="Recorded Session" title="Ectopic Pregnancy" accent="#C9A227">
           <VimeoWithPoster videoId="1207380804" title="Ectopic Pregnancy — Recorded Session" />
           <p
             className="mt-3 text-xs leading-relaxed"
@@ -66,7 +66,7 @@ export default function CoursePreviewPage() {
         </PreviewBlock>
 
         {/* 2 — CLINICAL PDF */}
-        <PreviewBlock number="02" label="Clinical PDF" title="Cystic Fibrosis and Pregnancy" accent="#f87171">
+        <PreviewBlock number="02" label="Clinical PDF" title="Cystic Fibrosis and Pregnancy" accent="#C9A227">
           {cfUrl ? (
             <div className="rounded-xl overflow-hidden" style={{ height: 520, background: BG_MID }}>
               <PdfViewer url={cfUrl} title="Cystic Fibrosis and Pregnancy" />
@@ -77,12 +77,12 @@ export default function CoursePreviewPage() {
         </PreviewBlock>
 
         {/* 3 — FLASHCARD */}
-        <PreviewBlock number="03" label="Strategy Flashcard" title="Time Management" accent="#fbbf24">
+        <PreviewBlock number="03" label="Strategy Flashcard" title="Time Management" accent="#C9A227">
           <TimeManagementCard />
         </PreviewBlock>
 
         {/* 4 — LAST MINUTE PREP */}
-        <PreviewBlock number="04" label="Last Minute Prep" title="Antenatal Corticosteroids" accent="#a78bfa">
+        <PreviewBlock number="04" label="Last Minute Prep" title="Antenatal Corticosteroids" accent="#C9A227">
           {csUrl ? (
             <div className="rounded-xl overflow-hidden" style={{ height: 520, background: BG_MID }}>
               <PdfViewer url={csUrl} title="Antenatal Corticosteroids" />
@@ -93,8 +93,8 @@ export default function CoursePreviewPage() {
         </PreviewBlock>
 
         {/* 5 — BRAIN MAP */}
-        <PreviewBlock number="05" label="Brain Map" title="Down Syndrome" accent="#10b981">
-          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(16,185,129,0.25)" }}>
+        <PreviewBlock number="05" label="Brain Map" title="Down Syndrome" accent="#C9A227">
+          <div className="rounded-xl overflow-hidden" style={{ border: "1px solid rgba(201,162,39,0.25)" }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="https://pgcxmwlwiwkamhtuhukh.supabase.co/storage/v1/object/public/course-preview/brain-map-down-syndrome.jpg"
@@ -159,7 +159,7 @@ export default function CoursePreviewPage() {
         </div>
 
         {/* 7 — DASHBOARD WALKTHROUGH */}
-        <PreviewBlock number="07" label="Dashboard Walkthrough" title="Inside the Student Experience" accent={TEAL}>
+        <PreviewBlock number="07" label="Dashboard Walkthrough" title="Inside the Student Experience" accent="#C9A227">
           <div className="rounded-xl overflow-hidden" style={{ aspectRatio: "16/9", background: "#000", border: `1px solid ${TEAL}33` }}>
             <iframe
               src="https://player.vimeo.com/video/1227763214?h=062fbfe194&autoplay=0&title=0&byline=0&portrait=0"
