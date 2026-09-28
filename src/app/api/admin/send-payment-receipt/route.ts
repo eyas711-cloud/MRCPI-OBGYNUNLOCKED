@@ -27,6 +27,7 @@ function buildReceiptHtml(p: {
   total_fee: number;
   remaining_fee: number;
   currency: string;
+  notes?: string | null;
 }) {
   const fmt = (n: number) => `${p.currency} ${Number(n).toLocaleString()}`;
   const dateStr = new Date(p.payment_date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
@@ -209,6 +210,15 @@ function buildReceiptHtml(p: {
     </div>` : ""}
   </div>
 
+  ${p.notes ? `
+  <!-- ADMIN NOTES -->
+  <div style="margin:20px 40px 0;">
+    <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C9A227;">Notes</p>
+    <div style="border-left:3px solid #C9A227;padding:10px 16px;background:rgba(201,162,39,0.06);border-radius:0 4px 4px 0;">
+      <p style="margin:0;font-size:13px;color:#1a1a1a;line-height:1.7;">${p.notes}</p>
+    </div>
+  </div>` : ""}
+
   <!-- IMPORTANT NOTES -->
   <div style="margin:28px 40px 0;">
     <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:#C9A227;">Important Notes</p>
@@ -286,6 +296,7 @@ export async function POST(req: Request) {
     total_fee: Number(payment.total_fee ?? payment.amount),
     remaining_fee: Number(payment.remaining_fee ?? 0),
     currency: payment.currency ?? "SAR",
+    notes: payment.notes ?? null,
   });
 
   try {
