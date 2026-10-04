@@ -157,13 +157,13 @@ export default function Footer() {
           </div>
         )}
 
-        <div className="pt-6 pb-3 text-xs text-white/30 text-center">
-          This site uses cookies for analytics and marketing purposes, including the Meta Pixel to measure ad performance.
-        </div>
-        <div className="pt-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs text-white/35">
-          <p>&copy; {new Date().getFullYear()} MRCPI-OBGYN Unlocked. Not affiliated with the Royal College of Physicians of Ireland.</p>
-          <div className="flex gap-4">
+        <div className="pt-6 flex flex-col items-center gap-2 text-xs text-center text-white/30">
+          <p>This site uses cookies for analytics and marketing purposes, including the Meta Pixel to measure ad performance.</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1" style={{ color: "rgba(255,255,255,0.35)" }}>
+            <p>&copy; {new Date().getFullYear()} MRCPI-OBGYN Unlocked. Not affiliated with the Royal College of Physicians of Ireland.</p>
+            <span className="hidden sm:inline" style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
             <a href="#" className="hover:text-white/60 transition-colors">Privacy Policy</a>
+            <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
             <a href="#" className="hover:text-white/60 transition-colors">Terms of Use</a>
           </div>
         </div>
