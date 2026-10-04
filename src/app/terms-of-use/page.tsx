@@ -7,7 +7,6 @@ export default function TermsOfUsePage() {
         <div className="max-w-3xl mx-auto">
           <p className="font-mono-data text-xs uppercase tracking-widest mb-3" style={{ color: "var(--gold)" }}>Legal</p>
           <h1 className="font-serif font-semibold text-white" style={{ fontSize: "clamp(2rem,4vw,3rem)" }}>Terms of Use</h1>
-          <p className="mt-3 text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>Last updated: October 2026</p>
         </div>
       </section>
 
