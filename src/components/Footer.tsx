@@ -157,7 +157,10 @@ export default function Footer() {
           </div>
         )}
 
-        <div className="pt-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs text-white/35">
+        <div className="pt-6 pb-3 text-xs text-white/30 text-center">
+          This site uses cookies for analytics and marketing purposes, including the Meta Pixel to measure ad performance.
+        </div>
+        <div className="pt-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs text-white/35">
           <p>&copy; {new Date().getFullYear()} MRCPI-OBGYN Unlocked. Not affiliated with the Royal College of Physicians of Ireland.</p>
           <div className="flex gap-4">
             <a href="#" className="hover:text-white/60 transition-colors">Privacy Policy</a>
