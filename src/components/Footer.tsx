@@ -162,9 +162,9 @@ export default function Footer() {
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1" style={{ color: "rgba(255,255,255,0.35)" }}>
             <p>&copy; {new Date().getFullYear()} MRCPI-OBGYN Unlocked. Not affiliated with the Royal College of Physicians of Ireland.</p>
             <span className="hidden sm:inline" style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
-            <a href="#" className="hover:text-white/60 transition-colors">Privacy Policy</a>
+            <Link href="/privacy-policy" className="hover:text-white/60 transition-colors">Privacy Policy</Link>
             <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
-            <a href="#" className="hover:text-white/60 transition-colors">Terms of Use</a>
+            <Link href="/terms-of-use" className="hover:text-white/60 transition-colors">Terms of Use</Link>
           </div>
         </div>
         <div className="pt-6 flex flex-col items-center gap-3">
