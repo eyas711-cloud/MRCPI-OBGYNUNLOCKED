@@ -55,8 +55,8 @@ export async function GET() {
     .eq("id", user.id)
     .single();
 
-  // Blocked → blocked page
-  if (profile?.status === "blocked") {
+  // Blocked or frozen → blocked page
+  if (profile?.status === "blocked" || profile?.status === "frozen") {
     redirect("/access-blocked");
   }
 

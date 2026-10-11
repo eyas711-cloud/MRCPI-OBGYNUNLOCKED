@@ -1329,7 +1329,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     }).then(() => fetchBatchStudents(activeBatchId));
   }, [activeBatchId, fetchBatchStudents]);
 
-  const handleStudentAction = async (studentId: string, action: "approve" | "reject" | "block" | "reinstate" | "terminate") => {
+  const handleStudentAction = async (studentId: string, action: "approve" | "reject" | "block" | "freeze" | "unfreeze" | "reinstate" | "terminate") => {
     setActionLoading(studentId + action);
     const res = await fetch("/api/admin/approve-student", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -1338,7 +1338,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
     setActionLoading(null);
     if (res.ok) {
       fetchStudents();
-      if (action === "block" || action === "terminate") fetchAuditLogs();
+      if (action === "block" || action === "freeze" || action === "terminate") fetchAuditLogs();
     } else {
       const body = await res.json().catch(() => ({}));
       alert(`Action failed (${res.status}): ${body?.error || "Unknown error"}`);
@@ -1619,8 +1619,8 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                     <div className="divide-y" style={{ borderColor: "rgba(15,76,92,0.06)" }}>
                       {students.slice(0, 5).map((s) => {
                         const ini = (s.full_name ?? s.email).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-                        const badgeBg = s.status === "active" ? "rgba(21,176,151,0.1)" : s.status === "pending" ? "rgba(201,162,39,0.12)" : "rgba(200,50,50,0.08)";
-                        const badgeColor = s.status === "active" ? "var(--teal)" : s.status === "pending" ? "var(--gold)" : "rgba(180,40,40,0.8)";
+                        const badgeBg = s.status === "active" ? "rgba(21,176,151,0.1)" : s.status === "pending" ? "rgba(201,162,39,0.12)" : s.status === "frozen" ? "rgba(234,179,8,0.1)" : "rgba(200,50,50,0.08)";
+                        const badgeColor = s.status === "active" ? "var(--teal)" : s.status === "pending" ? "var(--gold)" : s.status === "frozen" ? "rgba(161,120,0,0.9)" : "rgba(180,40,40,0.8)";
                         return (
                           <div key={s.id} className="flex items-center gap-4 px-5 py-3.5">
                             <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: "var(--teal)" }}>{ini}</div>
@@ -1711,7 +1711,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
               )}
 
               <div className="flex gap-2 flex-wrap">
-                {(["pending", "active", "blocked", "terminated", "rejected", "all"] as const).map((f) => {
+                {(["pending", "active", "frozen", "blocked", "terminated", "rejected", "all"] as const).map((f) => {
                   const count = f === "blocked" ? blockedLogs.length : f === "terminated" ? terminatedLogs.length : f === "all" ? students.length : students.filter((s) => s.status === f).length;
                   return (
                     <button key={f} onClick={() => setStudentFilter(f)} className="px-4 py-2 rounded-lg text-sm font-medium capitalize transition-colors" style={{ backgroundColor: studentFilter === f ? "var(--navy)" : "white", color: studentFilter === f ? "white" : "rgba(26,26,26,0.6)", border: "1px solid rgba(15,76,92,0.15)" }}>
@@ -1846,9 +1846,9 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                       </div>
                       {filtered.map((s) => {
                         const ini = (s.full_name ?? s.email).split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
-                        const avatarColor = s.status === "pending" ? "var(--gold)" : s.status === "active" ? "var(--teal)" : s.status === "blocked" ? "#6b21a8" : "rgba(200,50,50,0.6)";
-                        const badgeBg = s.status === "active" ? "rgba(21,176,151,0.1)" : s.status === "pending" ? "rgba(201,162,39,0.12)" : s.status === "blocked" ? "rgba(107,33,168,0.1)" : "rgba(200,50,50,0.08)";
-                        const badgeColor = s.status === "active" ? "var(--teal)" : s.status === "pending" ? "var(--gold)" : s.status === "blocked" ? "#6b21a8" : "rgba(180,40,40,0.8)";
+                        const avatarColor = s.status === "pending" ? "var(--gold)" : s.status === "active" ? "var(--teal)" : s.status === "frozen" ? "rgba(161,120,0,0.9)" : s.status === "blocked" ? "#6b21a8" : "rgba(200,50,50,0.6)";
+                        const badgeBg = s.status === "active" ? "rgba(21,176,151,0.1)" : s.status === "pending" ? "rgba(201,162,39,0.12)" : s.status === "frozen" ? "rgba(234,179,8,0.1)" : s.status === "blocked" ? "rgba(107,33,168,0.1)" : "rgba(200,50,50,0.08)";
+                        const badgeColor = s.status === "active" ? "var(--teal)" : s.status === "pending" ? "var(--gold)" : s.status === "frozen" ? "rgba(161,120,0,0.9)" : s.status === "blocked" ? "#6b21a8" : "rgba(180,40,40,0.8)";
                         return (
                           <div key={s.id} data-row-id={s.id} className="flex items-center gap-4 px-5 py-4 transition-colors" style={{ backgroundColor: highlightedId === s.id ? "rgba(21,176,151,0.1)" : bulkSelected.has(s.id) ? "rgba(200,50,50,0.03)" : undefined }}>
                             <input type="checkbox" checked={bulkSelected.has(s.id)} onChange={() => setBulkSelected(prev => { const n = new Set(prev); n.has(s.id) ? n.delete(s.id) : n.add(s.id); return n; })} className="w-4 h-4 rounded cursor-pointer flex-shrink-0" style={{ accentColor: "var(--teal)" }} />
@@ -1877,8 +1877,16 @@ export default function AdminClient({ user }: { user: AdminUser }) {
                               )}
                               {s.status === "active" && (
                                 <>
+                                  <button onClick={() => { if (confirm(`Freeze access for ${s.full_name || s.email}? They will receive a notice that their access has been withheld.`)) handleStudentAction(s.id, "freeze"); }} disabled={actionLoading === s.id + "freeze"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(234,179,8,0.45)", color: "rgba(161,120,0,0.9)" }}>{actionLoading === s.id + "freeze" ? "…" : "Freeze Access"}</button>
                                   <button onClick={() => { if (confirm(`Block access for ${s.full_name || s.email}? They will immediately lose access to the platform.`)) handleStudentAction(s.id, "block"); }} disabled={actionLoading === s.id + "block"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(107,33,168,0.35)", color: "#6b21a8" }}>{actionLoading === s.id + "block" ? "…" : "Block Access"}</button>
                                   <button onClick={() => { if (confirm(`End course for ${s.full_name || s.email}? This permanently deletes their account and cannot be undone.`)) handleStudentAction(s.id, "terminate"); }} disabled={actionLoading === s.id + "terminate"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(200,50,50,0.35)", color: "rgba(180,40,40,0.9)" }}>{actionLoading === s.id + "terminate" ? "…" : "Course Ended"}</button>
+                                </>
+                              )}
+                              {s.status === "frozen" && (
+                                <>
+                                  <button onClick={() => handleStudentAction(s.id, "unfreeze")} disabled={actionLoading === s.id + "unfreeze"} className="px-3 py-2 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50" style={{ backgroundColor: "var(--teal-bright)", color: "var(--navy)" }}>{actionLoading === s.id + "unfreeze" ? "…" : "Unfreeze"}</button>
+                                  <button onClick={() => { if (confirm(`Block access for ${s.full_name || s.email}?`)) handleStudentAction(s.id, "block"); }} disabled={actionLoading === s.id + "block"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(107,33,168,0.35)", color: "#6b21a8" }}>{actionLoading === s.id + "block" ? "…" : "Block Access"}</button>
+                                  <button onClick={() => { if (confirm(`TERMINATE account for ${s.full_name || s.email}? This permanently deletes their account and cannot be undone.`)) handleStudentAction(s.id, "terminate"); }} disabled={actionLoading === s.id + "terminate"} className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all hover:opacity-90 disabled:opacity-50 border" style={{ borderColor: "rgba(200,50,50,0.35)", color: "rgba(180,40,40,0.9)" }}>{actionLoading === s.id + "terminate" ? "…" : "Terminate"}</button>
                                 </>
                               )}
                               {s.status === "blocked" && (

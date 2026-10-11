@@ -45,8 +45,8 @@ export async function middleware(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    // Blocked → blocked page
-    if (profile?.status === "blocked") {
+    // Blocked or frozen → blocked page
+    if (profile?.status === "blocked" || profile?.status === "frozen") {
       return NextResponse.redirect(new URL("/access-blocked", request.url));
     }
 
