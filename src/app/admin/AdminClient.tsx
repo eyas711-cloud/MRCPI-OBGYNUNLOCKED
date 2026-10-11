@@ -862,7 +862,7 @@ export default function AdminClient({ user }: { user: AdminUser }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [students, setStudents] = useState<StudentRow[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
-  const [studentFilter, setStudentFilter] = useState<"all" | "pending" | "active" | "blocked" | "rejected" | "terminated">("pending");
+  const [studentFilter, setStudentFilter] = useState<"all" | "pending" | "active" | "frozen" | "blocked" | "rejected" | "terminated">("pending");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [bulkSelected, setBulkSelected] = useState<Set<string>>(new Set());
