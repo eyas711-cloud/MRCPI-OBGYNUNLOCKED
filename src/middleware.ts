@@ -45,9 +45,14 @@ export async function middleware(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    // Blocked or frozen → blocked page
-    if (profile?.status === "blocked" || profile?.status === "frozen") {
+    // Blocked → blocked page
+    if (profile?.status === "blocked") {
       return NextResponse.redirect(new URL("/access-blocked", request.url));
+    }
+
+    // Frozen → withheld page
+    if (profile?.status === "frozen") {
+      return NextResponse.redirect(new URL("/access-frozen", request.url));
     }
 
     // Pending/rejected → hold page
