@@ -159,9 +159,15 @@ export default function Footer() {
 
         <div className="pt-6 flex flex-col items-center gap-2 text-xs text-center text-white/30">
           <p>This site uses cookies for analytics and marketing purposes, including the Meta Pixel to measure ad performance.</p>
+          <p style={{ color: "rgba(255,255,255,0.28)", maxWidth: "560px" }}>
+            MRCPI-OBGYN Unlocked is an independent educational resource. It is not affiliated with, endorsed by, or approved by the Royal College of Physicians of Ireland (RCPI). &ldquo;MRCPI&rdquo; is used only to identify the examination this material helps prepare for.{" "}
+            <Link href="/disclaimer" className="underline hover:text-white/50 transition-colors">Full disclaimer →</Link>
+          </p>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1" style={{ color: "rgba(255,255,255,0.35)" }}>
-            <p>&copy; {new Date().getFullYear()} MRCPI-OBGYN Unlocked. Not affiliated with the Royal College of Physicians of Ireland.</p>
-            <span className="hidden sm:inline" style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
+            <p>&copy; {new Date().getFullYear()} MRCPI-OBGYN Unlocked.</p>
+            <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
+            <Link href="/disclaimer" className="hover:text-white/60 transition-colors">Disclaimer</Link>
+            <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
             <Link href="/privacy-policy" className="hover:text-white/60 transition-colors">Privacy Policy</Link>
             <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
             <Link href="/terms-of-use" className="hover:text-white/60 transition-colors">Terms of Use</Link>
