@@ -199,7 +199,7 @@ export default async function HomePage() {
                 With a broad portfolio of postgraduate diplomas spanning women&apos;s health, aesthetic gynecology, mental health counselling, and hospital management, Dr. Diab offers a uniquely comprehensive perspective on clinical practice and examination excellence.
               </p>
               <p className="leading-relaxed mb-8" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
-                She is also the host of an educational podcast &ldquo;Dakatret Nesa&rdquo; where she shares Evidence-based discussions, Clinical insight and Practical Guidance on Women&apos;s health, Obstetrics and Gynecology. Episodes available on{" "}
+                Dr. Diab hosts an educational podcast &ldquo;Dakatret Nesa&rdquo; where she shares Evidence-based discussions, Clinical insight and Practical Guidance on Women&apos;s health, Obstetrics and Gynecology. Episodes available on{" "}
                 <a
                   href="https://www.youtube.com/@Dakatretnesa-i4f"
                   target="_blank"
