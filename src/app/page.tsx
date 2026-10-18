@@ -329,6 +329,73 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* BOOKS */}
+      <section id="books" className="py-24 px-6" style={{ backgroundColor: "var(--paper)" }}>
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-14">
+            <p className="font-mono-data text-xs uppercase tracking-widest mb-3" style={{ color: "var(--teal)" }}>Published Books</p>
+            <h2 className="font-serif font-semibold mb-4" style={{ fontSize: "clamp(1.8rem,3vw,2.5rem)", color: "var(--navy)" }}>
+              Take the course material with you
+            </h2>
+            <p className="text-base leading-relaxed mx-auto" style={{ color: "rgba(26,26,26,0.6)", maxWidth: "520px" }}>
+              Two companion books by Dr. Einas Diab — available now on Amazon in Kindle and paperback.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            {/* Book 1 — Brain Maps */}
+            <div className="flex flex-col rounded-2xl border overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)", backgroundColor: "white" }}>
+              <div className="flex items-center justify-center px-12 py-10" style={{ backgroundColor: "#0d3d2e" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/book-brain-maps.jpg" alt="MRCPI Obstetrics & Gynecology OSCE Brain Maps" className="w-full max-w-[200px] rounded-lg shadow-2xl" style={{ aspectRatio: "0.7/1", objectFit: "cover" }} />
+              </div>
+              <div className="flex flex-col flex-1 p-7">
+                <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>OSCE Brain Maps</p>
+                <h3 className="font-serif font-semibold text-lg mb-2" style={{ color: "var(--navy)" }}>MRCPI Obstetrics &amp; Gynecology</h3>
+                <p className="text-sm mb-5" style={{ color: "rgba(26,26,26,0.55)" }}>High-yield visual brain maps for the MRCPI OB/GYN OSCE. 11 chapters · 127 recall sheets · Full colour.</p>
+                <div className="flex gap-3 mt-auto">
+                  <a href="https://a.co/d/0gIV7V6m" target="_blank" rel="noopener noreferrer"
+                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+                    style={{ backgroundColor: "var(--navy)", color: "white" }}>
+                    Kindle
+                  </a>
+                  <a href="https://a.co/d/0gIV7V6m" target="_blank" rel="noopener noreferrer"
+                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold border transition-all hover:opacity-80"
+                    style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--navy)" }}>
+                    Paperback
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            {/* Book 2 — Last-Minute OSCE Preparation */}
+            <div className="flex flex-col rounded-2xl border overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)", backgroundColor: "white" }}>
+              <div className="flex items-center justify-center px-12 py-10" style={{ backgroundColor: "#0f1f4a" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/book-last-minute.jpg" alt="MRCPI Obstetrics & Gynaecology Last-Minute OSCE Preparation" className="w-full max-w-[200px] rounded-lg shadow-2xl" style={{ aspectRatio: "0.7/1", objectFit: "cover" }} />
+              </div>
+              <div className="flex flex-col flex-1 p-7">
+                <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>Last-Minute OSCE Preparation</p>
+                <h3 className="font-serif font-semibold text-lg mb-2" style={{ color: "var(--navy)" }}>MRCPI Obstetrics &amp; Gynaecology</h3>
+                <p className="text-sm mb-5" style={{ color: "rgba(26,26,26,0.55)" }}>High-yield recall sheets for the MRCPI Part II OB/GYN OSCE. 11 chapters · 127 recall sheets · Full colour.</p>
+                <div className="flex gap-3 mt-auto">
+                  <a href="https://a.co/d/08KZacRW" target="_blank" rel="noopener noreferrer"
+                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+                    style={{ backgroundColor: "var(--navy)", color: "white" }}>
+                    Kindle
+                  </a>
+                  <a href="https://a.co/d/08KZacRW" target="_blank" rel="noopener noreferrer"
+                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold border transition-all hover:opacity-80"
+                    style={{ borderColor: "rgba(15,76,92,0.25)", color: "var(--navy)" }}>
+                    Paperback
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* COURSE OVERVIEW */}
       <section className="py-24 px-6" style={{ backgroundColor: "var(--paper)" }}>
         <div className="max-w-7xl mx-auto">
