@@ -355,12 +355,12 @@ export default async function HomePage() {
                 <p className="text-sm mb-5" style={{ color: "rgba(26,26,26,0.55)" }}>Visual brain maps for the MRCPI OB/GYN OSCE.</p>
                 <div className="flex gap-3 mt-auto">
                   <a href="https://a.co/d/0gIV7V6m" target="_blank" rel="noopener noreferrer"
-                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-                    style={{ backgroundColor: "var(--gold)", color: "var(--navy)" }}>
+                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+                    style={{ backgroundColor: "var(--navy)", color: "white" }}>
                     Kindle
                   </a>
                   <a href="https://a.co/d/0gIV7V6m" target="_blank" rel="noopener noreferrer"
-                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
                     style={{ backgroundColor: "var(--navy)", color: "white" }}>
                     Paperback
                   </a>
@@ -379,12 +379,12 @@ export default async function HomePage() {
                 <p className="text-sm mb-5" style={{ color: "rgba(26,26,26,0.55)" }}>Recall sheets for the MRCPI OB/GYN OSCE.</p>
                 <div className="flex gap-3 mt-auto">
                   <a href="https://a.co/d/08KZacRW" target="_blank" rel="noopener noreferrer"
-                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-                    style={{ backgroundColor: "var(--gold)", color: "var(--navy)" }}>
+                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
+                    style={{ backgroundColor: "var(--navy)", color: "white" }}>
                     Kindle
                   </a>
                   <a href="https://a.co/d/08KZacRW" target="_blank" rel="noopener noreferrer"
-                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+                    className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
                     style={{ backgroundColor: "var(--navy)", color: "white" }}>
                     Paperback
                   </a>
