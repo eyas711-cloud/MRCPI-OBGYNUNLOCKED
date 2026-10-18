@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowRight, CheckCircle, Award,
   Users, Video, FileText, Calendar, MessageSquare, ShieldCheck
@@ -346,8 +347,7 @@ export default async function HomePage() {
             {/* Book 1 — Brain Maps */}
             <div className="flex flex-col rounded-2xl border overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)", backgroundColor: "white" }}>
               <div className="flex items-center justify-center px-12 py-10" style={{ backgroundColor: "var(--paper)" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/book-brain-maps.jpg" alt="MRCPI Obstetrics & Gynecology OSCE Brain Maps" className="w-full max-w-[200px] rounded-lg" style={{ aspectRatio: "0.7/1", objectFit: "cover", boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }} />
+                <Image src="/book-brain-maps.jpg" alt="MRCPI Obstetrics & Gynecology OSCE Brain Maps" width={200} height={286} className="rounded-lg" style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.18)", objectFit: "cover" }} />
               </div>
               <div className="flex flex-col flex-1 p-7">
                 <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>OSCE Brain Maps</p>
@@ -371,8 +371,7 @@ export default async function HomePage() {
             {/* Book 2 — Last-Minute OSCE Preparation */}
             <div className="flex flex-col rounded-2xl border overflow-hidden" style={{ borderColor: "rgba(15,76,92,0.12)", backgroundColor: "white" }}>
               <div className="flex items-center justify-center px-12 py-10" style={{ backgroundColor: "var(--paper)" }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/book-last-minute.jpg" alt="MRCPI Obstetrics & Gynaecology Last-Minute OSCE Preparation" className="w-full max-w-[200px] rounded-lg" style={{ aspectRatio: "0.7/1", objectFit: "cover", boxShadow: "0 8px 40px rgba(0,0,0,0.18)" }} />
+                <Image src="/book-last-minute.jpg" alt="MRCPI Obstetrics & Gynaecology Last-Minute OSCE Preparation" width={200} height={286} className="rounded-lg" style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.18)", objectFit: "cover" }} />
               </div>
               <div className="flex flex-col flex-1 p-7">
                 <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>Last-Minute OSCE Preparation</p>
