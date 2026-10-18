@@ -211,6 +211,14 @@ export default async function HomePage() {
                 </a>.
               </p>
 
+              <p className="leading-relaxed mb-8" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontSize: "1.2rem", fontWeight: 400, color: "rgba(26,26,26,0.75)" }}>
+                She is also the author of{" "}
+                <em>MRCPI Obstetrics &amp; Gynecology: OSCE Brain Maps</em>{" "}
+                and{" "}
+                <em>MRCPI Obstetrics &amp; Gynaecology: Last-Minute OSCE Preparation</em>
+                {" "}— both available on Amazon.
+              </p>
+
               {/* Credentials grid */}
               <div>
                 <p className="text-xs uppercase tracking-widest mb-4" style={{ fontFamily: "'Cormorant Garamond', Georgia, serif", fontWeight: 600, letterSpacing: "0.12em", color: "var(--teal)" }}>Academic Credentials</p>
