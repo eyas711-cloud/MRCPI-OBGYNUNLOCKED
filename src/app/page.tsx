@@ -350,7 +350,7 @@ export default async function HomePage() {
                 <Image src="/book-brain-maps.jpg" alt="MRCPI Obstetrics & Gynecology OSCE Brain Maps" width={200} height={286} className="rounded-lg" style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.18)", objectFit: "cover" }} />
               </div>
               <div className="flex flex-col flex-1 p-7">
-                <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>OSCE Brain Maps</p>
+                <span className="inline-block font-mono-data text-xs uppercase tracking-widest mb-3 px-3 py-1 rounded-full" style={{ backgroundColor: "#C9A227", color: "white" }}>OSCE Brain Maps</span>
                 <h3 className="font-serif font-semibold text-lg mb-2" style={{ color: "var(--navy)" }}>MRCPI Obstetrics &amp; Gynecology</h3>
                 <p className="text-sm mb-5" style={{ color: "rgba(26,26,26,0.55)" }}>Visual brain maps for the MRCPI OB/GYN OSCE.</p>
                 <div className="flex gap-3 mt-auto">
@@ -374,7 +374,7 @@ export default async function HomePage() {
                 <Image src="/book-last-minute.jpg" alt="MRCPI Obstetrics & Gynaecology Last-Minute OSCE Preparation" width={200} height={286} className="rounded-lg" style={{ boxShadow: "0 8px 40px rgba(0,0,0,0.18)", objectFit: "cover" }} />
               </div>
               <div className="flex flex-col flex-1 p-7">
-                <p className="font-mono-data text-xs uppercase tracking-widest mb-2" style={{ color: "var(--teal)" }}>Last-Minute OSCE Preparation</p>
+                <span className="inline-block font-mono-data text-xs uppercase tracking-widest mb-3 px-3 py-1 rounded-full" style={{ backgroundColor: "#C9A227", color: "white" }}>Last-Minute OSCE Preparation</span>
                 <h3 className="font-serif font-semibold text-lg mb-2" style={{ color: "var(--navy)" }}>MRCPI Obstetrics &amp; Gynaecology</h3>
                 <p className="text-sm mb-5" style={{ color: "rgba(26,26,26,0.55)" }}>Recall sheets for the MRCPI OB/GYN OSCE.</p>
                 <div className="flex gap-3 mt-auto">
