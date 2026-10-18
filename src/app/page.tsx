@@ -339,7 +339,7 @@ export default async function HomePage() {
               Study resources, available on Amazon
             </h2>
             <p className="text-base leading-relaxed mx-auto" style={{ color: "rgba(26,26,26,0.6)", maxWidth: "520px" }}>
-              Two books by Dr. Einas Diab — available independently on Amazon in Kindle and paperback.
+              Authored by Dr. Einas Diab and available independently on Amazon — each book is a focused revision tool for the MRCPI OB/GYN OSCE.
             </p>
           </div>
 
