@@ -356,12 +356,12 @@ export default async function HomePage() {
                 <div className="flex gap-3 mt-auto">
                   <a href="https://a.co/d/0gIV7V6m" target="_blank" rel="noopener noreferrer"
                     className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
-                    style={{ backgroundColor: "var(--navy)", color: "white" }}>
+                    style={{ backgroundColor: "#0B1E3D", color: "white" }}>
                     Kindle
                   </a>
                   <a href="https://a.co/d/0gIV7V6m" target="_blank" rel="noopener noreferrer"
                     className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
-                    style={{ backgroundColor: "var(--navy)", color: "white" }}>
+                    style={{ backgroundColor: "#0B1E3D", color: "white" }}>
                     Paperback
                   </a>
                 </div>
@@ -380,12 +380,12 @@ export default async function HomePage() {
                 <div className="flex gap-3 mt-auto">
                   <a href="https://a.co/d/08KZacRW" target="_blank" rel="noopener noreferrer"
                     className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
-                    style={{ backgroundColor: "var(--navy)", color: "white" }}>
+                    style={{ backgroundColor: "#0B1E3D", color: "white" }}>
                     Kindle
                   </a>
                   <a href="https://a.co/d/08KZacRW" target="_blank" rel="noopener noreferrer"
                     className="flex-1 text-center py-2.5 rounded-xl text-sm font-semibold transition-all hover:opacity-80"
-                    style={{ backgroundColor: "var(--navy)", color: "white" }}>
+                    style={{ backgroundColor: "#0B1E3D", color: "white" }}>
                     Paperback
                   </a>
                 </div>
